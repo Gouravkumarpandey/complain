@@ -13,7 +13,10 @@ import {
   generateComplaintFromWatson,
   refreshToken,
   verifyOTP,
-  resendOTP
+  resendOTP,
+  forgotPassword,
+  resetPassword,
+  verifyResetToken
 } from "../controllers/authController.js";
 import { validateSession } from "../controllers/sessionController.js";
 import { authenticate } from "../middleware/auth.js";
@@ -28,6 +31,11 @@ router.post("/refresh", refreshToken);
 // OTP verification
 router.post("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
+
+// Password reset
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+router.get("/verify-reset-token/:token", verifyResetToken);
 
 // Session validation
 router.get("/validate-session", authenticate, validateSession);
