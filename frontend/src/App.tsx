@@ -6,6 +6,8 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { HomePage } from './components/home/HomePage';
 import { LoginForm } from './components/auth/LoginForm';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
 import FacebookCallback from './components/auth/FacebookCallback';
 import { UserDashboard } from './components/dashboard/UserDashboard';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
@@ -133,6 +135,8 @@ function AppContent() {
       />
 
       <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       
       {/* Protected Routes */}
       <Route 

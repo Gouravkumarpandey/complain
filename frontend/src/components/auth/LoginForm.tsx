@@ -417,6 +417,17 @@ export function LoginForm() {
                   </>
                 )}
               </button>
+
+              {isLogin && (
+                <div className="mt-4 text-center">
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200 text-sm"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+              )}
             </form>
 
             <div className="mt-6 flex justify-between items-center">
