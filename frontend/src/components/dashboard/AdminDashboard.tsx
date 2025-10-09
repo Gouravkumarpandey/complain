@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, Shield, BarChart3, Activity, FileText, UserCheck, UserX, MessageCircle, RefreshCw } from 'lucide-react';
+import { Shield, Activity, FileText, UserCheck, RefreshCw } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
 import { apiService } from '../../services/apiService';
 import { agentService } from '../../services/agentService';
 
+// Helper functions - commented out since they are not used directly in this view
+// but might be needed in the future or used elsewhere
+/*
 // Helper function to get background color class based on agent color
 const getAgentBgColorClass = (color: string): string => {
   switch (color) {
@@ -42,6 +45,7 @@ const getSatisfactionColor = (score: number): string => {
   if (score >= 70) return 'bg-yellow-500';
   return 'bg-red-500';
 };
+*/
 
 // Define interfaces for type safety
 interface Agent {
@@ -87,7 +91,7 @@ interface ApiAgentData {
   lastName?: string;
   agentStatus?: string;
   availability?: string;
-  activeComplaints?: any[];
+  activeComplaints?: Array<unknown>;
   metrics?: {
     avgResponseTime?: number;
   };
@@ -130,7 +134,8 @@ interface Complaint {
 }
 
 export const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState<string>('user-agent-control');
+  // Remove unused state since it's not being used in the component
+  // const [activeSection, setActiveSection] = useState<string>('user-agent-control');
   const { socket, isConnected } = useSocket();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState<boolean>(false);
