@@ -132,6 +132,66 @@ class ApiService {
   async register(userData: { firstName: string; lastName: string; email: string; password: string; role?: string; department?: string }) {
     return this.request('/auth/register', { method: 'POST', body: JSON.stringify(userData) });
   }
+  
+  async forgotPassword(email: string) {
+    try {
+      console.log("Making forgot password request to:", `${API_BASE_URL}/auth/forgot-password`);
+      const result = await this.request('/auth/forgot-password', { 
+        method: 'POST', 
+        body: JSON.stringify({ email }) 
+      });
+      console.log("Forgot password API response:", result);
+      return result;
+    } catch (error) {
+      console.error("Failed to process forgot password request:", error);
+      return { error: "Failed to send password reset request. Please try again later." };
+    }
+  }
+  
+  async resetPassword(token: string, password: string) {
+    try {
+      console.log("Resetting password with token");
+      const result = await this.request('/auth/reset-password', { 
+        method: 'POST', 
+        body: JSON.stringify({ token, password }) 
+      });
+      console.log("Reset password response:", result);
+      if (result.error) {
+        return { 
+          error: result.error || "Failed to reset password. Please try again or request a new reset link." 
+        };
+      }
+      return result;
+    } catch (error) {
+      console.error("Failed to reset password:", error);
+      return { 
+        error: "Failed to reset password. Please try again or request a new reset link.",
+        networkError: error instanceof Error && 
+          (error.message.includes('network') || error.message.includes('fetch'))
+      };
+    }
+  }
+  
+  async verifyResetToken(token: string) {
+    try {
+      console.log("Verifying reset token:", token);
+      const result = await this.request(`/auth/verify-reset-token/${token}`);
+      console.log("Verify reset token response:", result);
+      if (result.error) {
+        return { 
+          error: result.error || "Failed to verify reset token. It might be invalid or expired." 
+        };
+      }
+      return result;
+    } catch (error) {
+      console.error("Failed to verify reset token:", error);
+      return { 
+        error: "Failed to verify reset token. It might be invalid or expired.",
+        networkError: error instanceof Error && 
+          (error.message.includes('network') || error.message.includes('fetch'))
+      };
+    }
+  }
 
   async refreshToken(token: string) {
     try {
