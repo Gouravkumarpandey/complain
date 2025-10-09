@@ -51,9 +51,27 @@ For more information, visit: https://developers.google.com/identity/gsi/web/guid
 
 export default function setupGoogleAuth() {
   const currentOrigin = window.location.origin;
+  const clientId = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "Not found in environment";
+  
   console.log(`
+========= Google Auth Debug Info =========
 Current origin: ${currentOrigin}
-Please ensure this origin is added to your Google Cloud Console as an authorized JavaScript origin.
+Google Client ID: ${clientId.substring(0, 8)}...
+Client ID length: ${clientId.length} characters
+======================================
+
+This origin needs to be added to your Google Cloud Console as an authorized JavaScript origin.
+Follow the detailed instructions above to resolve the issue.
   `);
+  
+  // Log all Vite environment variables (excluding sensitive ones)
+  console.log("Environment Variables:");
+  Object.keys(import.meta.env).forEach(key => {
+    if (key.startsWith('VITE_') && !key.includes('SECRET') && !key.includes('KEY')) {
+      const value = import.meta.env[key];
+      console.log(`- ${key}: ${value.substring(0, 5)}...`);
+    }
+  });
+  
   return true;
 }

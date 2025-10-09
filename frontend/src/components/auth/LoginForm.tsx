@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import validateGoogleConfig from '../../services/googleAuthDebug';
+// @ts-expect-error - Missing type declarations for this JS module
 import setupGoogleAuth from '../../utils/googleAuthSetup';
 import { OTPVerification } from './OTPVerification';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
@@ -163,7 +164,16 @@ export function LoginForm() {
           </div>
           
           {/* Right Side - OTP Verification */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center relative">
+            {/* Back button for OTP verification screen */}
+            <button
+              onClick={cancelVerification}
+              className="absolute top-6 left-6 text-gray-400 hover:text-blue-600 transition-all duration-200 flex items-center gap-2 font-medium text-lg group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+              Back to Sign In
+            </button>
+            
             <OTPVerification 
               email={pendingVerification.email}
               onVerifySuccess={handleVerificationSuccess}
@@ -188,6 +198,26 @@ export function LoginForm() {
             <div className="absolute bottom-32 right-20 w-24 h-24 bg-blue-300 rounded-full"></div>
             <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-blue-400 rounded-full"></div>
           </div>
+          
+          {/* Back button in left panel */}
+          {isLogin ? (
+            <Link
+              to="/"
+              className="absolute top-8 left-8 text-white hover:text-blue-200 transition-all duration-200 flex items-center gap-2 font-medium text-lg z-20"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Home
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsLogin(true)}
+              className="absolute top-8 left-8 text-white hover:text-blue-200 transition-all duration-200 flex items-center gap-2 font-medium text-lg z-20"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Login
+            </button>
+          )}
           
           <div className="relative z-10 flex flex-col justify-center px-12 py-20">
             <div className="mb-12">
@@ -219,14 +249,6 @@ export function LoginForm() {
 
         {/* Right Side - Login Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-16 py-12 relative">
-          {/* Enhanced Back Button */}
-          <Link
-            to="/"
-            className="absolute top-6 left-6 text-gray-400 hover:text-blue-600 transition-all duration-200 flex items-center gap-2 font-medium text-lg group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
-            Back to Home
-          </Link>
 
           <div className="max-w-md w-full mx-auto">
             <div className="text-center mb-8">
@@ -255,14 +277,12 @@ export function LoginForm() {
                 onError={() => {
                   console.error('Google Login Failed');
                   
-                  // Check if it's an origin-related error
+                  // Check if it's an origin-related error - always show the current origin
                   const currentOrigin = window.location.origin;
-                  if (currentOrigin === 'http://localhost:5175') {
-                    setError(`Google authentication failed. Your current origin (${currentOrigin}) may not be authorized in Google Cloud Console. See console for setup instructions.`);
-                    setupGoogleAuth(); // Show detailed setup guide in console
-                  } else {
-                    setError('Google login failed. Please try again.');
-                  }
+                  
+                  // Always show the origin information as it's likely an origin-related issue
+                  setError(`Google authentication failed. Your current origin (${currentOrigin}) may not be authorized in Google Cloud Console. Check console for setup instructions.`);
+                  setupGoogleAuth(); // Show detailed setup guide in console
                 }}
                 size="large"
                 width="100%"
@@ -399,14 +419,15 @@ export function LoginForm() {
               </button>
             </form>
 
-            <div className="text-center mt-6">
+            <div className="mt-6 flex justify-between items-center">
+              {/* Always show the toggle button */}
               <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200"
               >
                 {isLogin
                   ? "Don't have an account? Sign up"
-                  : 'Already have an account? Sign in'}
+                  : 'Already have an account?'}
               </button>
             </div>
           </div>
