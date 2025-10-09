@@ -5,7 +5,7 @@
  * Run this script in your browser console to get specific instructions for your environment.
  */
 
-(function() {
+export default function setupGoogleAuth() {
   const currentOrigin = window.location.origin;
   const clientId = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
   const projectId = clientId.split('-')[0] || "unknown";
@@ -14,6 +14,8 @@
 =======================================================
 🔐 Google OAuth Configuration Guide for ${currentOrigin}
 =======================================================
+
+YOUR ORIGIN IS NOT AUTHORIZED! FOLLOW THESE STEPS:
 
 Your application is trying to use Google Sign-In from ${currentOrigin}, 
 but this origin is not authorized in your Google Cloud Console.
@@ -40,31 +42,24 @@ Note: If you're developing locally and frequently changing ports,
 you might want to add multiple localhost URLs with different ports:
 - ${currentOrigin}
 - http://localhost:5173
+- http://localhost:5174
 - http://localhost:5001
 - http://localhost:3000
-- http://localhost:5175
 
 For more information, visit: https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid
 =======================================================
 `);
-})();
 
-export default function setupGoogleAuth() {
-  const currentOrigin = window.location.origin;
-  const clientId = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "Not found in environment";
-  
+  // Display debug info
   console.log(`
 ========= Google Auth Debug Info =========
 Current origin: ${currentOrigin}
 Google Client ID: ${clientId.substring(0, 8)}...
 Client ID length: ${clientId.length} characters
 ======================================
+`);
 
-This origin needs to be added to your Google Cloud Console as an authorized JavaScript origin.
-Follow the detailed instructions above to resolve the issue.
-  `);
-  
-  // Log all Vite environment variables (excluding sensitive ones)
+  // Log environment variables for debugging
   console.log("Environment Variables:");
   Object.keys(import.meta.env).forEach(key => {
     if (key.startsWith('VITE_') && !key.includes('SECRET') && !key.includes('KEY')) {
