@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import validateGoogleConfig from '../../services/googleAuthDebug';
+import setupGoogleAuth from '../../utils/googleAuthSetup';
 import { OTPVerification } from './OTPVerification';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
 
@@ -14,6 +15,7 @@ export function LoginForm() {
   // Debug Google Sign-In configuration on component mount
   useEffect(() => {
     validateGoogleConfig();
+    setupGoogleAuth(); // Show detailed setup guide in console
   }, []);
   
   const [formData, setFormData] = useState({
@@ -250,7 +252,18 @@ export function LoginForm() {
             <div className="space-y-3 mb-6">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setError('Google login failed')}
+                onError={() => {
+                  console.error('Google Login Failed');
+                  
+                  // Check if it's an origin-related error
+                  const currentOrigin = window.location.origin;
+                  if (currentOrigin === 'http://localhost:5175') {
+                    setError(`Google authentication failed. Your current origin (${currentOrigin}) may not be authorized in Google Cloud Console. See console for setup instructions.`);
+                    setupGoogleAuth(); // Show detailed setup guide in console
+                  } else {
+                    setError('Google login failed. Please try again.');
+                  }
+                }}
                 size="large"
                 width="100%"
                 text={isLogin ? "signin_with" : "signup_with"}
