@@ -133,10 +133,10 @@ class ApiService {
     return this.request('/auth/register', { method: 'POST', body: JSON.stringify(userData) });
   }
   
-  async forgotPassword(email: string) {
+  async forgotPassword(email: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
     try {
       console.log("Making forgot password request to:", `${API_BASE_URL}/auth/forgot-password`);
-      const result = await this.request('/auth/forgot-password', { 
+      const result = await this.request<{ success: boolean; message: string }>('/auth/forgot-password', { 
         method: 'POST', 
         body: JSON.stringify({ email }) 
       });
