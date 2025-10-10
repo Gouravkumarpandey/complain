@@ -1,0 +1,188 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-10-10 01:33+0530\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/components/home/HomePage.tsx
+msgid "About us"
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Translated Content Demo"
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "We're here to help resolve your complaints quickly and efficiently."
+msgstr ""
+
+#: src/components/home/HomePage.tsx
+msgid "How It Works"
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Current Language"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Español - Spanish (es)"
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+#: src/components/home/HomePage.tsx
+msgid "AI-Powered Support"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Option 2: Using the Language Dropdown"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Note: Your language preference will be saved and remembered the next time you visit the application."
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Français - French (fr)"
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Your language preference will be saved for your next visit. You can change it anytime using the language buttons above."
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Click on the language selector in the navigation bar:"
+msgstr ""
+
+#: src/components/home/HomePage.tsx
+msgid "Try it free"
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Our AI-powered system helps route your concerns to the right department and provides instant feedback on common issues."
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+msgid "An error occurred. Please try again later."
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+msgid "No worries! We'll send you a secure link to reset your password and get you back to managing your support tickets."
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "Current language: {locale}"
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Choose Your Language"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Choose your language from the expanded list."
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "How to Change Language"
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+#: src/components/auth/ForgotPassword.tsx
+msgid "If your email is registered, you will receive a password reset link shortly."
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "中文 - Chinese (zh)"
+msgstr ""
+
+#: src/components/home/HomePage.tsx
+msgid "Features"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Select your preferred language from the dropdown list."
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "AI-Powered Complaint Resolution System"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Click on the language dropdown button:"
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "Please select your preferred language to continue."
+msgstr ""
+
+#: src/components/home/HomePage.tsx
+msgid "Get Started"
+msgstr ""
+
+#: src/components/home/HomePage.tsx
+msgid "Book a demo"
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "This is a test component to verify that language switching is working correctly."
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "Language Switching Test"
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "Hello! Welcome to QuickFix."
+msgstr ""
+
+#: src/components/common/LanguageSwitchTest.tsx
+msgid "Try selecting a different language from the selector above to see this text change."
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Option 1: Using the Language Selector in the Navigation Bar"
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Hello! Welcome to QuickFix, where we make resolving your complaints fast and easy."
+msgstr ""
+
+#: src/components/home/HomeLangSwitcher.tsx
+msgid "Welcome to QuickFix"
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+msgid "Customer Support"
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+msgid "Forgot your <0>password?</0>"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "हिन्दी - Hindi (hi)"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "Available Languages"
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+msgid "Language Settings"
+msgstr ""
+
+#: src/components/auth/ForgotPassword.tsx
+msgid "Please enter your email address"
+msgstr ""
+
+#: src/components/common/LanguageSwitchInstructions.tsx
+msgid "English (en)"
+msgstr ""

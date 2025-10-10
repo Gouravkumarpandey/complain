@@ -1,0 +1,11 @@
+{
+  "lingui": {
+    "config": {
+      "extractorParserOptions": {
+        "presets": [
+          "@babel/preset-react"
+        ]
+      }
+    }
+  }
+}

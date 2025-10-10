@@ -17,6 +17,7 @@ import { ChatBot } from './components/chatbot/ChatBot';
 import { useAuth } from './hooks/useAuth';
 import { Notifications } from './components/notifications/Notifications';
 import { useNotificationPermission } from './hooks/useSocket';
+import { LanguageSwitchInstructions } from './components/common/LanguageSwitchInstructions';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -137,6 +138,7 @@ function AppContent() {
       <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/language-settings" element={<LanguageSwitchInstructions />} />
       
       {/* Protected Routes */}
       <Route 

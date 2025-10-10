@@ -1,33 +1,40 @@
 # QuickFix - AI Powered Complaint System
 
-A comprehensive, enterprise-grade complaint management platform with advanced AI capabilities, real-time updates, and multi-role dashboards. Built with modern technologies including React 18, Node.js, MongoDB, and Python AI services.
+A comprehensive, enterprise-grade complaint management platform with advanced AI capabilities, real-time updates, multi-role dashboards, and full internationalization support. Built with modern technologies including React 18, Node.js, MongoDB, Python AI services, and Lingui for i18n.
 
 ##  Project Structure
 
 ```
-complease/                  # Root project folder
-├── frontend/              # React (JS) + TailwindCSS
-│   ├── public/            # Static assets (icons, logo, etc.)
+complain/                   # Root project folder
+├── frontend/              # React (TS) + TailwindCSS + Vite
+│   ├── public/            # Static assets (icons, images, etc.)
 │   └── src/
-│       ├── assets/        # Images, fonts, icons
-│       ├── components/    # Reusable UI components (Navbar, Footer, etc.)
-│       ├── pages/         # Pages
-│       │   ├── Home.js
-│       │   ├── Login.js
-│       │   ├── Signup.js
-│       │   ├── ResetPassword.js
-│       │   ├── Dashboard.js
-│       │   ├── ComplaintForm.js
-│       │   ├── ComplaintList.js
-│       │   └── Chatbot.js
-│       ├── services/      # API calls (axios)
-│       │   ├── authService.js
-│       │   ├── complaintService.js
-│       │   └── chatbotService.js
-│       ├── context/       # React context (auth, complaints, chatbot state)
-│       ├── utils/         # Helper functions (validators, formatters)
-│       ├── App.js
-│       └── index.js
+│       ├── components/    # Reusable UI components organized by feature
+│       │   ├── analytics/
+│       │   ├── auth/
+│       │   ├── chatbot/
+│       │   ├── common/    # Shared components including language selector
+│       │   ├── complaints/
+│       │   ├── dashboard/
+│       │   ├── home/
+│       │   └── notifications/
+│       ├── contexts/      # React context providers
+│       │   ├── AuthContext.tsx
+│       │   ├── ComplaintContext.tsx
+│       │   ├── LanguageContext.tsx
+│       │   ├── NotificationContext.tsx
+│       │   └── SocketContext.tsx
+│       ├── hooks/         # Custom React hooks
+│       ├── locales/       # Internationalization files (i18n)
+│       │   ├── en/        # English translations
+│       │   ├── es/        # Spanish translations
+│       │   ├── fr/        # French translations
+│       │   ├── hi/        # Hindi translations
+│       │   └── zh/        # Chinese translations
+│       ├── services/      # API calls and services
+│       ├── utils/         # Helper functions
+│       ├── App.tsx        # Main application component
+│       └── main.tsx       # Application entry point
 ├── backend/               # Node.js + Express + MongoDB
 │   ├── src/
 │   │   ├── config/        # DB connection, env config
@@ -107,6 +114,12 @@ complease/                  # Root project folder
    ```bash
    cd frontend
    npm install
+   
+   # Compile language translations
+   npm run i18n:extract
+   npm run i18n:compile
+   
+   # Start development server
    npm run dev
    ```
 
@@ -190,6 +203,9 @@ complease/                  # Root project folder
 - `npm run build` - Build optimized production bundle
 - `npm run preview` - Preview production build locally
 - `npm run lint` - Check TypeScript and code quality
+- `npm run i18n:extract` - Extract translation strings from code
+- `npm run i18n:compile` - Compile translation catalogs for use
+- `npm run type-check` - Run TypeScript type checking
 
 ### AI Service Commands
 - `python main.py` - Start AI service server
@@ -244,6 +260,15 @@ complease/                  # Root project folder
 - **Search & Filtering**: Advanced complaint discovery and sorting
 - **Export Capabilities**: Data export for reporting and analysis
 - **Customizable Dashboards**: Role-specific interface customization
+- **Multi-language Interface**: Full internationalization with language switching
+
+### 🌐 **Internationalization (i18n)**
+- **Multiple Languages**: Support for English, Spanish, French, Hindi, and Chinese
+- **Lingui Integration**: Powerful i18n library with macro support
+- **Dynamic Language Switching**: Real-time UI language changes
+- **Translation Management**: Automated extraction and compilation workflow
+- **Language Persistence**: Remembers user's language preference
+- **Accessibility**: Enhanced accessibility through proper language tags
 
 ## 🧪 Testing & Quality Assurance
 
@@ -292,6 +317,8 @@ npm audit && npm audit fix
 - Vite for build optimization
 - Lucide React for icons
 - Context API for state management
+- Lingui for internationalization (@lingui/core, @lingui/react)
+- React Router for navigation
 
 **Backend:**
 - Node.js with Express.js
@@ -347,11 +374,11 @@ npm audit && npm audit fix
 
 ## 🔮 **Roadmap & Future Enhancements**
 
-### **Version 2.1 (Upcoming)**
+### **Version 2.1 (Current)**
 - [ ] **Mobile Applications**: Native iOS/Android apps
 - [ ] **Advanced Chatbot**: AI-powered customer service bot
 - [ ] **Video Call Integration**: Agent-customer video support
-- [ ] **Multi-language Support**: Internationalization (i18n)
+- [x] **Multi-language Support**: Internationalization with Lingui (i18n)
 - [ ] **API Rate Limiting**: Enhanced security measures
 
 ### **Version 3.0 (Planned)**
@@ -369,6 +396,7 @@ npm audit && npm audit fix
 - **Enterprise-Ready**: Scalable to handle 10,000+ users
 - **Mobile-First**: Responsive design for all devices
 - **Security Compliant**: GDPR and data protection ready
+- **Multilingual Support**: Fully internationalized with 5 languages
 
 ## 🤝 Contributing
 

@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play } from 'lucide-react';
+import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
+import { Trans } from '@lingui/macro';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export function HomePage() {
+  const { locale, setLocale } = useLanguage();
+  
   return (
     <div className="bg-white">
       {/* Navigation */}
@@ -15,19 +19,89 @@ export function HomePage() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1">AI-Powered Support</span>
+              <span className="text-sm text-gray-500 ml-1"><Trans>AI-Powered Support</Trans></span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How It Works</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">About us</a>
+              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium"><Trans>Features</Trans></a>
+              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium"><Trans>How It Works</Trans></a>
+              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium"><Trans>About us</Trans></a>
+              
+              {/* Language Selector */}
+              <div className="relative group">
+                <button className="flex items-center text-gray-600 hover:text-gray-900 border-r border-gray-200 pr-4 mr-2">
+                  <Globe className="w-4 h-4 mr-1" />
+                  <span className="text-sm">{locale.toUpperCase()}</span>
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-36 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <div className="py-1">
+                    <button 
+                      onClick={async () => {
+                        console.log('HomePage: Switching to English');
+                        try {
+                          // Set localStorage directly
+                          localStorage.setItem('language', 'en');
+                          // Then update via context
+                          await setLocale('en');
+                          console.log('HomePage: Switched to English successfully');
+                          // Force reload to make sure changes take effect
+                          window.location.reload();
+                        } catch (e) {
+                          console.error('HomePage: Error switching to English:', e);
+                        }
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${locale === 'en' ? 'bg-orange-50 text-orange-700 font-medium' : 'hover:bg-gray-100'}`}
+                    >
+                      🇬🇧 English
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        console.log('HomePage: Switching to Spanish');
+                        try {
+                          // Set localStorage directly
+                          localStorage.setItem('language', 'es');
+                          // Then update via context
+                          await setLocale('es');
+                          console.log('HomePage: Switched to Spanish successfully');
+                          // Force reload to make sure changes take effect
+                          window.location.reload();
+                        } catch (e) {
+                          console.error('HomePage: Error switching to Spanish:', e);
+                        }
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${locale === 'es' ? 'bg-orange-50 text-orange-700 font-medium' : 'hover:bg-gray-100'}`}
+                    >
+                      🇪🇸 Español
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        console.log('HomePage: Switching to French');
+                        try {
+                          // Set localStorage directly
+                          localStorage.setItem('language', 'fr');
+                          // Then update via context
+                          await setLocale('fr');
+                          console.log('HomePage: Switched to French successfully');
+                          // Force reload to make sure changes take effect
+                          window.location.reload();
+                        } catch (e) {
+                          console.error('HomePage: Error switching to French:', e);
+                        }
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${locale === 'fr' ? 'bg-orange-50 text-orange-700 font-medium' : 'hover:bg-gray-100'}`}
+                    >
+                      🇫🇷 Français
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
               <Link
                 to="/login"
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
               >
-                Get Started
+                <Trans>Get Started</Trans>
               </Link>
             </div>
           </div>
@@ -49,16 +123,16 @@ export function HomePage() {
                 instantly and intelligently.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-16">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
                 <Link
                   to="/login"
                   className="bg-orange-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
-                  Try it free
+                  <Trans>Try it free</Trans>
                 </Link>
                 <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:border-orange-500 hover:text-orange-500 transition-all duration-200 flex items-center justify-center gap-2">
                   <Play className="w-5 h-5" />
-                  Book a demo
+                  <Trans>Book a demo</Trans>
                 </button>
               </div>
             </div>
