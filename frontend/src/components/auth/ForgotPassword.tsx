@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle, Shield } from 'lucide-react';
+import { Trans, t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import apiService from '../../services/apiService';
+import { LanguageDropdown } from '../common/LanguageSelector';
 
 export function ForgotPassword() {
+  const { i18n } = useLingui();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!email) {
-      setMessage({ text: 'Please enter your email address', type: 'error' });
+      setMessage({ text: t`Please enter your email address`, type: 'error' });
       return;
     }
 
@@ -31,21 +37,21 @@ export function ForgotPassword() {
         });
       } else if (response.data && response.data.success) {
         setMessage({ 
-          text: response.message || response.data.message || 'If your email is registered, you will receive a password reset link shortly.', 
+          text: response.message || response.data.message || t`If your email is registered, you will receive a password reset link shortly.`, 
           type: 'success' 
         });
         setEmail(''); // Clear the form
       } else {
         // Handle ambiguous response
         setMessage({ 
-          text: 'If your email is registered, you will receive a password reset link shortly.', 
+          text: t`If your email is registered, you will receive a password reset link shortly.`, 
           type: 'success' 
         });
         setEmail(''); // Clear the form for security
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again later.';
+      const errorMessage = error instanceof Error ? error.message : t`An error occurred. Please try again later.`;
       setMessage({ 
         text: errorMessage, 
         type: 'error' 
@@ -67,7 +73,14 @@ export function ForgotPassword() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1">AI-Powered Support</span>
+              <span className="text-sm text-gray-500 ml-1"><Trans>AI-Powered Support</Trans></span>
+            </div>
+            {/* Language selector */}
+            <div className="flex items-center space-x-4">
+              <Link to="/language-settings" className="text-sm text-blue-600 hover:text-blue-700">
+                <Trans>Language Settings</Trans>
+              </Link>
+              <LanguageDropdown />
             </div>
           </div>
         </div>
@@ -79,15 +92,15 @@ export function ForgotPassword() {
         <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-white">
           <div className="max-w-md">
             <h1 className="text-4xl font-bold text-gray-900 mb-6">
-              Forgot your <span className="text-orange-500">password?</span>
+              <Trans>Forgot your <span className="text-orange-500">password?</span></Trans>
             </h1>
             <p className="text-xl text-gray-600 mb-6">
-              No worries! We'll send you a secure link to reset your password and get you back to managing your support tickets.
+              <Trans>No worries! We'll send you a secure link to reset your password and get you back to managing your support tickets.</Trans>
             </p>
             <div className="rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src="Forgetpass.jpg" 
-                alt="Customer Support" 
+                alt={t`Customer Support`} 
                 className="w-full h-auto"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -184,12 +197,13 @@ export function ForgotPassword() {
               </div>
               
               <div className="text-center mt-6">
-                <Link 
-                  to="/login" 
-                  className="flex items-center justify-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                <button 
+                  type="button"
+                  onClick={() => navigate('/login')}
+                  className="flex items-center justify-center mx-auto text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to Login
-                </Link>
+                </button>
               </div>
             </form>
           </div>

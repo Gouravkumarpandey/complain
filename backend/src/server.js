@@ -23,8 +23,18 @@ console.log('Node environment:', process.env.NODE_ENV);
 global.SERVER_SESSION_ID = `session-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
 console.log('Server session ID:', global.SERVER_SESSION_ID);
 
+// Set a flag to track DB connection status
+global.DB_CONNECTED = false;
+
 // Connect to MongoDB
-connectDB();
+connectDB()
+  .then(() => {
+    global.DB_CONNECTED = true;
+  })
+  .catch(err => {
+    console.log('⚠️ Starting server without database connection. Some features may be limited.');
+    // In development mode, continue running the server even without DB
+  });
 
 const app = express();
 const server = createServer(app);
@@ -196,6 +206,11 @@ app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Import database check middleware
+import { dbConnectionCheck } from './middleware/dbCheck.js';
+// Add database connection check for API routes
+app.use(dbConnectionCheck);
+
 // Routes
 import authRoutes from "./routes/auth.js";
 import complaintsRoutes from "./routes/complaints.js";
@@ -204,6 +219,17 @@ import notificationsRoutes from "./routes/notifications.js";
 import analyticsRoutes from "./routes/analytics.js";
 import adminRoutes from "./routes/admin.js";
 import agentsRoutes from "./routes/agents.js";
+
+// Health check endpoint that works even when DB is down
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date(),
+    serverSessionId: global.SERVER_SESSION_ID,
+    dbConnected: global.DB_CONNECTED,
+    environment: process.env.NODE_ENV
+  });
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintsRoutes);

@@ -7,54 +7,37 @@ interface TestimonialProps {
 
 const testimonials = [
   {
-    title: "", // Removed text content
+    title: "",
     person: "",
     role: "",
     description: "",
     linkTo: "/approach",
     linkColor: "text-green-600 hover:text-green-800",
-    image: "/Slider.png", // Updated path with leading slash for public directory
-    imageAlt: "Customer service representative",
+    image: "/messaging-and-live-chat-fd.webp",
+    imageAlt: "Customer service messaging and live chat",
+    className: "sc-ace17a57-0 sc-28d93f57-5 jmfCpS NPNTZ"
   },
   {
-    title: "", // Removed text content
+    title: "",
     person: "",
     role: "",
     description: "",
     linkTo: "/collaboration",
     linkColor: "text-blue-600 hover:text-blue-800",
-    image: "/sliderimage2.png", // Updated path
-    imageAlt: "Team meeting with analytics",
+    image: "/messaging-and-live-chat-fd.webp",
+    imageAlt: "Team meeting with customer service",
+    className: "sc-5159831f-0 sc-a2518aa6-2 tSOdx imokbA"
   },
   {
-    title: "", // Removed text content
+    title: "",
     person: "",
     role: "",
     description: "",
     linkTo: "/innovation",
     linkColor: "text-purple-600 hover:text-purple-800",
-    image: "/sliderimage3.png", // Updated path
-    imageAlt: "Innovation team collaborating",
-  },
-  {
-    title: "", // Removed text content
-    person: "",
-    role: "",
-    description: "",
-    linkTo: "/solutions",
-    linkColor: "text-blue-600 hover:text-blue-800",
-    image: "/exploreinsight.png", // Using one of the provided images
-    imageAlt: "Analytics dashboard meeting",
-  },
-  {
-    title: "", // Removed text content
-    person: "",
-    role: "",
-    description: "",
-    linkTo: "/technology",
-    linkColor: "text-purple-600 hover:text-purple-800",
-    image: "/exploreinsight2.png", // Using one of the provided images
-    imageAlt: "AI-powered data visualization",
+    image: "/messaging-and-live-chat-fd.webp",
+    imageAlt: "Innovation in customer service",
+    className: "sc-ace17a57-0 sc-28d93f57-5 jmfCpS NPNTZ"
   }
 ];
 
@@ -149,7 +132,7 @@ const TestimonialCarousel: React.FC<TestimonialProps> = ({ autoScrollInterval = 
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         aria-live="polite"
       >
-        {testimonials.map((testimonial, index) => (
+        {testimonials.map((_, index) => (
           <div 
             key={index} 
             className="carousel-slide min-w-full flex-shrink-0 h-full"
@@ -162,9 +145,9 @@ const TestimonialCarousel: React.FC<TestimonialProps> = ({ autoScrollInterval = 
                 {/* Full-Width Image Panel (removed text content panel) */}
                 <div className="w-full relative overflow-hidden">
                   <img 
-                    src={testimonial.image} 
-                    alt={testimonial.imageAlt} 
-                    className="w-full h-full object-cover object-center"
+                    src={testimonials[index].image} 
+                    alt={testimonials[index].imageAlt} 
+                    className={testimonials[index].className}
                     loading="lazy"
                   />
                 </div>
