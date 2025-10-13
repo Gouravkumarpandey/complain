@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trans } from '../../i18n-compat';
+import { i18n } from '../../i18n';
+// Trans removed after full migration
 import { Shield, Activity, FileText, UserCheck, RefreshCw } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
@@ -678,7 +679,7 @@ export const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-800"><Trans>QuickFix Admin Dashboard</Trans></h1>
+              <h1 className="text-2xl font-bold text-gray-800">{i18n.t('quickfix_admin_dashboard')}</h1>
             </div>
             
             <div className="flex items-center gap-4 relative admin-menu-container">
@@ -711,9 +712,9 @@ export const AdminDashboard = () => {
                     <p className="text-xs text-gray-500">{adminProfile.email}</p>
                     <p className="text-xs text-gray-500 capitalize">{adminProfile.role}</p>
                   </div>
-                  <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><Trans>Profile Settings</Trans></a>
+                  <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{i18n.t('profile_settings')}</a>
                   <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100">
-                    <Trans>Log out</Trans>
+                    {i18n.t('log_out')}
                   </button>
                 </div>
               )}
@@ -730,9 +731,9 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500"><Trans>Total Tickets</Trans></p>
+                  <p className="text-sm text-gray-500">{i18n.t('total_tickets')}</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.total}</h3>
-                  <p className="text-xs text-gray-500 mt-1"><Trans>Last 30 days</Trans></p>
+                  <p className="text-xs text-gray-500 mt-1">{i18n.t('last_30_days')}</p>
                 </div>
                 <div className="bg-blue-50 p-3 rounded-md">
                   <FileText size={20} className="text-blue-500" />
@@ -743,7 +744,7 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500"><Trans>Resolved</Trans></p>
+                  <p className="text-sm text-gray-500">{i18n.t('status_resolved')}</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.resolved}</h3>
                   <p className="text-xs text-gray-500 mt-1">{Math.round((ticketsData.resolved / ticketsData.total) * 100)}% resolution rate</p>
                 </div>
@@ -756,9 +757,9 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500"><Trans>Pending</Trans></p>
+                  <p className="text-sm text-gray-500">{i18n.t('status_pending')}</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.pending}</h3>
-                  <p className="text-xs text-gray-500 mt-1"><Trans>Including {ticketsData.inProgress} in progress</Trans></p>
+                  <p className="text-xs text-gray-500 mt-1">{i18n.t('including_0_in_progress', { 0: ticketsData.inProgress })}</p>
                 </div>
                 <div className="bg-yellow-50 p-3 rounded-md">
                   <Activity size={20} className="text-yellow-500" />
@@ -769,9 +770,9 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500"><Trans>Critical</Trans></p>
+                  <p className="text-sm text-gray-500">{i18n.t('critical')}</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.critical}</h3>
-                  <p className="text-xs text-gray-500 mt-1"><Trans>Need immediate attention</Trans></p>
+                  <p className="text-xs text-gray-500 mt-1">{i18n.t('need_immediate_attention')}</p>
                 </div>
                 <div className="bg-red-50 p-3 rounded-md">
                   <Shield size={20} className="text-red-500" />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Trans, t } from '../../i18n-compat';
+import { i18n } from '../../i18n';
+// Trans and t removed after migration
 import { 
   Clock, CheckCircle, Bell, User, MessageCircle, 
   Search, Calendar, X, Shield, Home, 
@@ -350,7 +351,7 @@ export function AgentDashboard() {
                   title="Set as Available"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span><Trans>Available</Trans></span>
+                  <span>{i18n.t('available')}</span>
                 </button>
 
                 <button 
@@ -359,7 +360,7 @@ export function AgentDashboard() {
                   title="Set as Busy"
                 >
                   <Activity className="w-4 h-4" />
-                  <span><Trans>Busy</Trans></span>
+                  <span>{i18n.t('busy')}</span>
                 </button>
 
                 <button 
@@ -368,14 +369,14 @@ export function AgentDashboard() {
                   title="Set as Offline"
                 >
                   <UserX className="w-4 h-4" />
-                  <span><Trans>Offline</Trans></span>
+                  <span>{i18n.t('offline')}</span>
                 </button>
               </div>
 
               <div className="text-sm text-gray-700">
-                <p><strong><Trans>Socket ID:</Trans></strong> {socket?.id || t`Not connected`}</p>
-                <p><strong><Trans>Auth token:</Trans></strong> {localStorage.getItem('token') ? t`✓ Present` : t`✗ Missing`}</p>
-                <p><strong><Trans>User ID:</Trans></strong> {user?.id || t`Unknown`}</p>
+                <p><strong>{i18n.t('socket_id')}</strong> {socket?.id || i18n.t('not_connected')}</p>
+                <p><strong>{i18n.t('auth_token')}</strong> {localStorage.getItem('token') ? i18n.t('present') : i18n.t('missing')}</p>
+                <p><strong>{i18n.t('user_id')}</strong> {user?.id || i18n.t('unknown')}</p>
                 <button
                   onClick={() => {
                     try {
@@ -387,7 +388,7 @@ export function AgentDashboard() {
                   }}
                   className="ml-3 bg-gray-100 px-3 py-1 rounded-lg"
                 >
-                  <Trans>Reconnect</Trans>
+                  {i18n.t('reconnect')}
                 </button>
               </div>
             </div>

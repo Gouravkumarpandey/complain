@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { i18n } from '../../i18n';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle, Shield } from 'lucide-react';
-import { Trans, t } from '../../i18n-compat';
+import { Trans } from 'react-i18next';
 import apiService from '../../services/apiService';
 import { LanguageDropdown } from '../common/LanguageSelector';
 
@@ -15,7 +16,7 @@ export function ForgotPassword() {
     e.preventDefault();
     
     if (!email) {
-      setMessage({ text: t`Please enter your email address`, type: 'error' });
+      setMessage({ text: i18n.t('please_enter_your_email_address'), type: 'error' });
       return;
     }
 
@@ -35,21 +36,21 @@ export function ForgotPassword() {
         });
       } else if (response.data && response.data.success) {
         setMessage({ 
-          text: response.message || response.data.message || t`If your email is registered, you will receive a password reset link shortly.`, 
+          text: response.message || response.data.message || i18n.t('if_your_email_is_registered_you_will_receive_a_password_rese'), 
           type: 'success' 
         });
         setEmail(''); // Clear the form
       } else {
         // Handle ambiguous response
         setMessage({ 
-          text: t`If your email is registered, you will receive a password reset link shortly.`, 
+          text: i18n.t('if_your_email_is_registered_you_will_receive_a_password_rese'), 
           type: 'success' 
         });
         setEmail(''); // Clear the form for security
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      const errorMessage = error instanceof Error ? error.message : t`An error occurred. Please try again later.`;
+      const errorMessage = error instanceof Error ? error.message : i18n.t('an_error_occurred_please_try_again_later');
       setMessage({ 
         text: errorMessage, 
         type: 'error' 
@@ -71,12 +72,12 @@ export function ForgotPassword() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1"><Trans>AI-Powered Support</Trans></span>
+              <span className="text-sm text-gray-500 ml-1">{i18n.t('ai_powered_support')}</span>
             </div>
             {/* Language selector */}
             <div className="flex items-center space-x-4">
               <Link to="/language-settings" className="text-sm text-blue-600 hover:text-blue-700">
-                <Trans>Language Settings</Trans>
+                {i18n.t('language_settings')}
               </Link>
               <LanguageDropdown />
             </div>
@@ -90,15 +91,15 @@ export function ForgotPassword() {
         <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-white">
           <div className="max-w-md">
             <h1 className="text-4xl font-bold text-gray-900 mb-6">
-              <Trans>Forgot your <span className="text-orange-500">password?</span></Trans>
+              <Trans i18nKey="forgot_your_password">Forgot your <span className="text-orange-500">password?</span></Trans>
             </h1>
             <p className="text-xl text-gray-600 mb-6">
-              <Trans>No worries! We'll send you a secure link to reset your password and get you back to managing your support tickets.</Trans>
+              {i18n.t('no_worries_we_ll_send_you_a_secure_link_to_reset_your_passwo')}
             </p>
             <div className="rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src="Forgetpass.jpg" 
-                alt={t`Customer Support`} 
+                alt={i18n.t('customer_support')} 
                 className="w-full h-auto"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;

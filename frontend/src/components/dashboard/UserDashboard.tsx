@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { i18n } from '../../i18n';
 import { 
   Plus, Clock, CheckCircle, Bell, User, MessageCircle, 
   Search, Calendar, X, Shield, Home, 
@@ -6,7 +7,7 @@ import {
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown
 } from 'lucide-react';
 import { ComplaintForm } from '../complaints/ComplaintForm';
-import { Trans } from '../../i18n-compat';
+// Trans removed after migration
 import { Notifications } from '../notifications/Notifications';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
@@ -206,10 +207,10 @@ export function UserDashboard() {
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
-              {activeView === 'dashboard' && <Trans>User Dashboard</Trans>}
-              {activeView === 'complaints' && <Trans>My Complaints</Trans>}
-              {activeView === 'new-complaint' && <Trans>File New Complaint</Trans>}
-              {activeView === 'profile' && <Trans>Profile Management</Trans>}
+              {activeView === 'dashboard' && i18n.t('user_dashboard')}
+              {activeView === 'complaints' && i18n.t('my_complaints')}
+              {activeView === 'new-complaint' && i18n.t('file_new_complaint')}
+              {activeView === 'profile' && i18n.t('profile_management')}
             </h1>
           </div>
           
@@ -219,7 +220,7 @@ export function UserDashboard() {
               className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg"
             >
               <Plus className="w-4 h-4" />
-              <Trans>New Complaint</Trans>
+              {i18n.t('new_complaint')}
             </button>
             
             <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
