@@ -1,5 +1,6 @@
 import React from 'react';
-import { Trans } from '../../i18n-compat';
+import { i18n } from '../../i18n';
+// Trans removed after full migration
 import { useLanguage } from '../../contexts/LanguageContext';
 
 type LanguageInfo = {
@@ -39,16 +40,16 @@ export function HomeLangSwitcher() {
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
           <h1 className="text-3xl font-bold text-white">
-            <Trans>Welcome to QuickFix</Trans>
+            {i18n.t('welcome_to_quickfix')}
           </h1>
           <p className="text-blue-100 mt-2">
-            <Trans>AI-Powered Complaint Resolution System</Trans>
+            {i18n.t('ai_powered_complaint_resolution_system')}
           </p>
         </div>
         
         <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            <Trans>Choose Your Language</Trans>
+            {i18n.t('choose_your_language')}
           </h2>
           
           <div className="flex flex-wrap gap-3 mb-8">
@@ -74,18 +75,13 @@ export function HomeLangSwitcher() {
           
           <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
             <h3 className="text-lg font-medium text-gray-800 mb-3">
-              <Trans>Translated Content Demo</Trans>
+              {i18n.t('translated_content_demo')}
             </h3>
             <p className="mb-2">
-              <Trans>
-                Hello! Welcome to QuickFix, where we make resolving your complaints fast and easy.
-              </Trans>
+              {i18n.t('hello_welcome_to_quickfix_where_we_make_resolving_your_compl')}
             </p>
             <p>
-              <Trans>
-                Our AI-powered system helps route your concerns to the right department and provides
-                instant feedback on common issues.
-              </Trans>
+              {i18n.t('our_ai_powered_system_helps_route_your_concerns_to_the_right')}
             </p>
           </div>
           
@@ -95,13 +91,11 @@ export function HomeLangSwitcher() {
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd"></path>
               </svg>
               <h4 className="font-medium text-blue-800">
-                <Trans>Current Language</Trans>: {locale}
+                {i18n.t('current_language')}: {locale}
               </h4>
             </div>
             <p className="text-blue-700 text-sm">
-              <Trans>
-                Your language preference will be saved for your next visit. You can change it anytime using the language buttons above.
-              </Trans>
+              {i18n.t('your_language_preference_will_be_saved_for_your_next_visit_y')}
             </p>
           </div>
         </div>

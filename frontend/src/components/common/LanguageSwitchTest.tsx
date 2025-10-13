@@ -1,5 +1,6 @@
 import React from 'react';
-import { Trans } from '../../i18n-compat';
+import { i18n } from '../../i18n';
+// Trans removed after migration
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const LanguageSwitchTest: React.FC = () => {
@@ -21,26 +22,26 @@ const LanguageSwitchTest: React.FC = () => {
     <div className="p-4 bg-gray-100 rounded-md my-4">
       <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
         <span>{currentFlag}</span>
-        <Trans>Language Switching Test</Trans>
+        {i18n.t('language_switching_test')}
       </h2>
       <p className="mb-2">
-        <Trans>This is a test component to verify that language switching is working correctly.</Trans>
+        {i18n.t('this_is_a_test_component_to_verify_that_language_switching_i')}
       </p>
       <p className="mb-2 font-semibold">
-        <Trans>Current language: {locale}</Trans>
+        {i18n.t('current_language_locale')}
       </p>
       <p className="font-medium">
-        <Trans>Try selecting a different language from the selector above to see this text change.</Trans>
+        {i18n.t('try_selecting_a_different_language_from_the_selector_above_t')}
       </p>
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
         <p className="text-lg font-medium">
-          <Trans>Hello! Welcome to QuickFix.</Trans>
+          {i18n.t('hello_welcome_to_quickfix')}
         </p>
         <p>
-          <Trans>We're here to help resolve your complaints quickly and efficiently.</Trans>
+          {i18n.t('we_re_here_to_help_resolve_your_complaints_quickly_and_effic')}
         </p>
         <p className="mt-2">
-          <Trans>Please select your preferred language to continue.</Trans>
+          {i18n.t('please_select_your_preferred_language_to_continue')}
         </p>
       </div>
       

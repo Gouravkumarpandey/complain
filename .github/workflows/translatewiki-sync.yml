@@ -1,0 +1,22 @@
+name: Sync Translations from Translatewiki
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Pull translations from Translatewiki
+        run: |
+          echo "Placeholder: configure Translatewiki bot or API to pull translations into /frontend/src/locales"
+          echo "See https://translatewiki.net/wiki/Translating:New_project for setup steps"
+        # To automate, you'll need to add Translatewiki bot credentials/secrets and use their tooling or a script here.

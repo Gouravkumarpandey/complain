@@ -1,5 +1,6 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
+import { i18n } from './i18n';
+// Trans not needed in App
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -85,7 +86,7 @@ function DashboardRoute() {
           {!activeUser?.role && (
         <div className="p-8 text-white flex flex-col items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <div className="text-xl"><Trans>Loading dashboard...</Trans></div>
+          <div className="text-xl">{i18n.t('loading_dashboard')}</div>
         </div>
       )}
       <ChatBot />
@@ -106,7 +107,7 @@ function AppContent() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <Trans>Loading Application...</Trans>
+            {i18n.t('loading_application')}
           </div>
         </div>
       </div>

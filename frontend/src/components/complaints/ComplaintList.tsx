@@ -1,5 +1,6 @@
 import { Complaint } from '../../contexts/ComplaintContext';
-import { Trans } from '../../i18n-compat';
+import { i18n } from '../../i18n';
+// Trans removed after migration
 import { ComplaintCard } from './ComplaintCard';
 
 interface ComplaintListProps {
@@ -17,8 +18,8 @@ export function ComplaintList({ complaints, showActions, isAdmin = false, isAgen
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-gray-400 text-2xl">📋</span>
         </div>
-        <h3 className="text-lg font-medium text-gray-600 mb-2"><Trans>No complaints found</Trans></h3>
-        <p className="text-gray-500"><Trans>No complaints match your current filters.</Trans></p>
+        <h3 className="text-lg font-medium text-gray-600 mb-2">{i18n.t('no_complaints_found')}</h3>
+        <p className="text-gray-500">{i18n.t('no_complaints_match_your_current_filters')}</p>
       </div>
     );
   }

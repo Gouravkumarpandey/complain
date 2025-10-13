@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
+import { i18n } from '../../i18n';
 import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
-import { Trans } from '../../i18n-compat';
+import { Trans } from 'react-i18next';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export function HomePage() {
@@ -19,14 +20,14 @@ export function HomePage() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1"><Trans>AI-Powered Support</Trans></span>
+              <span className="text-sm text-gray-500 ml-1">{i18n.t('ai_powered_support')}</span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium"><Trans>Features</Trans></a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium"><Trans>How It Works</Trans></a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium"><Trans>About us</Trans></a>
+              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">{i18n.t('features')}</a>
+              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">{i18n.t('how_it_works')}</a>
+              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">{i18n.t('about_us')}</a>
               
               {/* Language Selector */}
               <div className="relative group">
@@ -86,7 +87,7 @@ export function HomePage() {
                 to="/login"
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
               >
-                <Trans>Get Started</Trans>
+                {i18n.t('get_started')}
               </Link>
             </div>
           </div>
@@ -100,10 +101,10 @@ export function HomePage() {
             {/* Left side - Text content */}
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                <Trans>The agentic AI solution for modern <span className="text-orange-500">customer service</span></Trans>
+                <Trans i18nKey="the_agentic_ai_solution_for_modern_customer_service">The agentic AI solution for modern <span className="text-orange-500">customer service</span></Trans>
               </h1>
               <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                <Trans>With QuickFix, AI agents and human agents work as one—resolving every issue, instantly and intelligently.</Trans>
+                {i18n.t('with_quickfix_ai_agents_and_human_agents_work_as_one_resolvi')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
@@ -111,11 +112,11 @@ export function HomePage() {
                   to="/login"
                   className="bg-orange-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
-                  <Trans>Try it free</Trans>
+                  {i18n.t('try_it_free')}
                 </Link>
                 <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:border-orange-500 hover:text-orange-500 transition-all duration-200 flex items-center justify-center gap-2">
                   <Play className="w-5 h-5" />
-                  <Trans>Book a demo</Trans>
+                  {i18n.t('book_a_demo')}
                 </button>
               </div>
             </div>
@@ -135,7 +136,7 @@ export function HomePage() {
 
           {/* Trust Bar - moved below hero content */}
           <div className="text-center mt-24">
-            <p className="text-sm text-gray-500 mb-6"><Trans>TRUSTED BY 73,000+ BUSINESSES WORLDWIDE</Trans></p>
+            <p className="text-sm text-gray-500 mb-6">{i18n.t('trusted_by_73_000_businesses_worldwide')}</p>
             <div className="relative overflow-hidden">
               <div className="flex animate-scroll gap-8 items-center opacity-60">
                 {/* First set of logos */}
@@ -168,10 +169,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              <Trans>Seamless support. Smarter agents. Faster resolutions.</Trans>
+              {i18n.t('seamless_support_smarter_agents_faster_resolutions')}
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              <Trans>Unify every channel, cut the noise, and give agents an easy-to-use platform to resolve requests without missing a beat. With QuickFix, you don't just keep up, you stay ahead.</Trans>
+              {i18n.t('unify_every_channel_cut_the_noise_and_give_agents_an_easy_to')}
             </p>
           </div>
 
@@ -180,9 +181,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4"><Trans>Turn email tickets into instant resolutions</Trans></h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{i18n.t('turn_email_tickets_into_instant_resolutions')}</h3>
               <p className="text-gray-600">
-                <Trans>Answer email queries with Email AI agents that read every incoming email ticket, understand the request, respond with the right solution, and auto-resolve the ticket.</Trans>
+                {i18n.t('answer_email_queries_with_email_ai_agents_that_read_every_in')}
               </p>
             </div>
 
@@ -190,9 +191,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4"><Trans>Auto-resolve issues with conversational AI agents</Trans></h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{i18n.t('auto_resolve_issues_with_conversational_ai_agents')}</h3>
               <p className="text-gray-600">
-                <Trans>Deploy intelligent chatbots that understand context, provide accurate solutions, and escalate to human agents when needed.</Trans>
+                {i18n.t('deploy_intelligent_chatbots_that_understand_context_provide_')}
               </p>
             </div>
 
@@ -200,9 +201,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4"><Trans>Empower support teams with intelligent assistance</Trans></h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{i18n.t('empower_support_teams_with_intelligent_assistance')}</h3>
               <p className="text-gray-600">
-                <Trans>Give your human agents AI-powered insights, suggested responses, and automated workflows to resolve issues faster.</Trans>
+                {i18n.t('give_your_human_agents_ai_powered_insights_suggested_respons')}
               </p>
             </div>
           </div>
@@ -214,10 +215,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              <Trans>See QuickFix in action</Trans>
+              {i18n.t('see_quickfix_in_action')}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              <Trans>Watch how our AI-powered complaint management system transforms customer support and delivers exceptional experiences at scale.</Trans>
+              {i18n.t('watch_how_our_ai_powered_complaint_management_system_transfo')}
             </p>
           </div>
 
@@ -238,7 +239,7 @@ export function HomePage() {
             {/* Video description */}
             <div className="text-center mt-8">
               <p className="text-gray-600 text-lg">
-                  <Trans>Discover how QuickFix revolutionizes customer support with intelligent automation</Trans>
+                  {i18n.t('discover_how_quickfix_revolutionizes_customer_support_with_i')}
                 </p>
             </div>
           </div>
@@ -250,10 +251,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              <Trans>Meet Freddy AI</Trans>
+              {i18n.t('meet_freddy_ai')}
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
-              <Trans>From AI agents that resolve routine queries instantly to AI-powered assistance for human agents, Freddy AI combines automation and intelligence to help your team work more efficiently, scale effortlessly, and deliver great experiences across every channel.</Trans>
+              {i18n.t('from_ai_agents_that_resolve_routine_queries_instantly_to_ai_')}
             </p>
             <Link
               to="/login"
@@ -288,32 +289,32 @@ export function HomePage() {
           {/* Stats with colored cards like image */}
           <div className="mt-12 mb-4">
             <h3 className="text-2xl font-bold text-blue-600 text-center mb-6">
-              <Trans>Industry-leading results with QuickFix</Trans>
+              {i18n.t('industry_leading_results_with_quickfix')}
             </h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* 83% Card - Mint Green */}
             <div className="bg-green-100 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">83%</div>
-              <div className="text-lg text-gray-700"><Trans>Reduction in response times</Trans></div>
+              <div className="text-lg text-gray-700">{i18n.t('reduction_in_response_times')}</div>
             </div>
             
             {/* <2 mins Card - Light Purple */}
             <div className="bg-purple-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">&lt;2 mins</div>
-              <div className="text-lg text-gray-700"><Trans>Average conversational resolution time</Trans></div>
+              <div className="text-lg text-gray-700">{i18n.t('average_conversational_resolution_time')}</div>
             </div>
             
             {/* 97% Card - Cream */}
             <div className="bg-yellow-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">97%</div>
-              <div className="text-lg text-gray-700"><Trans>Omnichannel first contact resolution rate</Trans></div>
+              <div className="text-lg text-gray-700">{i18n.t('omnichannel_first_contact_resolution_rate')}</div>
             </div>
             
             {/* 60% Card - Light Pink */}
             <div className="bg-red-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">60%</div>
-              <div className="text-lg text-gray-700"><Trans>Improved agent productivity with Freddy AI Copilot</Trans></div>
+              <div className="text-lg text-gray-700">{i18n.t('improved_agent_productivity_with_freddy_ai_copilot')}</div>
             </div>
           </div>
         </div>
@@ -324,10 +325,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              <Trans>The full customer service experience</Trans>
+              {i18n.t('the_full_customer_service_experience')}
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-10">
-              <Trans>Everything you need to support customers and empower teams—all in one place, available out of the box</Trans>
+              {i18n.t('everything_you_need_to_support_customers_and_empower_teams_a')}
             </p>
             
             {/* Customer Experience Video */}
@@ -355,33 +356,33 @@ export function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <MessageSquare className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Chat and voice</Trans></h3>
-              <p className="text-gray-600"><Trans>Connect seamlessly across chat and voice channels</Trans></p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('chat_and_voice')}</h3>
+              <p className="text-gray-600">{i18n.t('connect_seamlessly_across_chat_and_voice_channels')}</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Users className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Self-service</Trans></h3>
-              <p className="text-gray-600"><Trans>Empower customers with comprehensive self-service options</Trans></p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('self_service')}</h3>
+              <p className="text-gray-600">{i18n.t('empower_customers_with_comprehensive_self_service_options')}</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Unified context</Trans></h3>
-              <p className="text-gray-600"><Trans>Get complete customer context across all touchpoints</Trans></p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('unified_context')}</h3>
+              <p className="text-gray-600">{i18n.t('get_complete_customer_context_across_all_touchpoints')}</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <CheckCircle className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Advanced workflows</Trans></h3>
-              <p className="text-gray-600"><Trans>Automate complex processes with intelligent workflows</Trans></p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('advanced_workflows')}</h3>
+              <p className="text-gray-600">{i18n.t('automate_complex_processes_with_intelligent_workflows')}</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Analytics and insights</Trans></h3>
-              <p className="text-gray-600"><Trans>Make data-driven decisions with powerful analytics</Trans></p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('analytics_and_insights')}</h3>
+              <p className="text-gray-600">{i18n.t('make_data_driven_decisions_with_powerful_analytics')}</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Shield className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Security & compliance</Trans></h3>
-              <p className="text-gray-600"><Trans>Enterprise-grade security and compliance features</Trans></p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('security_compliance')}</h3>
+              <p className="text-gray-600">{i18n.t('enterprise_grade_security_and_compliance_features')}</p>
             </div>
           </div>
         </div>
@@ -493,14 +494,14 @@ export function HomePage() {
       <section className="py-24 bg-gradient-to-br from-orange-500 to-red-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <Trans>Get started with QuickFix</Trans>
+              {i18n.t('get_started_with_quickfix')}
             </h2>
           
           <div className="grid md:grid-cols-3 gap-8 mt-16">
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4"><Trans>Free to try. Fast to scale.</Trans></h3>
+              <h3 className="text-2xl font-bold mb-4">{i18n.t('free_to_try_fast_to_scale')}</h3>
               <p className="text-white/90 mb-6">
-                <Trans>Experience the power of QuickFix with a free trial. No credit card needed. Set up in minutes and see immediate value.</Trans>
+                {i18n.t('experience_the_power_of_quickfix_with_a_free_trial_no_credit')}
               </p>
               <Link
                 to="/login"
@@ -511,9 +512,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4"><Trans>See rapid impact in action</Trans></h3>
+              <h3 className="text-2xl font-bold mb-4">{i18n.t('see_rapid_impact_in_action')}</h3>
               <p className="text-white/90 mb-6">
-                <Trans>Let our product experts show you how QuickFix can solve your specific challenges. Get a personalized walkthrough tailored to your needs.</Trans>
+                {i18n.t('let_our_product_experts_show_you_how_quickfix_can_solve_your')}
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Book a demo
@@ -521,9 +522,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4"><Trans>Learn, explore, get inspired</Trans></h3>
+              <h3 className="text-2xl font-bold mb-4">{i18n.t('learn_explore_get_inspired')}</h3>
               <p className="text-white/90 mb-6">
-                <Trans>Check out the interactive product tour to explore QuickFix's capabilities.</Trans>
+                {i18n.t('check_out_the_interactive_product_tour_to_explore_quickfix_s')}
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Take the tour
@@ -546,7 +547,7 @@ export function HomePage() {
                 <span className="text-2xl font-bold">QuickFix</span>
               </div>
               <p className="text-gray-300 mb-6 max-w-md">
-                <Trans>AI-powered complaint management system that revolutionizes customer support with intelligent automation, real-time analytics, and seamless resolution workflows.</Trans>
+                {i18n.t('ai_powered_complaint_management_system_that_revolutionizes_c')}
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">
@@ -574,37 +575,37 @@ export function HomePage() {
 
             {/* Products */}
             <div>
-              <h3 className="text-lg font-semibold mb-4"><Trans>Products</Trans></h3>
+              <h3 className="text-lg font-semibold mb-4">{i18n.t('products')}</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>QuickFix Helpdesk</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>AI Chat Support</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Analytics Dashboard</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Mobile App</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>API & Integrations</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('quickfix_helpdesk')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('ai_chat_support')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('analytics_dashboard')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('mobile_app')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('api_integrations')}</a></li>
               </ul>
             </div>
 
             {/* Solutions */}
             <div>
-              <h3 className="text-lg font-semibold mb-4"><Trans>Solutions</Trans></h3>
+              <h3 className="text-lg font-semibold mb-4">{i18n.t('solutions')}</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Customer Support</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>IT Service Management</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Enterprise</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Small Business</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>E-commerce</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('customer_support')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('it_service_management')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('enterprise')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('small_business')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('e_commerce')}</a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h3 className="text-lg font-semibold mb-4"><Trans>Company</Trans></h3>
+              <h3 className="text-lg font-semibold mb-4">{i18n.t('company')}</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>About Us</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Careers</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Press & News</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Security</Trans></a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Contact Us</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('about_us_1')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('careers')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('press_news')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('security')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('contact_us')}</a></li>
               </ul>
             </div>
           </div>
@@ -614,16 +615,16 @@ export function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
               {/* Legal Links */}
               <div className="flex flex-wrap gap-6">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Privacy Policy</Trans></a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Terms of Service</Trans></a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Cookie Policy</Trans></a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Accessibility</Trans></a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('privacy_policy')}</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('terms_of_service')}</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('cookie_policy')}</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('accessibility')}</a>
               </div>
 
               {/* Copyright */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">
-                  <Trans>© 2025 QuickFix Inc. All Rights Reserved</Trans>
+                  {i18n.t('2025_quickfix_inc_all_rights_reserved')}
                 </p>
               </div>
 
