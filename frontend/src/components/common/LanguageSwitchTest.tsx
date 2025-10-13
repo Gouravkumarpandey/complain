@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trans } from '@lingui/macro';
+import { Trans } from '../../i18n-compat';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const LanguageSwitchTest: React.FC = () => {

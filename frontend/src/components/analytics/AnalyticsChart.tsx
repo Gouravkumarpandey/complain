@@ -1,6 +1,6 @@
-import React from 'react';
 import { Complaint } from '../../contexts/ComplaintContext';
 import { BarChart3, PieChart } from 'lucide-react';
+import { Trans } from '../../i18n-compat';
 
 interface AnalyticsChartProps {
   title: string;
@@ -75,7 +75,7 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
         {total === 0 && (
           <div className="text-center py-8 text-gray-500">
             <PieChart className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p>No data available</p>
+            <p><Trans>No data available</Trans></p>
           </div>
         )}
       </div>
@@ -90,12 +90,12 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
       </div>
 
       <div className="space-y-4">
-        {trendData.map((item, index) => (
+        {trendData.map((item) => (
           <div key={item.date} className="flex items-center gap-3">
             <div className="w-12 text-sm text-gray-600">{item.date}</div>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-gray-500">Resolved</span>
+                <span className="text-sm text-gray-500"><Trans>Resolved</Trans></span>
                 <span className="text-sm font-medium text-gray-700">{item.resolved}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -112,7 +112,7 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
       {trendData.every(item => item.resolved === 0) && (
         <div className="text-center py-8 text-gray-500">
           <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-          <p>No resolution data available</p>
+          <p><Trans>No resolution data available</Trans></p>
         </div>
       )}
     </div>

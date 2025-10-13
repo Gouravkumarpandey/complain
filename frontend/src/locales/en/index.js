@@ -1,8 +1,7 @@
 // This is a wrapper to provide both CommonJS and ES module compatibility
 import * as originalMessages from './messages.js';
 
-// For ES modules
-export const messages = originalMessages.messages || {};
+// Lingui generated file replaced during migration to i18next.
+export const messages = {};
 
-// For CommonJS
 export default { messages };

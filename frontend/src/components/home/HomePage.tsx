@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
-import { Trans } from '@lingui/macro';
+import { Trans } from '../../i18n-compat';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export function HomePage() {
@@ -40,13 +40,8 @@ export function HomePage() {
                       onClick={async () => {
                         console.log('HomePage: Switching to English');
                         try {
-                          // Set localStorage directly
-                          localStorage.setItem('language', 'en');
-                          // Then update via context
                           await setLocale('en');
                           console.log('HomePage: Switched to English successfully');
-                          // Force reload to make sure changes take effect
-                          window.location.reload();
                         } catch (e) {
                           console.error('HomePage: Error switching to English:', e);
                         }
@@ -59,13 +54,8 @@ export function HomePage() {
                       onClick={async () => {
                         console.log('HomePage: Switching to Spanish');
                         try {
-                          // Set localStorage directly
-                          localStorage.setItem('language', 'es');
-                          // Then update via context
                           await setLocale('es');
                           console.log('HomePage: Switched to Spanish successfully');
-                          // Force reload to make sure changes take effect
-                          window.location.reload();
                         } catch (e) {
                           console.error('HomePage: Error switching to Spanish:', e);
                         }
@@ -78,13 +68,8 @@ export function HomePage() {
                       onClick={async () => {
                         console.log('HomePage: Switching to French');
                         try {
-                          // Set localStorage directly
-                          localStorage.setItem('language', 'fr');
-                          // Then update via context
                           await setLocale('fr');
                           console.log('HomePage: Switched to French successfully');
-                          // Force reload to make sure changes take effect
-                          window.location.reload();
                         } catch (e) {
                           console.error('HomePage: Error switching to French:', e);
                         }
@@ -115,12 +100,10 @@ export function HomePage() {
             {/* Left side - Text content */}
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                The agentic AI solution for modern{' '}
-                <span className="text-orange-500">customer service</span>
+                <Trans>The agentic AI solution for modern <span className="text-orange-500">customer service</span></Trans>
               </h1>
               <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                With QuickFix, AI agents and human agents work as one—resolving every issue, 
-                instantly and intelligently.
+                <Trans>With QuickFix, AI agents and human agents work as one—resolving every issue, instantly and intelligently.</Trans>
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
@@ -152,7 +135,7 @@ export function HomePage() {
 
           {/* Trust Bar - moved below hero content */}
           <div className="text-center mt-24">
-            <p className="text-sm text-gray-500 mb-6">TRUSTED BY 73,000+ BUSINESSES WORLDWIDE</p>
+            <p className="text-sm text-gray-500 mb-6"><Trans>TRUSTED BY 73,000+ BUSINESSES WORLDWIDE</Trans></p>
             <div className="relative overflow-hidden">
               <div className="flex animate-scroll gap-8 items-center opacity-60">
                 {/* First set of logos */}
@@ -185,11 +168,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Seamless support. Smarter agents. Faster resolutions.
+              <Trans>Seamless support. Smarter agents. Faster resolutions.</Trans>
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              Unify every channel, cut the noise, and give agents an easy-to-use platform to 
-              resolve requests without missing a beat. With QuickFix, you don't just keep up, you stay ahead.
+              <Trans>Unify every channel, cut the noise, and give agents an easy-to-use platform to resolve requests without missing a beat. With QuickFix, you don't just keep up, you stay ahead.</Trans>
             </p>
           </div>
 
@@ -198,10 +180,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Turn email tickets into instant resolutions</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4"><Trans>Turn email tickets into instant resolutions</Trans></h3>
               <p className="text-gray-600">
-                Answer email queries with Email AI agents that read every incoming email ticket, 
-                understand the request, respond with the right solution, and auto-resolve the ticket.
+                <Trans>Answer email queries with Email AI agents that read every incoming email ticket, understand the request, respond with the right solution, and auto-resolve the ticket.</Trans>
               </p>
             </div>
 
@@ -209,10 +190,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Auto-resolve issues with conversational AI agents</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4"><Trans>Auto-resolve issues with conversational AI agents</Trans></h3>
               <p className="text-gray-600">
-                Deploy intelligent chatbots that understand context, provide accurate solutions, 
-                and escalate to human agents when needed.
+                <Trans>Deploy intelligent chatbots that understand context, provide accurate solutions, and escalate to human agents when needed.</Trans>
               </p>
             </div>
 
@@ -220,10 +200,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Empower support teams with intelligent assistance</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4"><Trans>Empower support teams with intelligent assistance</Trans></h3>
               <p className="text-gray-600">
-                Give your human agents AI-powered insights, suggested responses, 
-                and automated workflows to resolve issues faster.
+                <Trans>Give your human agents AI-powered insights, suggested responses, and automated workflows to resolve issues faster.</Trans>
               </p>
             </div>
           </div>
@@ -235,11 +214,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              See QuickFix in action
+              <Trans>See QuickFix in action</Trans>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Watch how our AI-powered complaint management system transforms customer support 
-              and delivers exceptional experiences at scale.
+              <Trans>Watch how our AI-powered complaint management system transforms customer support and delivers exceptional experiences at scale.</Trans>
             </p>
           </div>
 
@@ -260,8 +238,8 @@ export function HomePage() {
             {/* Video description */}
             <div className="text-center mt-8">
               <p className="text-gray-600 text-lg">
-                Discover how QuickFix revolutionizes customer support with intelligent automation
-              </p>
+                  <Trans>Discover how QuickFix revolutionizes customer support with intelligent automation</Trans>
+                </p>
             </div>
           </div>
         </div>
@@ -272,12 +250,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Meet Freddy AI
+              <Trans>Meet Freddy AI</Trans>
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
-              From AI agents that resolve routine queries instantly to AI-powered assistance 
-              for human agents, Freddy AI combines automation and intelligence to help your 
-              team work more efficiently, scale effortlessly, and deliver great experiences across every channel.
+              <Trans>From AI agents that resolve routine queries instantly to AI-powered assistance for human agents, Freddy AI combines automation and intelligence to help your team work more efficiently, scale effortlessly, and deliver great experiences across every channel.</Trans>
             </p>
             <Link
               to="/login"
@@ -312,32 +288,32 @@ export function HomePage() {
           {/* Stats with colored cards like image */}
           <div className="mt-12 mb-4">
             <h3 className="text-2xl font-bold text-blue-600 text-center mb-6">
-              Industry-leading results with QuickFix
+              <Trans>Industry-leading results with QuickFix</Trans>
             </h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* 83% Card - Mint Green */}
             <div className="bg-green-100 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">83%</div>
-              <div className="text-lg text-gray-700">Reduction in response times</div>
+              <div className="text-lg text-gray-700"><Trans>Reduction in response times</Trans></div>
             </div>
             
             {/* <2 mins Card - Light Purple */}
             <div className="bg-purple-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">&lt;2 mins</div>
-              <div className="text-lg text-gray-700">Average conversational resolution time</div>
+              <div className="text-lg text-gray-700"><Trans>Average conversational resolution time</Trans></div>
             </div>
             
             {/* 97% Card - Cream */}
             <div className="bg-yellow-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">97%</div>
-              <div className="text-lg text-gray-700">Omnichannel first contact resolution rate</div>
+              <div className="text-lg text-gray-700"><Trans>Omnichannel first contact resolution rate</Trans></div>
             </div>
             
             {/* 60% Card - Light Pink */}
             <div className="bg-red-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">60%</div>
-              <div className="text-lg text-gray-700">Improved agent productivity with Freddy AI Copilot</div>
+              <div className="text-lg text-gray-700"><Trans>Improved agent productivity with Freddy AI Copilot</Trans></div>
             </div>
           </div>
         </div>
@@ -348,10 +324,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              The full customer service experience
+              <Trans>The full customer service experience</Trans>
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-10">
-              Everything you need to support customers and empower teams—all in one place, available out of the box
+              <Trans>Everything you need to support customers and empower teams—all in one place, available out of the box</Trans>
             </p>
             
             {/* Customer Experience Video */}
@@ -379,33 +355,33 @@ export function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <MessageSquare className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat and voice</h3>
-              <p className="text-gray-600">Connect seamlessly across chat and voice channels</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Chat and voice</Trans></h3>
+              <p className="text-gray-600"><Trans>Connect seamlessly across chat and voice channels</Trans></p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Users className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Self-service</h3>
-              <p className="text-gray-600">Empower customers with comprehensive self-service options</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Self-service</Trans></h3>
+              <p className="text-gray-600"><Trans>Empower customers with comprehensive self-service options</Trans></p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified context</h3>
-              <p className="text-gray-600">Get complete customer context across all touchpoints</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Unified context</Trans></h3>
+              <p className="text-gray-600"><Trans>Get complete customer context across all touchpoints</Trans></p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <CheckCircle className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Advanced workflows</h3>
-              <p className="text-gray-600">Automate complex processes with intelligent workflows</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Advanced workflows</Trans></h3>
+              <p className="text-gray-600"><Trans>Automate complex processes with intelligent workflows</Trans></p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics and insights</h3>
-              <p className="text-gray-600">Make data-driven decisions with powerful analytics</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Analytics and insights</Trans></h3>
+              <p className="text-gray-600"><Trans>Make data-driven decisions with powerful analytics</Trans></p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Shield className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Security & compliance</h3>
-              <p className="text-gray-600">Enterprise-grade security and compliance features</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2"><Trans>Security & compliance</Trans></h3>
+              <p className="text-gray-600"><Trans>Enterprise-grade security and compliance features</Trans></p>
             </div>
           </div>
         </div>
@@ -516,16 +492,15 @@ export function HomePage() {
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-orange-500 to-red-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Get started with QuickFix
-          </h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <Trans>Get started with QuickFix</Trans>
+            </h2>
           
           <div className="grid md:grid-cols-3 gap-8 mt-16">
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">Free to try. Fast to scale.</h3>
+              <h3 className="text-2xl font-bold mb-4"><Trans>Free to try. Fast to scale.</Trans></h3>
               <p className="text-white/90 mb-6">
-                Experience the power of QuickFix with a free trial. No credit card needed. 
-                Set up in minutes and see immediate value.
+                <Trans>Experience the power of QuickFix with a free trial. No credit card needed. Set up in minutes and see immediate value.</Trans>
               </p>
               <Link
                 to="/login"
@@ -536,10 +511,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">See rapid impact in action</h3>
+              <h3 className="text-2xl font-bold mb-4"><Trans>See rapid impact in action</Trans></h3>
               <p className="text-white/90 mb-6">
-                Let our product experts show you how QuickFix can solve your specific challenges. 
-                Get a personalized walkthrough tailored to your needs.
+                <Trans>Let our product experts show you how QuickFix can solve your specific challenges. Get a personalized walkthrough tailored to your needs.</Trans>
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Book a demo
@@ -547,9 +521,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">Learn, explore, get inspired</h3>
+              <h3 className="text-2xl font-bold mb-4"><Trans>Learn, explore, get inspired</Trans></h3>
               <p className="text-white/90 mb-6">
-                Check out the interactive product tour to explore QuickFix's capabilities.
+                <Trans>Check out the interactive product tour to explore QuickFix's capabilities.</Trans>
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Take the tour
@@ -572,8 +546,7 @@ export function HomePage() {
                 <span className="text-2xl font-bold">QuickFix</span>
               </div>
               <p className="text-gray-300 mb-6 max-w-md">
-                AI-powered complaint management system that revolutionizes customer support with 
-                intelligent automation, real-time analytics, and seamless resolution workflows.
+                <Trans>AI-powered complaint management system that revolutionizes customer support with intelligent automation, real-time analytics, and seamless resolution workflows.</Trans>
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">
@@ -601,37 +574,37 @@ export function HomePage() {
 
             {/* Products */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Products</h3>
+              <h3 className="text-lg font-semibold mb-4"><Trans>Products</Trans></h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">QuickFix Helpdesk</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">AI Chat Support</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Analytics Dashboard</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Mobile App</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">API & Integrations</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>QuickFix Helpdesk</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>AI Chat Support</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Analytics Dashboard</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Mobile App</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>API & Integrations</Trans></a></li>
               </ul>
             </div>
 
             {/* Solutions */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Solutions</h3>
+              <h3 className="text-lg font-semibold mb-4"><Trans>Solutions</Trans></h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Customer Support</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">IT Service Management</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Enterprise</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Small Business</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">E-commerce</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Customer Support</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>IT Service Management</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Enterprise</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Small Business</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>E-commerce</Trans></a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Company</h3>
+              <h3 className="text-lg font-semibold mb-4"><Trans>Company</Trans></h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">About Us</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Press & News</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Security</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Contact Us</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>About Us</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Careers</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Press & News</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Security</Trans></a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors"><Trans>Contact Us</Trans></a></li>
               </ul>
             </div>
           </div>
@@ -641,16 +614,16 @@ export function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
               {/* Legal Links */}
               <div className="flex flex-wrap gap-6">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Privacy Policy</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Terms of Service</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Cookie Policy</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Accessibility</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Privacy Policy</Trans></a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Terms of Service</Trans></a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Cookie Policy</Trans></a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm"><Trans>Accessibility</Trans></a>
               </div>
 
               {/* Copyright */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">
-                  © 2025 QuickFix Inc. All Rights Reserved
+                  <Trans>© 2025 QuickFix Inc. All Rights Reserved</Trans>
                 </p>
               </div>
 

@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { aiService } from '../services/aiService';
-import { useNotifications } from './NotificationContext';
 
 export interface Complaint {
   id: string;

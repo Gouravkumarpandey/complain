@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Trans, t } from '../../i18n-compat';
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -25,13 +26,12 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
     setLoading(true);
     try {
       const complaint = await createComplaint(formData.title, formData.description, user.id);
-      addNotification('success', 'Complaint Filed Successfully', 
-        `Your complaint has been classified as ${complaint.category} with ${complaint.priority} priority.`);
+      addNotification('success', t`Complaint Filed Successfully`, t`Your complaint has been classified as ${complaint.category} with ${complaint.priority} priority.`);
       setFormData({ title: '', description: '' });
       onSuccess?.();
     } catch {
       // We're not using the error parameter, so we omit it completely
-      addNotification('error', 'Error', 'Failed to file complaint. Please try again.');
+  addNotification('error', t`Error`, t`Failed to file complaint. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-          Complaint Title
+          <Trans>Complaint Title</Trans>
         </label>
         <div className="relative">
           <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -50,7 +50,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
             id="title"
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Brief summary of your complaint"
+            placeholder={t`Brief summary of your complaint`}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             required
           />
@@ -59,20 +59,20 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-          Detailed Description
+          <Trans>Detailed Description</Trans>
         </label>
         <textarea
           id="description"
           value={formData.description}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Please provide a detailed description of your complaint..."
+          placeholder={t`Please provide a detailed description of your complaint...`}
           rows={6}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
           required
         />
         <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
           <Sparkles className="w-4 h-4" />
-          <span>Our AI will automatically categorize and prioritize your complaint</span>
+          <span><Trans>Our AI will automatically categorize and prioritize your complaint</Trans></span>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
         ) : (
           <>
             <Send className="w-5 h-5" />
-            Submit Complaint
+            <Trans>Submit Complaint</Trans>
           </>
         )}
       </button>

@@ -1,0 +1,13 @@
+{
+  "dashboard": "Dashboard",
+  "complaint_list": "Complaint List",
+  "submit": "Submit",
+  "logout": "Logout",
+  "status_pending": "Pending",
+  "status_resolved": "Resolved",
+  "loading_dashboard": "Loading dashboard...",
+  "loading_application": "Loading Application...",
+  "file_new_complaint": "File New Complaint",
+  "user_dashboard": "User Dashboard",
+  "ai_powered_support": "AI-Powered Support"
+}

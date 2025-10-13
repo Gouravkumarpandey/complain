@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle, Shield } from 'lucide-react';
-import { Trans, t } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
+import { Trans, t } from '../../i18n-compat';
 import apiService from '../../services/apiService';
 import { LanguageDropdown } from '../common/LanguageSelector';
 
 export function ForgotPassword() {
-  const { i18n } = useLingui();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

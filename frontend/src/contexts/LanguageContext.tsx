@@ -1,6 +1,4 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { i18n } from '@lingui/core';
-import { I18nProvider } from '@lingui/react';
 import { dynamicActivate, locales, defaultLocale } from '../i18n';
 
 // Type for the language context value
@@ -66,9 +64,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, availableLocales: locales }}>
-      <I18nProvider i18n={i18n}>
-        {children}
-      </I18nProvider>
+      {children}
     </LanguageContext.Provider>
   );
 };
