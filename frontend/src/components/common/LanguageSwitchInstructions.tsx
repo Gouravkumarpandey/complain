@@ -1,5 +1,5 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
+// React import not required with the new JSX transform
+import { Trans } from '../../i18n-compat';
 import { LanguageSelector, LanguageDropdown } from './LanguageSelector';
 import LanguageSwitchTest from './LanguageSwitchTest';
 

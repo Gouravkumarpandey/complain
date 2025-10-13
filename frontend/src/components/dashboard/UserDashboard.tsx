@@ -6,6 +6,7 @@ import {
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown
 } from 'lucide-react';
 import { ComplaintForm } from '../complaints/ComplaintForm';
+import { Trans } from '../../i18n-compat';
 import { Notifications } from '../notifications/Notifications';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
@@ -205,10 +206,10 @@ export function UserDashboard() {
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
-              {activeView === 'dashboard' && 'User Dashboard'}
-              {activeView === 'complaints' && 'My Complaints'}
-              {activeView === 'new-complaint' && 'File New Complaint'}
-              {activeView === 'profile' && 'Profile Management'}
+              {activeView === 'dashboard' && <Trans>User Dashboard</Trans>}
+              {activeView === 'complaints' && <Trans>My Complaints</Trans>}
+              {activeView === 'new-complaint' && <Trans>File New Complaint</Trans>}
+              {activeView === 'profile' && <Trans>Profile Management</Trans>}
             </h1>
           </div>
           
@@ -218,7 +219,7 @@ export function UserDashboard() {
               className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg"
             >
               <Plus className="w-4 h-4" />
-              New Complaint
+              <Trans>New Complaint</Trans>
             </button>
             
             <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">

@@ -1,120 +1,49 @@
-import { i18n } from '@lingui/core';
-import { en, es, fr, zh } from 'make-plural/plurals';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import en from './locales/en/translation.json';
+import hi from './locales/hi/translation.json';
 
-// Type definition for message modules
-type MessageModule = {
-  messages?: Record<string, any>;
-  default?: { 
-    messages?: Record<string, any> 
-  };
-};
-
-// Define available locales and their data
+// Define simple locales metadata for compatibility with previous Lingui-based code
 export const locales = {
-  en: {
-    name: 'English',
-    plurals: en
-  },
-  es: {
-    name: 'Español',
-    plurals: es
-  },
-  fr: {
-    name: 'Français',
-    plurals: fr
-  },
-  hi: {
-    name: 'हिन्दी',
-    // Hindi uses same plural rules as English for now
-    plurals: en
-  },
-  zh: {
-    name: '中文',
-    plurals: zh
-  }
-};
+  en: { name: 'English' },
+  hi: { name: 'हिन्दी' },
+  fr: { name: 'Français' },
+  es: { name: 'Español' },
+  zh: { name: '中文' }
+} as const;
 
-// Define the default locale
 export const defaultLocale = 'en';
 
-// Initialize i18n
-i18n.loadLocaleData({
-  en: { plurals: locales.en.plurals },
-  es: { plurals: locales.es.plurals },
-  fr: { plurals: locales.fr.plurals },
-  hi: { plurals: locales.hi.plurals },
-  zh: { plurals: locales.zh.plurals }
+// Initialize i18next with JSON resource files
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    hi: { translation: hi }
+  },
+  lng: localStorage.getItem('language') || defaultLocale,
+  fallbackLng: defaultLocale,
+  interpolation: { escapeValue: false }
 });
 
-/**
- * Load messages for the given locale and activate it
- */
-export async function dynamicActivate(locale: string) {
-  console.log(`Activating locale: ${locale}`);
-  
-  // Handle different locales
-  let messages = {};
-  
-  try {
-    // Use index.js files which contain both original messages and custom translations
-    switch (locale) {
-      case 'en': {
-        const enModule = await import('./locales/en/index.js') as MessageModule;
-        messages = enModule.messages || enModule.default?.messages || {};
-        console.log('Loaded English messages:', messages);
-        break;
-      }
-      case 'es': {
-        const esModule = await import('./locales/es/index.js') as MessageModule;
-        messages = esModule.messages || esModule.default?.messages || {};
-        console.log('Loaded Spanish messages:', messages);
-        break;
-      }
-      case 'fr': {
-        const frModule = await import('./locales/fr/index.js') as MessageModule;
-        messages = frModule.messages || frModule.default?.messages || {};
-        console.log('Loaded French messages:', messages);
-        break;
-      }
-      case 'hi': {
-        const hiModule = await import('./locales/hi/index.js') as MessageModule;
-        messages = hiModule.messages || hiModule.default?.messages || {};
-        console.log('Loaded Hindi messages:', messages);
-        break;
-      }
-      case 'zh': {
-        const zhModule = await import('./locales/zh/index.js') as MessageModule;
-        messages = zhModule.messages || zhModule.default?.messages || {};
-        console.log('Loaded Chinese messages:', messages);
-        break;
-      }
-      default:
-        console.warn(`Unknown locale: ${locale}, falling back to empty messages`);
-        messages = {};
+// Compatibility functions to match previous APIs
+export function dynamicActivate(locale: string) {
+  return i18n.changeLanguage(locale).then(() => {
+    try {
+      localStorage.setItem('language', locale);
+    } catch (e) {
+      // ignore localStorage errors
     }
-  } catch (error) {
-    console.error(`Error loading messages for ${locale}:`, error);
-    messages = {};
-  }
-  
-  // Load and activate the locale
-  i18n.load(locale, messages);
-  i18n.activate(locale);
-  
-  // Store the selected language
-  try {
-    localStorage.setItem('language', locale);
-    console.log(`Successfully saved language "${locale}" to localStorage`);
-  } catch (error) {
-    console.error('Error saving language to localStorage:', error);
-  }
-  document.documentElement.setAttribute('lang', locale);
-  
-  return messages;
+    document.documentElement.setAttribute('lang', locale);
+    return locale;
+  });
 }
 
-// Initialize with the default locale
 export function initI18n() {
-  const storedLocale = localStorage.getItem('language') || defaultLocale;
-  return dynamicActivate(storedLocale);
+  const stored = localStorage.getItem('language') || defaultLocale;
+  return dynamicActivate(stored);
 }
+
+// named export for any modules importing { i18n }
+export { i18n };
+
+export default i18n;

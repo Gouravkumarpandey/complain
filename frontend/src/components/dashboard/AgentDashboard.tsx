@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Trans, t } from '../../i18n-compat';
 import { 
   Clock, CheckCircle, Bell, User, MessageCircle, 
   Search, Calendar, X, Shield, Home, 
@@ -14,7 +15,6 @@ import { useSocket } from '../../hooks/useSocket';
 import { 
   getStatusColor,
   getPriorityColor,
-  getConnectionStatusColor,
   getNavItemClasses,
   getMessageSendButtonClasses,
   getProgressBarStyle
@@ -103,10 +103,11 @@ export function AgentDashboard() {
         try {
           if (user?.id) {
             const result = await agentService.refreshAvailability(user.id);
-            if (result.data) {
+            const availability = result?.data?.availability;
+            if (typeof availability === 'string') {
               setAgentProfile(prev => ({
                 ...prev,
-                availability: result.data.availability
+                availability
               }));
             }
           }
@@ -199,15 +200,16 @@ export function AgentDashboard() {
     try {
       const result = await agentService.updateAvailability(user.id, status);
       
-      if (result.data) {
+      const availability = result?.data?.availability;
+      if (typeof availability === 'string') {
         setAgentProfile(prev => ({
           ...prev,
-          availability: result.data.availability
+          availability
         }));
-        
+
         // Inform the user of the status change
         alert(`Your availability status has been updated to ${status}`);
-      } else if (result.error) {
+      } else if (result && result.error) {
         console.error('Error updating availability:', result.error);
         alert(`Failed to update availability: ${result.error}`);
       }
@@ -348,48 +350,44 @@ export function AgentDashboard() {
                   title="Set as Available"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>Available</span>
+                  <span><Trans>Available</Trans></span>
                 </button>
+
                 <button 
                   onClick={() => updateAvailability('busy')}
                   className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'busy' ? 'bg-orange-500 text-white' : 'hover:bg-gray-200'}`}
                   title="Set as Busy"
                 >
                   <Activity className="w-4 h-4" />
-                  <span>Busy</span>
+                  <span><Trans>Busy</Trans></span>
                 </button>
+
                 <button 
                   onClick={() => updateAvailability('offline')}
-                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'offline' ? 'bg-gray-500 text-white' : 'hover:bg-gray-200'}`}
+                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'offline' ? 'bg-gray-400 text-white' : 'hover:bg-gray-200'}`}
                   title="Set as Offline"
                 >
                   <UserX className="w-4 h-4" />
-                  <span>Offline</span>
+                  <span><Trans>Offline</Trans></span>
                 </button>
               </div>
-            </div>
-            
-            {/* Socket Connection Status Indicator with debug info */}
-            <div className="flex items-center gap-1.5 text-sm group relative">
-              <div className={`w-2.5 h-2.5 rounded-full ${getConnectionStatusColor(isConnected)}`}></div>
-              <span className="text-gray-600">{isConnected ? 'Connected' : 'Disconnected'}</span>
-              
-              {/* Debug tooltip */}
-              <div className="hidden group-hover:block absolute top-full left-0 mt-1 w-64 bg-gray-800 text-white p-2 rounded text-xs z-50">
-                <p>Socket ID: {socket?.id || 'Not connected'}</p>
-                <p>Auth token: {localStorage.getItem('token') ? '✓ Present' : '✗ Missing'}</p>
-                <p>User ID: {user?.id || 'Unknown'}</p>
-                <button 
-                  className="mt-1 bg-blue-500 hover:bg-blue-600 px-2 py-0.5 rounded text-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (socket) {
-                      socket.disconnect();
-                      setTimeout(() => socket.connect(), 500);
+
+              <div className="text-sm text-gray-700">
+                <p><strong><Trans>Socket ID:</Trans></strong> {socket?.id || t`Not connected`}</p>
+                <p><strong><Trans>Auth token:</Trans></strong> {localStorage.getItem('token') ? t`✓ Present` : t`✗ Missing`}</p>
+                <p><strong><Trans>User ID:</Trans></strong> {user?.id || t`Unknown`}</p>
+                <button
+                  onClick={() => {
+                    try {
+                      socket?.disconnect();
+                      setTimeout(() => socket?.connect(), 500);
+                    } catch (err) {
+                      console.warn('Reconnect failed', err);
                     }
                   }}
+                  className="ml-3 bg-gray-100 px-3 py-1 rounded-lg"
                 >
-                  Reconnect
+                  <Trans>Reconnect</Trans>
                 </button>
               </div>
             </div>

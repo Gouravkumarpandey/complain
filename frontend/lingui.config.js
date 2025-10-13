@@ -18,6 +18,7 @@ module.exports = {
   fallbackLocales: {
     default: 'en'
   },
-  pseudoLocale: 'pseudo'
+  pseudoLocale: 'pseudo',
+  compileNamespace: 'es'
   // Removed all extractor configurations to use defaults
 };
