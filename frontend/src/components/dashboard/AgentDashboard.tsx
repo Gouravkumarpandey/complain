@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { i18n } from '../../i18n';
+// i18n removed
 // Trans and t removed after migration
 import { 
   Clock, CheckCircle, Bell, User, MessageCircle, 

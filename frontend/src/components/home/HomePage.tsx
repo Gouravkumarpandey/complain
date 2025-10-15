@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { i18n } from '../../i18n';
+// i18n removed
 import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
-import { Trans } from 'react-i18next';
-import { useLanguage } from '../../contexts/LanguageContext';
+// Trans removed
+// useLanguage removed
 
 export function HomePage() {
-  const { locale, setLocale } = useLanguage();
+  // Language logic removed
   
   return (
     <div className="bg-white">
@@ -20,20 +20,20 @@ export function HomePage() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1">{i18n.t('ai_powered_support')}</span>
+              <span className="text-sm text-gray-500 ml-1">AI Powered Support</span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">{i18n.t('features')}</a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">{i18n.t('how_it_works')}</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">{i18n.t('about_us')}</a>
+              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
+              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How it works</a>
+              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">About Us</a>
               
               {/* Language Selector */}
               <div className="relative group">
                 <button className="flex items-center text-gray-600 hover:text-gray-900 border-r border-gray-200 pr-4 mr-2">
                   <Globe className="w-4 h-4 mr-1" />
-                  <span className="text-sm">{locale.toUpperCase()}</span>
+                  <span className="text-sm">EN</span>
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-36 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                   <div className="py-1">
@@ -41,13 +41,13 @@ export function HomePage() {
                       onClick={async () => {
                         console.log('HomePage: Switching to English');
                         try {
-                          await setLocale('en');
+                          // setLocale removed
                           console.log('HomePage: Switched to English successfully');
                         } catch (e) {
                           console.error('HomePage: Error switching to English:', e);
                         }
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm ${locale === 'en' ? 'bg-orange-50 text-orange-700 font-medium' : 'hover:bg-gray-100'}`}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       🇬🇧 English
                     </button>
@@ -55,13 +55,13 @@ export function HomePage() {
                       onClick={async () => {
                         console.log('HomePage: Switching to Spanish');
                         try {
-                          await setLocale('es');
+                          // setLocale removed
                           console.log('HomePage: Switched to Spanish successfully');
                         } catch (e) {
                           console.error('HomePage: Error switching to Spanish:', e);
                         }
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm ${locale === 'es' ? 'bg-orange-50 text-orange-700 font-medium' : 'hover:bg-gray-100'}`}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       🇪🇸 Español
                     </button>
@@ -69,13 +69,13 @@ export function HomePage() {
                       onClick={async () => {
                         console.log('HomePage: Switching to French');
                         try {
-                          await setLocale('fr');
+                          // setLocale removed
                           console.log('HomePage: Switched to French successfully');
                         } catch (e) {
                           console.error('HomePage: Error switching to French:', e);
                         }
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm ${locale === 'fr' ? 'bg-orange-50 text-orange-700 font-medium' : 'hover:bg-gray-100'}`}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       🇫🇷 Français
                     </button>
@@ -87,7 +87,7 @@ export function HomePage() {
                 to="/login"
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
               >
-                {i18n.t('get_started')}
+                Get Started
               </Link>
             </div>
           </div>
@@ -101,10 +101,10 @@ export function HomePage() {
             {/* Left side - Text content */}
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                <Trans i18nKey="the_agentic_ai_solution_for_modern_customer_service">The agentic AI solution for modern <span className="text-orange-500">customer service</span></Trans>
+                The agentic AI solution for modern <span className="text-orange-500">customer service</span>
               </h1>
               <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                {i18n.t('with_quickfix_ai_agents_and_human_agents_work_as_one_resolvi')}
+                With QuickFix AI, agents and human agents work as one, resolving issues fast.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
@@ -112,11 +112,11 @@ export function HomePage() {
                   to="/login"
                   className="bg-orange-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
-                  {i18n.t('try_it_free')}
+                  Try it free
                 </Link>
                 <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:border-orange-500 hover:text-orange-500 transition-all duration-200 flex items-center justify-center gap-2">
                   <Play className="w-5 h-5" />
-                  {i18n.t('book_a_demo')}
+                  Book a demo
                 </button>
               </div>
             </div>
@@ -136,7 +136,7 @@ export function HomePage() {
 
           {/* Trust Bar - moved below hero content */}
           <div className="text-center mt-24">
-            <p className="text-sm text-gray-500 mb-6">{i18n.t('trusted_by_73_000_businesses_worldwide')}</p>
+            <p className="text-sm text-gray-500 mb-6">Trusted by 73,000 businesses worldwide</p>
             <div className="relative overflow-hidden">
               <div className="flex animate-scroll gap-8 items-center opacity-60">
                 {/* First set of logos */}
@@ -169,10 +169,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {i18n.t('seamless_support_smarter_agents_faster_resolutions')}
+              Seamless support, smarter agents, faster resolutions
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              {i18n.t('unify_every_channel_cut_the_noise_and_give_agents_an_easy_to')}
+              Unify every channel, cut the noise, and give agents an easy tool
             </p>
           </div>
 
@@ -181,9 +181,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{i18n.t('turn_email_tickets_into_instant_resolutions')}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Turn email tickets into instant resolutions</h3>
               <p className="text-gray-600">
-                {i18n.t('answer_email_queries_with_email_ai_agents_that_read_every_in')}
+                Answer email queries with email AI agents that read every incoming message
               </p>
             </div>
 
@@ -191,9 +191,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{i18n.t('auto_resolve_issues_with_conversational_ai_agents')}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Auto-resolve issues with conversational AI agents</h3>
               <p className="text-gray-600">
-                {i18n.t('deploy_intelligent_chatbots_that_understand_context_provide_')}
+                Deploy intelligent chatbots that understand context, provide instant answers
               </p>
             </div>
 
@@ -201,9 +201,9 @@ export function HomePage() {
               <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{i18n.t('empower_support_teams_with_intelligent_assistance')}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Empower support teams with intelligent assistance</h3>
               <p className="text-gray-600">
-                {i18n.t('give_your_human_agents_ai_powered_insights_suggested_respons')}
+                Give your human agents AI-powered insights and suggested responses
               </p>
             </div>
           </div>
@@ -215,10 +215,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {i18n.t('see_quickfix_in_action')}
+              See QuickFix in action
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {i18n.t('watch_how_our_ai_powered_complaint_management_system_transfo')}
+              Watch how our AI-powered complaint management system transforms support
             </p>
           </div>
 
@@ -239,7 +239,7 @@ export function HomePage() {
             {/* Video description */}
             <div className="text-center mt-8">
               <p className="text-gray-600 text-lg">
-                  {i18n.t('discover_how_quickfix_revolutionizes_customer_support_with_i')}
+                  Discover how QuickFix revolutionizes customer support with AI
                 </p>
             </div>
           </div>
@@ -251,10 +251,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {i18n.t('meet_freddy_ai')}
+              Meet Freddy AI
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
-              {i18n.t('from_ai_agents_that_resolve_routine_queries_instantly_to_ai_')}
+              From AI agents that resolve routine queries instantly to AI that helps with complex issues
             </p>
             <Link
               to="/login"
@@ -289,32 +289,32 @@ export function HomePage() {
           {/* Stats with colored cards like image */}
           <div className="mt-12 mb-4">
             <h3 className="text-2xl font-bold text-blue-600 text-center mb-6">
-              {i18n.t('industry_leading_results_with_quickfix')}
+              Industry-leading results with QuickFix
             </h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* 83% Card - Mint Green */}
             <div className="bg-green-100 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">83%</div>
-              <div className="text-lg text-gray-700">{i18n.t('reduction_in_response_times')}</div>
+              <div className="text-lg text-gray-700">Reduction in response times</div>
             </div>
             
             {/* <2 mins Card - Light Purple */}
             <div className="bg-purple-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">&lt;2 mins</div>
-              <div className="text-lg text-gray-700">{i18n.t('average_conversational_resolution_time')}</div>
+              <div className="text-lg text-gray-700">Average conversational resolution time</div>
             </div>
             
             {/* 97% Card - Cream */}
             <div className="bg-yellow-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">97%</div>
-              <div className="text-lg text-gray-700">{i18n.t('omnichannel_first_contact_resolution_rate')}</div>
+              <div className="text-lg text-gray-700">Omnichannel first contact resolution rate</div>
             </div>
             
             {/* 60% Card - Light Pink */}
             <div className="bg-red-50 rounded-xl p-8 flex flex-col justify-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">60%</div>
-              <div className="text-lg text-gray-700">{i18n.t('improved_agent_productivity_with_freddy_ai_copilot')}</div>
+              <div className="text-lg text-gray-700">Improved agent productivity with Freddy AI Copilot</div>
             </div>
           </div>
         </div>
@@ -325,10 +325,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {i18n.t('the_full_customer_service_experience')}
+              The Full Customer Service Experience
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-10">
-              {i18n.t('everything_you_need_to_support_customers_and_empower_teams_a')}
+              Everything you need to support customers and empower teams.
             </p>
             
             {/* Customer Experience Video */}
@@ -356,33 +356,33 @@ export function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <MessageSquare className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('chat_and_voice')}</h3>
-              <p className="text-gray-600">{i18n.t('connect_seamlessly_across_chat_and_voice_channels')}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat and Voice</h3>
+              <p className="text-gray-600">Connect seamlessly across chat and voice channels.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Users className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('self_service')}</h3>
-              <p className="text-gray-600">{i18n.t('empower_customers_with_comprehensive_self_service_options')}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Self Service</h3>
+              <p className="text-gray-600">Empower customers with comprehensive self-service options.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('unified_context')}</h3>
-              <p className="text-gray-600">{i18n.t('get_complete_customer_context_across_all_touchpoints')}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified Context</h3>
+              <p className="text-gray-600">Get complete customer context across all touchpoints.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <CheckCircle className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('advanced_workflows')}</h3>
-              <p className="text-gray-600">{i18n.t('automate_complex_processes_with_intelligent_workflows')}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Advanced Workflows</h3>
+              <p className="text-gray-600">Automate complex processes with intelligent workflows.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('analytics_and_insights')}</h3>
-              <p className="text-gray-600">{i18n.t('make_data_driven_decisions_with_powerful_analytics')}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics and Insights</h3>
+              <p className="text-gray-600">Make data-driven decisions with powerful analytics.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Shield className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{i18n.t('security_compliance')}</h3>
-              <p className="text-gray-600">{i18n.t('enterprise_grade_security_and_compliance_features')}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Security & Compliance</h3>
+              <p className="text-gray-600">Enterprise-grade security and compliance features.</p>
             </div>
           </div>
         </div>
@@ -494,14 +494,14 @@ export function HomePage() {
       <section className="py-24 bg-gradient-to-br from-orange-500 to-red-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              {i18n.t('get_started_with_quickfix')}
+              Get Started with QuickFix
             </h2>
           
           <div className="grid md:grid-cols-3 gap-8 mt-16">
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">{i18n.t('free_to_try_fast_to_scale')}</h3>
+              <h3 className="text-2xl font-bold mb-4">Free to Try, Fast to Scale</h3>
               <p className="text-white/90 mb-6">
-                {i18n.t('experience_the_power_of_quickfix_with_a_free_trial_no_credit')}
+                Experience the power of QuickFix with a free trial. No credit card required.
               </p>
               <Link
                 to="/login"
@@ -512,9 +512,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">{i18n.t('see_rapid_impact_in_action')}</h3>
+              <h3 className="text-2xl font-bold mb-4">See rapid impact in action</h3>
               <p className="text-white/90 mb-6">
-                {i18n.t('let_our_product_experts_show_you_how_quickfix_can_solve_your')}
+                Let our product experts show you how QuickFix can solve your toughest challenges.
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Book a demo
@@ -522,9 +522,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">{i18n.t('learn_explore_get_inspired')}</h3>
+              <h3 className="text-2xl font-bold mb-4">Learn, Explore, Get Inspired</h3>
               <p className="text-white/90 mb-6">
-                {i18n.t('check_out_the_interactive_product_tour_to_explore_quickfix_s')}
+                Check out the interactive product tour to explore QuickFix's features and benefits.
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Take the tour
@@ -547,7 +547,7 @@ export function HomePage() {
                 <span className="text-2xl font-bold">QuickFix</span>
               </div>
               <p className="text-gray-300 mb-6 max-w-md">
-                {i18n.t('ai_powered_complaint_management_system_that_revolutionizes_c')}
+                AI-powered complaint management system that revolutionizes customer service.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">
@@ -575,37 +575,37 @@ export function HomePage() {
 
             {/* Products */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">{i18n.t('products')}</h3>
+              <h3 className="text-lg font-semibold mb-4">Products</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('quickfix_helpdesk')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('ai_chat_support')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('analytics_dashboard')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('mobile_app')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('api_integrations')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">QuickFix Helpdesk</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">AI Chat Support</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Analytics Dashboard</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Mobile App</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">API Integrations</a></li>
               </ul>
             </div>
 
             {/* Solutions */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">{i18n.t('solutions')}</h3>
+              <h3 className="text-lg font-semibold mb-4">Solutions</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('customer_support')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('it_service_management')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('enterprise')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('small_business')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('e_commerce')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Customer Support</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">IT Service Management</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Enterprise</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Small Business</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">E-commerce</a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">{i18n.t('company')}</h3>
+              <h3 className="text-lg font-semibold mb-4">Company</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('about_us_1')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('careers')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('press_news')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('security')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">{i18n.t('contact_us')}</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">About Us</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Careers</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Press & News</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Security</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Contact Us</a></li>
               </ul>
             </div>
           </div>
@@ -615,16 +615,16 @@ export function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
               {/* Legal Links */}
               <div className="flex flex-wrap gap-6">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('privacy_policy')}</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('terms_of_service')}</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('cookie_policy')}</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">{i18n.t('accessibility')}</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Privacy Policy</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Terms of Service</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Cookie Policy</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Accessibility</a>
               </div>
 
               {/* Copyright */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">
-                  {i18n.t('2025_quickfix_inc_all_rights_reserved')}
+                  2025 QuickFix Inc. All rights reserved.
                 </p>
               </div>
 
