@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { i18n } from '../../i18n';
-import { Link, useNavigate } from 'react-router-dom';
+// i18n removed
+import { useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle, Shield } from 'lucide-react';
-import { Trans } from 'react-i18next';
 import apiService from '../../services/apiService';
-import { LanguageDropdown } from '../common/LanguageSelector';
+
 
 export function ForgotPassword() {
   const navigate = useNavigate();
@@ -16,7 +15,7 @@ export function ForgotPassword() {
     e.preventDefault();
     
     if (!email) {
-      setMessage({ text: i18n.t('please_enter_your_email_address'), type: 'error' });
+      setMessage({ text: 'Please enter your email address.', type: 'error' });
       return;
     }
 
@@ -36,21 +35,21 @@ export function ForgotPassword() {
         });
       } else if (response.data && response.data.success) {
         setMessage({ 
-          text: response.message || response.data.message || i18n.t('if_your_email_is_registered_you_will_receive_a_password_rese'), 
+          text: response.message || response.data.message || 'If your email is registered, you will receive a password reset link.', 
           type: 'success' 
         });
         setEmail(''); // Clear the form
       } else {
         // Handle ambiguous response
         setMessage({ 
-          text: i18n.t('if_your_email_is_registered_you_will_receive_a_password_rese'), 
+          text: 'If your email is registered, you will receive a password reset link.', 
           type: 'success' 
         });
         setEmail(''); // Clear the form for security
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      const errorMessage = error instanceof Error ? error.message : i18n.t('an_error_occurred_please_try_again_later');
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again later.';
       setMessage({ 
         text: errorMessage, 
         type: 'error' 
@@ -72,14 +71,7 @@ export function ForgotPassword() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1">{i18n.t('ai_powered_support')}</span>
-            </div>
-            {/* Language selector */}
-            <div className="flex items-center space-x-4">
-              <Link to="/language-settings" className="text-sm text-blue-600 hover:text-blue-700">
-                {i18n.t('language_settings')}
-              </Link>
-              <LanguageDropdown />
+              <span className="text-sm text-gray-500 ml-1">AI-powered support</span>
             </div>
           </div>
         </div>
@@ -91,15 +83,15 @@ export function ForgotPassword() {
         <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-white">
           <div className="max-w-md">
             <h1 className="text-4xl font-bold text-gray-900 mb-6">
-              <Trans i18nKey="forgot_your_password">Forgot your <span className="text-orange-500">password?</span></Trans>
+              Forgot your <span className="text-orange-500">password?</span>
             </h1>
             <p className="text-xl text-gray-600 mb-6">
-              {i18n.t('no_worries_we_ll_send_you_a_secure_link_to_reset_your_passwo')}
+              No worries! We'll send you a secure link to reset your password.
             </p>
             <div className="rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src="Forgetpass.jpg" 
-                alt={i18n.t('customer_support')} 
+                alt="Customer Support"
                 className="w-full h-auto"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -198,7 +190,16 @@ export function ForgotPassword() {
               <div className="text-center mt-6">
                 <button 
                   type="button"
-                  onClick={() => navigate('/login')}
+                  onClick={() => {
+                    console.log('Back to Login button clicked');
+                    try {
+                      console.log('Attempting to navigate to /login');
+                      navigate('/login');
+                      console.log('Navigation to /login successful');
+                    } catch (error) {
+                      console.error('Navigation error:', error);
+                    }
+                  }}
                   className="flex items-center justify-center mx-auto text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to Login

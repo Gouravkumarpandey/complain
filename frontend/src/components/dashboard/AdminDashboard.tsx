@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { i18n } from '../../i18n';
+// i18n removed
 // Trans removed after full migration
 import { Shield, Activity, FileText, UserCheck, RefreshCw } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
@@ -207,8 +207,8 @@ export const AdminDashboard = () => {
       color: 'orange',
       lastUpdated: new Date()
     }
-  ]);
-  
+  ]); // Closing the agents array properly
+
   const [ticketsData, setTicketsData] = useState<TicketData>({
     total: 92,
     resolved: 68,
@@ -679,7 +679,7 @@ export const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-800">{i18n.t('quickfix_admin_dashboard')}</h1>
+              <h1 className="text-2xl font-bold text-gray-800">QuickFix Admin Dashboard</h1>
             </div>
             
             <div className="flex items-center gap-4 relative admin-menu-container">
@@ -712,9 +712,9 @@ export const AdminDashboard = () => {
                     <p className="text-xs text-gray-500">{adminProfile.email}</p>
                     <p className="text-xs text-gray-500 capitalize">{adminProfile.role}</p>
                   </div>
-                  <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{i18n.t('profile_settings')}</a>
+                  <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile Settings</a>
                   <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100">
-                    {i18n.t('log_out')}
+                    Log Out
                   </button>
                 </div>
               )}
@@ -731,9 +731,9 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500">{i18n.t('total_tickets')}</p>
+                  <p className="text-sm text-gray-500">Total Tickets</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.total}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{i18n.t('last_30_days')}</p>
+                  <p className="text-xs text-gray-500 mt-1">Last 30 Days</p>
                 </div>
                 <div className="bg-blue-50 p-3 rounded-md">
                   <FileText size={20} className="text-blue-500" />
@@ -744,7 +744,7 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500">{i18n.t('status_resolved')}</p>
+                  <p className="text-sm text-gray-500">Status Resolved</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.resolved}</h3>
                   <p className="text-xs text-gray-500 mt-1">{Math.round((ticketsData.resolved / ticketsData.total) * 100)}% resolution rate</p>
                 </div>
@@ -757,9 +757,9 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500">{i18n.t('status_pending')}</p>
+                  <p className="text-sm text-gray-500">Status Pending</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.pending}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{i18n.t('including_0_in_progress', { 0: ticketsData.inProgress })}</p>
+                  <p className="text-xs text-gray-500 mt-1">Including {ticketsData.inProgress} in Progress</p>
                 </div>
                 <div className="bg-yellow-50 p-3 rounded-md">
                   <Activity size={20} className="text-yellow-500" />
@@ -770,9 +770,9 @@ export const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500">{i18n.t('critical')}</p>
+                  <p className="text-sm text-gray-500">Critical</p>
                   <h3 className="text-2xl font-bold mt-1">{ticketsData.critical}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{i18n.t('need_immediate_attention')}</p>
+                  <p className="text-xs text-gray-500 mt-1">Need Immediate Attention</p>
                 </div>
                 <div className="bg-red-50 p-3 rounded-md">
                   <Shield size={20} className="text-red-500" />

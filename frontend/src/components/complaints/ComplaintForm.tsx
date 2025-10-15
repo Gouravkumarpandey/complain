@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { i18n } from '../../i18n';
+// i18n removed
 // Trans and t removed after migration
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,12 +27,12 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
     setLoading(true);
     try {
   const complaint = await createComplaint(formData.title, formData.description, user.id);
-  addNotification('success', i18n.t('complaint_filed_successfully'), i18n.t('your_complaint_has_been_classified_as', { category: complaint.category, priority: complaint.priority }));
+  addNotification('success', 'Complaint filed successfully', `Your complaint has been classified as ${complaint.category} with priority ${complaint.priority}.`);
       setFormData({ title: '', description: '' });
       onSuccess?.();
     } catch {
       // We're not using the error parameter, so we omit it completely
-  addNotification('error', i18n.t('error'), i18n.t('failed_to_file_complaint_please_try_again'));
+  addNotification('error', 'Error', 'Failed to file complaint. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-          {i18n.t('complaint_title')}
+          Complaint Title
         </label>
         <div className="relative">
           <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -51,7 +51,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
             id="title"
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder={i18n.t('brief_summary_of_your_complaint')}
+            placeholder={'Brief summary of your complaint'}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             required
           />
@@ -60,20 +60,20 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-          {i18n.t('detailed_description')}
+          Detailed Description
         </label>
         <textarea
           id="description"
           value={formData.description}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder={i18n.t('please_provide_a_detailed_description_of_your_complaint')}
+          placeholder={'Please provide a detailed description of your complaint'}
           rows={6}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
           required
         />
         <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
           <Sparkles className="w-4 h-4" />
-          <span>{i18n.t('our_ai_will_automatically_categorize_and_prioritize_your_com')}</span>
+          <span>Our AI will automatically categorize and prioritize your complaint.</span>
         </div>
       </div>
 
@@ -87,7 +87,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
         ) : (
           <>
             <Send className="w-5 h-5" />
-            {i18n.t('submit_complaint')}
+            Submit Complaint
           </>
         )}
       </button>
