@@ -26,13 +26,15 @@ export function AgentDashboard() {
   const { complaints } = useComplaints();
   const { isConnected, socket, joinComplaintRoom, updateComplaint, sendMessage } = useSocket();
   const [activeView, setActiveView] = useState('my-tickets');
+  // This context is synchronous; no loading state provided by useComplaints
+  const complaintsLoading = false;
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [showChatBot, setShowChatBot] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Loading state comes from useComplaints hook
   const [messageText, setMessageText] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedComplaintForMessage, setSelectedComplaintForMessage] = useState<Complaint | null>(null);
@@ -85,7 +87,6 @@ export function AgentDashboard() {
 
   // Update filtered complaints to show only assigned tickets
   useEffect(() => {
-    setLoading(true);
     if (complaints && user) {
       // Filter complaints to show only tickets assigned to this agent
       const assignedComplaints = complaints.filter(c => c.assignedTo === user.id);
@@ -119,7 +120,6 @@ export function AgentDashboard() {
       
       refreshAvailability();
     }
-    setLoading(false);
   }, [complaints, user, isConnected, joinComplaintRoom]);
 
   const handleLogout = () => {
@@ -280,7 +280,7 @@ export function AgentDashboard() {
           <button 
             onClick={() => setActiveView('my-tickets')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${getNavItemClasses(activeView === 'my-tickets')}`}
-            title="My Assigned Tickets"
+            title="Agent Dashboard"
           >
             <Inbox className="w-5 h-5" />
           </button>
@@ -335,7 +335,7 @@ export function AgentDashboard() {
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
               {activeView === 'dashboard' && 'Agent Dashboard'}
-              {activeView === 'my-tickets' && 'My Assigned Tickets'}
+              {activeView === 'my-tickets' && 'Agent Dashboard'}
               {activeView === 'performance' && 'Performance Metrics'}
               {activeView === 'profile' && 'Profile Management'}
             </h1>
@@ -351,7 +351,7 @@ export function AgentDashboard() {
                   title="Set as Available"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>{i18n.t('available')}</span>
+                  <span>Available</span>
                 </button>
 
                 <button 
@@ -360,7 +360,7 @@ export function AgentDashboard() {
                   title="Set as Busy"
                 >
                   <Activity className="w-4 h-4" />
-                  <span>{i18n.t('busy')}</span>
+                  <span>Busy</span>
                 </button>
 
                 <button 
@@ -369,14 +369,14 @@ export function AgentDashboard() {
                   title="Set as Offline"
                 >
                   <UserX className="w-4 h-4" />
-                  <span>{i18n.t('offline')}</span>
+                  <span>Offline</span>
                 </button>
               </div>
 
               <div className="text-sm text-gray-700">
-                <p><strong>{i18n.t('socket_id')}</strong> {socket?.id || i18n.t('not_connected')}</p>
-                <p><strong>{i18n.t('auth_token')}</strong> {localStorage.getItem('token') ? i18n.t('present') : i18n.t('missing')}</p>
-                <p><strong>{i18n.t('user_id')}</strong> {user?.id || i18n.t('unknown')}</p>
+                <p><strong>Socket ID: </strong> {socket?.id || 'Not Connected'}</p>
+                <p><strong>Auth Token: </strong> {localStorage.getItem('token') ? 'Present' : 'Missing'}</p>
+                <p><strong>User ID: </strong> {user?.id || 'Unknown'}</p>
                 <button
                   onClick={() => {
                     try {
@@ -388,7 +388,7 @@ export function AgentDashboard() {
                   }}
                   className="ml-3 bg-gray-100 px-3 py-1 rounded-lg"
                 >
-                  {i18n.t('reconnect')}
+                  Reconnect
                 </button>
               </div>
             </div>
@@ -520,7 +520,7 @@ export function AgentDashboard() {
                   </button>
                 </div>
                 <div className="p-6">
-                  {loading ? (
+                  {complaintsLoading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="text-gray-500 mt-2">Loading tickets...</p>
@@ -677,7 +677,7 @@ export function AgentDashboard() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">My Assigned Tickets</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Agent Dashboard</h3>
                   <p className="text-sm text-gray-600">Manage all tickets assigned to you</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -715,7 +715,7 @@ export function AgentDashboard() {
                   </div>
                 </div>
                 
-                {loading ? (
+                {complaintsLoading ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="text-gray-500 mt-4">Loading your assigned tickets...</p>

@@ -1,5 +1,4 @@
 import { Complaint } from '../../contexts/ComplaintContext';
-import { i18n } from '../../i18n';
 import { BarChart3, PieChart } from 'lucide-react';
 // Trans removed after migration
 
@@ -76,7 +75,7 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
         {total === 0 && (
           <div className="text-center py-8 text-gray-500">
             <PieChart className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p>{i18n.t('no_data_available')}</p>
+            <p>No data available</p>
           </div>
         )}
       </div>
@@ -96,7 +95,7 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
             <div className="w-12 text-sm text-gray-600">{item.date}</div>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-gray-500">{i18n.t('status_resolved')}</span>
+                <span className="text-sm text-gray-500">Resolved</span>
                 <span className="text-sm font-medium text-gray-700">{item.resolved}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -113,7 +112,7 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
       {trendData.every(item => item.resolved === 0) && (
         <div className="text-center py-8 text-gray-500">
           <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-          <p>{i18n.t('no_resolution_data_available')}</p>
+          <p>No resolution data available</p>
         </div>
       )}
     </div>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { i18n } from '../../i18n';
 // Trans removed after full migration
 import { Complaint, useComplaints } from '../../contexts/ComplaintContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -111,7 +110,7 @@ export function ComplaintCard({ complaint, showActions, isAdmin = false, isAgent
               {complaint.assignedTo && (
                 <div className="flex items-center gap-1">
                   <User className="w-3 h-3" />
-                  {i18n.t('agent')} {complaint.assignedTo}
+                  Agent {complaint.assignedTo}
                 </div>
               )}
               {complaint.feedback && (
@@ -175,7 +174,7 @@ export function ComplaintCard({ complaint, showActions, isAdmin = false, isAgent
                           onClick={() => handleStatusChange(status as Complaint['status'])}
                           className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                         >
-                          {i18n.t('mark_as')} {status}
+                          Mark as {status}
                         </button>
                       ))}
                     </div>
