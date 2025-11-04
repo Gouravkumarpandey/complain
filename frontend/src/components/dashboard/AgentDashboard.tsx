@@ -85,11 +85,16 @@ export function AgentDashboard() {
     // Let the SocketContext handle reconnection
   }, [isConnected, socket]);
 
-  // Update filtered complaints to show only assigned tickets
+  // Update filtered complaints to show tickets assigned to this agent or unassigned
   useEffect(() => {
     if (complaints && user) {
-      // Filter complaints to show only tickets assigned to this agent
-      const assignedComplaints = complaints.filter(c => c.assignedTo === user.id);
+      // Filter complaints to show only tickets assigned to this agent (by id or name) or unassigned
+      const assignedComplaints = complaints.filter(c => {
+        const assigned = c.assignedTo;
+        const isMine = assigned === user.id || assigned === user.name;
+        const isUnassigned = !assigned || assigned === '' || assigned === 'Unassigned';
+        return isMine || isUnassigned;
+      });
       setFilteredComplaints(assignedComplaints);
       
       // Join socket rooms for all assigned complaints to receive real-time updates
