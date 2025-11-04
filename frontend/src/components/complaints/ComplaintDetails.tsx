@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { i18n } from '../../i18n';
 // Trans and t removed after migration; using i18n.t directly
 import { Complaint, useComplaints } from '../../contexts/ComplaintContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -111,7 +110,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
         </button>
-  <h1 className="text-3xl font-bold text-gray-800">{i18n.t('complaint_details')}</h1>
+  <h1 className="text-3xl font-bold text-gray-800">Complaint Details</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -143,7 +142,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
             </div>
 
             <div className="prose max-w-none">
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">{i18n.t('description')}</h3>
+  <h3 className="text-lg font-semibold text-gray-800 mb-3">Description</h3>
               <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
                 {complaint.description}
               </p>
@@ -154,7 +153,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              {i18n.t('updates_comments')}
+              Updates & Comments
             </h3>
             
             <div className="space-y-4 mb-6">
@@ -192,7 +191,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
                   <textarea
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder={isAgent ? i18n.t('add_a_comment_or_update') : i18n.t('add_a_comment')}
+                    placeholder={isAgent ? 'Add a comment or update' : 'Add a comment'}
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
@@ -203,11 +202,11 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
                         onChange={(e) => setNewStatus(e.target.value as typeof complaint.status)}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       >
-            <option value="Open">{i18n.t('open')}</option>
-              <option value="In Progress">{i18n.t('in_progress')}</option>
-              <option value="Under Review">{i18n.t('under_review')}</option>
-              <option value="Resolved">{i18n.t('status_resolved')}</option>
-              <option value="Closed">{i18n.t('closed')}</option>
+            <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
                       </select>
                     )}
                     <button

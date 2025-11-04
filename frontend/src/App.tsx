@@ -2,6 +2,7 @@ import React from 'react';
 // i18n removed
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ComplaintProvider } from './contexts/ComplaintContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -160,18 +161,19 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <ComplaintProvider>
-          <NotificationProvider>
-            <Router>
-
-              <AppContent />
-            </Router>
-          </NotificationProvider>
-        </ComplaintProvider>
-      </SocketProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <SocketProvider>
+          <ComplaintProvider>
+            <NotificationProvider>
+              <Router>
+                <AppContent />
+              </Router>
+            </NotificationProvider>
+          </ComplaintProvider>
+        </SocketProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

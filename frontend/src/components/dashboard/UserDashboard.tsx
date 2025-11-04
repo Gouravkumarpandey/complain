@@ -207,23 +207,21 @@ export function UserDashboard() {
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
-              {activeView === 'dashboard' && i18n.t('user_dashboard')}
-              {activeView === 'complaints' && i18n.t('my_complaints')}
-              {activeView === 'new-complaint' && i18n.t('file_new_complaint')}
-              {activeView === 'profile' && i18n.t('profile_management')}
+              {activeView === 'dashboard' && 'User Dashboard'}
+              {activeView === 'complaints' && 'My Complaints'}
+              {activeView === 'new-complaint' && 'File New Complaint'}
+              {activeView === 'profile' && 'Profile Management'}
             </h1>
           </div>
           
           <div className="flex items-center gap-4">
-            <button 
+              <button 
               onClick={() => setActiveView('new-complaint')}
               className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg"
             >
               <Plus className="w-4 h-4" />
-              {i18n.t('new_complaint')}
-            </button>
-            
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+              New Complaint
+            </button>            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
               <Search className="w-5 h-5" />
             </button>
             
