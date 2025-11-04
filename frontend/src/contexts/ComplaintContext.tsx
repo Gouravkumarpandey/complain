@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { aiService } from '../services/aiService';
+import apiService from '../services/apiService';
+import { useSocket } from '../hooks/useSocket';
 
 export interface Complaint {
   id: string;
@@ -54,6 +56,7 @@ interface ComplaintContextType {
 const ComplaintContext = createContext<ComplaintContextType | undefined>(undefined);
 
 export function ComplaintProvider({ children }: { children: ReactNode }) {
+  const { notifyNewComplaint } = useSocket();
   const [complaints, setComplaints] = useState<Complaint[]>([
     // Sample complaints for testing
     {
@@ -197,21 +200,69 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
   };
 
   const createComplaint = async (title: string, description: string, userId: string): Promise<Complaint> => {
-    // Use AI service to classify the complaint
+    // Classify first for category/priority hints
     const aiAnalysis = await aiService.classifyComplaint(description);
-    
-    // Calculate SLA target based on priority
-    const slaHours = {
-      'Urgent': 4,
-      'High': 24,
-      'Medium': 48,
-      'Low': 72
-    };
+
+    // Try creating via backend so other tabs/agents receive socket events
+    try {
+      const apiRes = await apiService.createComplaint({
+        title,
+        description,
+        category: aiAnalysis.category,
+      });
+
+      if (apiRes.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const incoming = apiRes.data as any;
+        // Map backend response to our Complaint shape
+        const mapped: Complaint = {
+          id: incoming._id || incoming.id || Date.now().toString(),
+          userId: incoming.userId || incoming.user?._id || incoming.user || userId,
+          title: incoming.title || title,
+          description: incoming.description || description,
+          category: incoming.category || aiAnalysis.category,
+          priority: incoming.priority || aiAnalysis.priority || 'Low',
+          status: incoming.status || 'Open',
+          sentiment: aiAnalysis.sentiment || 'Neutral',
+          assignedTo: incoming.assignedTo?._id || incoming.agentId?._id || incoming.assignedTo,
+          assignedTeam: incoming.assignedTeam,
+          slaTarget: incoming.slaTarget ? new Date(incoming.slaTarget) : new Date(Date.now() + 48 * 60 * 60 * 1000),
+          isEscalated: Boolean(incoming.isEscalated),
+          escalationReason: incoming.escalationReason,
+          createdAt: incoming.createdAt ? new Date(incoming.createdAt) : new Date(),
+          updatedAt: incoming.updatedAt ? new Date(incoming.updatedAt) : new Date(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          updates: Array.isArray(incoming.updates) ? incoming.updates.map((u: any) => ({
+            id: u._id || u.id || Math.random().toString(36).slice(2),
+            complaintId: (u.complaintId?._id) || u.complaintId || (incoming._id || incoming.id),
+            message: u.message || '',
+            author: u.author?.name || u.author || 'System',
+            timestamp: u.timestamp ? new Date(u.timestamp) : new Date(),
+            type: (u.type || 'comment') as ComplaintUpdate['type']
+          })) : [],
+        };
+
+        setComplaints(prev => {
+          // de-dupe by id
+          if (prev.some(c => c.id === mapped.id)) return prev;
+          return [...prev, mapped];
+        });
+  // Notify socket layer so other roles/tabs receive 'new_complaint'
+  try { notifyNewComplaint(mapped.id); } catch { /* optional: socket not connected */ }
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('API createComplaint failed, using local fallback', err);
+    }
+
+    // Fallback: local-only create to keep UX responsive
+    const slaHours = { Urgent: 4, High: 24, Medium: 48, Low: 72 } as const;
     const slaTarget = new Date();
     slaTarget.setHours(slaTarget.getHours() + slaHours[aiAnalysis.priority]);
-    
+
+    const id = Date.now().toString();
     const newComplaint: Complaint = {
-      id: Date.now().toString(),
+      id,
       userId,
       title,
       description,
@@ -224,8 +275,8 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
       createdAt: new Date(),
       updatedAt: new Date(),
       updates: [{
-        id: Date.now().toString() + '_init',
-        complaintId: Date.now().toString(),
+        id: `${id}_init`,
+        complaintId: id,
         message: 'Complaint has been created and classified automatically.',
         author: 'System',
         timestamp: new Date(),
@@ -233,14 +284,14 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
       }],
     };
 
-    // Auto-assign to agent
+    // Auto-assign (name-based fallback in local mode)
     const assignedAgent = autoAssignComplaint(newComplaint);
     if (assignedAgent) {
-      newComplaint.assignedTo = assignedAgent;
+      newComplaint.assignedTo = assignedAgent; // name fallback
       newComplaint.assignedTeam = getTeamForCategory(newComplaint.category);
       newComplaint.updates.push({
-        id: Date.now().toString() + '_assign',
-        complaintId: newComplaint.id,
+        id: `${id}_assign`,
+        complaintId: id,
         message: `Automatically assigned to ${assignedAgent} from ${newComplaint.assignedTeam} team`,
         author: 'System',
         timestamp: new Date(),
@@ -251,6 +302,48 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
     setComplaints(prev => [...prev, newComplaint]);
     return newComplaint;
   };
+
+  // Listen for server-pushed new complaints and merge into local state
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const e = evt as CustomEvent;
+      const incoming = e.detail || {};
+  const mapped: Complaint = {
+        id: incoming._id || incoming.id || Math.random().toString(36).slice(2),
+        userId: incoming.userId || incoming.user?._id || incoming.user || 'unknown',
+        title: incoming.title || 'New Complaint',
+        description: incoming.description || '',
+        category: incoming.category || 'General',
+        priority: incoming.priority || 'Low',
+        status: incoming.status || 'Open',
+        sentiment: 'Neutral',
+        assignedTo: incoming.assignedTo?._id || incoming.agentId?._id || incoming.assignedTo,
+        assignedTeam: incoming.assignedTeam,
+        slaTarget: incoming.slaTarget ? new Date(incoming.slaTarget) : new Date(Date.now() + 48 * 60 * 60 * 1000),
+        isEscalated: Boolean(incoming.isEscalated),
+        escalationReason: incoming.escalationReason,
+        createdAt: incoming.createdAt ? new Date(incoming.createdAt) : new Date(),
+        updatedAt: incoming.updatedAt ? new Date(incoming.updatedAt) : new Date(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updates: Array.isArray(incoming.updates) ? incoming.updates.map((u: any) => ({
+          id: u._id || u.id || Math.random().toString(36).slice(2),
+          complaintId: (u.complaintId?._id) || u.complaintId || (incoming._id || incoming.id),
+          message: u.message || '',
+          author: u.author?.name || u.author || 'System',
+          timestamp: u.timestamp ? new Date(u.timestamp) : new Date(),
+          type: (u.type || 'comment') as ComplaintUpdate['type']
+        })) : [],
+      };
+
+      setComplaints(prev => {
+        if (prev.some(c => c.id === mapped.id)) return prev;
+        return [mapped, ...prev];
+      });
+    };
+
+    window.addEventListener('newComplaint', handler as EventListener);
+    return () => window.removeEventListener('newComplaint', handler as EventListener);
+  }, []);
 
   const updateComplaintStatus = (id: string, status: Complaint['status'], message?: string) => {
     setComplaints(prev => prev.map(complaint => {
