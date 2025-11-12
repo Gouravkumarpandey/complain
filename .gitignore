@@ -74,3 +74,18 @@ temp/
 # Uploads
 uploads/
 public/uploads/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+ai-service/venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
