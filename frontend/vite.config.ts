@@ -10,6 +10,21 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        ws: true,
+      }
+    }
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
     include: ['@lingui/core']

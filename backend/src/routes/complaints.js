@@ -4,10 +4,9 @@ import { User } from '../models/User.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { validateComplaint, validateComplaintUpdate } from '../validators/complaintValidators.js';
-import { AIService } from '../services/aiService.js';
+import aiService from '../services/aiService.js';
 
 const router = express.Router();
-const aiService = new AIService();
 
 // Get all complaints (with filters)
 router.get('/', authenticate, asyncHandler(async (req, res) => {
@@ -142,6 +141,23 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
 
   // Save the complaint first to get its ID
   await complaint.save();
+  
+  // Generate AI summary if description is long enough
+  if (description && description.length > 100) {
+    try {
+      const summaryResult = await aiService.summarize(description, 100, 30);
+      complaint.aiSummary = {
+        text: summaryResult.summary,
+        confidence: summaryResult.error ? 0.5 : 0.85,
+        model: summaryResult.model,
+        generatedAt: new Date()
+      };
+      await complaint.save();
+    } catch (error) {
+      console.error('Failed to generate summary on creation:', error);
+      // Continue without summary - not critical
+    }
+  }
   
   // Import the ticket assignment service
   const { autoAssignTicket } = await import('../services/ticketAssignmentService.js');
@@ -679,4 +695,311 @@ router.get('/stats/dashboard', authenticate, asyncHandler(async (req, res) => {
   });
 }));
 
+// Generate AI draft reply for a complaint
+router.post('/:id/generate-reply', authenticate, authorize('agent', 'admin'), asyncHandler(async (req, res) => {
+  const complaint = await Complaint.findById(req.params.id)
+    .populate('user', 'firstName lastName email');
+
+  if (!complaint) {
+    return res.status(404).json({ error: 'Complaint not found' });
+  }
+
+  // Check if agent can generate reply for this complaint
+  if (req.user.role === 'agent' && 
+      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ error: 'You can only generate replies for complaints assigned to you' });
+  }
+
+  try {
+    // TODO: Implement KB context retrieval based on complaint category
+    // For now, use some basic context based on category
+    const kbContext = getKBContextForCategory(complaint.category);
+    
+    // Determine tone based on sentiment
+    const tone = complaint.aiAnalysis?.sentiment === 'Negative' ? 'empathetic' : 'polite';
+
+    // Generate draft reply using AI service
+    const aiReply = await aiService.generateReply(
+      complaint.description,
+      kbContext,
+      tone
+    );
+
+    // Store the AI draft reply in the complaint
+    complaint.aiDraftReply = {
+      text: aiReply.draft_reply,
+      confidence: aiReply.confidence,
+      needsHumanReview: aiReply.needs_human_review,
+      model: aiReply.model,
+      source: aiReply.source,
+      tone: aiReply.tone_used,
+      generatedAt: new Date(),
+      wasUsed: false,
+      wasEdited: false
+    };
+
+    await complaint.save();
+
+    // Emit socket event
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`complaint:${complaint._id}`).emit('draftReplyGenerated', {
+        complaintId: complaint._id,
+        draftReply: complaint.aiDraftReply
+      });
+    }
+
+    res.json({
+      success: true,
+      draftReply: complaint.aiDraftReply,
+      message: aiReply.needs_human_review 
+        ? 'Draft generated - human review required before sending'
+        : 'Draft generated - please review before sending'
+    });
+  } catch (error) {
+    console.error('Error generating AI reply:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate draft reply',
+      details: error.message 
+    });
+  }
+}));
+
+// Generate AI summary for a complaint
+router.post('/:id/generate-summary', authenticate, authorize('agent', 'admin'), asyncHandler(async (req, res) => {
+  const complaint = await Complaint.findById(req.params.id);
+
+  if (!complaint) {
+    return res.status(404).json({ error: 'Complaint not found' });
+  }
+
+  try {
+    // Generate summary using AI service
+    const aiSummary = await aiService.summarize(complaint.description, 100, 30);
+
+    // Store the AI summary in the complaint
+    complaint.aiSummary = {
+      text: aiSummary.summary,
+      confidence: aiSummary.error ? 0.5 : 0.85,
+      model: aiSummary.model,
+      generatedAt: new Date()
+    };
+
+    await complaint.save();
+
+    res.json({
+      success: true,
+      summary: complaint.aiSummary
+    });
+  } catch (error) {
+    console.error('Error generating AI summary:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate summary',
+      details: error.message 
+    });
+  }
+}));
+
+// Helper function to get KB context based on category
+function getKBContextForCategory(category) {
+  // This is a simplified version - in production, use semantic search on KB
+  const kbDatabase = {
+    'Technical Support': [
+      'For technical issues, first verify all cables are connected and device is powered on.',
+      'Standard troubleshooting includes: restart device, clear cache, update software.',
+      'Technical support response time is 24-48 hours for non-urgent issues.'
+    ],
+    'Billing': [
+      'Refunds are processed within 5-7 business days to the original payment method.',
+      'Bill credits are automatically applied for service outages exceeding 24 hours.',
+      'For billing disputes, please provide invoice number and specific charges in question.'
+    ],
+    'Product Quality': [
+      'Quality concerns are taken seriously and reviewed by our QA team within 48 hours.',
+      'Defective products can be returned within 30 days for full refund or replacement.',
+      'Please include photos or videos of the issue to expedite resolution.'
+    ],
+    'Customer Service': [
+      'We apologize for any inconvenience. Customer satisfaction is our top priority.',
+      'All feedback is reviewed by management and used to improve our services.',
+      'You can escalate concerns to a supervisor by calling our dedicated line.'
+    ],
+    'Delivery': [
+      'Standard delivery time is 3-5 business days. Delays may occur due to weather or holidays.',
+      'Track your order using the tracking number provided in your confirmation email.',
+      'For missing or delayed deliveries, please provide order number and expected delivery date.'
+    ],
+    'Account Issues': [
+      'Account recovery requires verification via email or phone number on file.',
+      'Password resets are sent to registered email and expire after 24 hours.',
+      'For security reasons, account changes require identity verification.'
+    ]
+  };
+
+  return kbDatabase[category] || [
+    'Thank you for contacting us. Our support team will assist you promptly.',
+    'We take customer concerns seriously and aim to resolve issues within 48 hours.',
+    'Please provide any additional details that may help us resolve your issue faster.'
+  ];
+}
+
+// Accept AI draft reply (save agent's reviewed/edited version)
+router.post('/:id/accept-reply', authenticate, authorize('agent', 'admin'), asyncHandler(async (req, res) => {
+  const { reply } = req.body;
+
+  if (!reply || !reply.trim()) {
+    return res.status(400).json({ error: 'Reply text is required' });
+  }
+
+  const complaint = await Complaint.findById(req.params.id);
+
+  if (!complaint) {
+    return res.status(404).json({ error: 'Complaint not found' });
+  }
+
+  // Check authorization
+  if (req.user.role === 'agent' && 
+      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ error: 'You can only accept replies for complaints assigned to you' });
+  }
+
+  try {
+    // Update the draft reply with agent's version
+    if (complaint.aiDraftReply) {
+      const wasEdited = complaint.aiDraftReply.text !== reply;
+      complaint.aiDraftReply.text = reply;
+      complaint.aiDraftReply.wasEdited = wasEdited;
+      complaint.aiDraftReply.needsHumanReview = false; // Agent has reviewed
+    } else {
+      // If no AI draft exists, create one (agent manually created reply)
+      complaint.aiDraftReply = {
+        text: reply,
+        confidence: 1.0, // Manual replies have 100% confidence
+        needsHumanReview: false,
+        model: 'manual',
+        source: 'agent',
+        tone: 'professional',
+        generatedAt: new Date(),
+        wasUsed: false,
+        wasEdited: false
+      };
+    }
+
+    await complaint.save();
+
+    res.json({
+      success: true,
+      complaint: complaint,
+      message: 'Draft reply accepted and saved'
+    });
+  } catch (error) {
+    console.error('Error accepting draft reply:', error);
+    res.status(500).json({ 
+      error: 'Failed to save draft reply',
+      details: error.message 
+    });
+  }
+}));
+
+// Send reply to customer (via email/notification)
+router.post('/:id/send-reply', authenticate, authorize('agent', 'admin'), asyncHandler(async (req, res) => {
+  const { reply } = req.body;
+
+  if (!reply || !reply.trim()) {
+    return res.status(400).json({ error: 'Reply text is required' });
+  }
+
+  const complaint = await Complaint.findById(req.params.id)
+    .populate('user', 'firstName lastName email');
+
+  if (!complaint) {
+    return res.status(404).json({ error: 'Complaint not found' });
+  }
+
+  // Check authorization
+  if (req.user.role === 'agent' && 
+      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ error: 'You can only send replies for complaints assigned to you' });
+  }
+
+  try {
+    // Import email service if available
+    const emailService = await import('../services/emailService.js').catch(() => null);
+    const notificationService = await import('../services/notificationService.js').catch(() => null);
+
+    // Send email to customer
+    if (emailService?.default?.sendEmail) {
+      await emailService.default.sendEmail({
+        to: complaint.user.email,
+        subject: `Re: Your complaint - ${complaint.title}`,
+        html: `
+          <h2>Response to Your Complaint</h2>
+          <p>Dear ${complaint.user.firstName || 'Customer'},</p>
+          <p>${reply.replace(/\n/g, '<br>')}</p>
+          <hr>
+          <p><small>Complaint ID: ${complaint._id}<br>
+          Original message: ${complaint.description}</small></p>
+        `
+      });
+    }
+
+    // Create notification
+    if (notificationService?.default?.createNotification) {
+      await notificationService.default.createNotification({
+        userId: complaint.user._id,
+        type: 'complaint_reply',
+        title: 'New Reply to Your Complaint',
+        message: reply.substring(0, 200) + (reply.length > 200 ? '...' : ''),
+        relatedId: complaint._id,
+        relatedModel: 'Complaint'
+      });
+    }
+
+    // Add reply to complaint updates
+    complaint.updates.push({
+      author: `${req.user.firstName} ${req.user.lastName}`,
+      message: reply,
+      type: 'agent_reply',
+      timestamp: new Date()
+    });
+
+    // Mark draft reply as used if it exists
+    if (complaint.aiDraftReply) {
+      complaint.aiDraftReply.wasUsed = true;
+    }
+
+    // Update status if still Open
+    if (complaint.status === 'Open') {
+      complaint.status = 'In Progress';
+    }
+
+    complaint.updatedAt = new Date();
+    await complaint.save();
+
+    // Emit socket event
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`complaint:${complaint._id}`).emit('replyPosted', {
+        complaintId: complaint._id,
+        reply: reply,
+        timestamp: new Date()
+      });
+    }
+
+    res.json({
+      success: true,
+      sentAt: new Date().toISOString(),
+      messageId: `msg_${Date.now()}`,
+      message: 'Reply sent to customer successfully'
+    });
+  } catch (error) {
+    console.error('Error sending reply:', error);
+    res.status(500).json({ 
+      error: 'Failed to send reply',
+      details: error.message 
+    });
+  }
+}));
+
 export default router;
+

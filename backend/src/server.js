@@ -13,6 +13,25 @@ import connectDB from "./config/db.js";
 import { handleConnection } from "./socket/socketHandlers.js";
 import { User } from "./models/User.js";
 
+// Add global error handlers to prevent silent crashes
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('❌ Reason:', reason);
+  // Don't exit in development, just log the error
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  console.error('❌ Stack:', error.stack);
+  // Don't exit in development, just log the error
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
 // Log system information on startup
 console.log('=== QuickFix Complaint Management System ===');
 console.log('Starting server with Socket.IO real-time updates');
@@ -345,6 +364,7 @@ import notificationsRoutes from "./routes/notifications.js";
 import analyticsRoutes from "./routes/analytics.js";
 import adminRoutes from "./routes/admin.js";
 import agentsRoutes from "./routes/agents.js";
+import aiRoutes from "./routes/ai.js";
 
 // Health check endpoint that works even when DB is down
 app.get('/api/health', (req, res) => {
@@ -364,6 +384,7 @@ app.use("/api/agents", agentsRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Enhanced Health check
 app.get("/api/health", async (req, res) => {

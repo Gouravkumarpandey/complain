@@ -17,6 +17,24 @@ export interface Complaint {
     priority?: string;
     suggestedResponse?: string;
   };
+  // AI-generated summary and reply fields
+  aiSummary?: {
+    text: string;
+    confidence: number;
+    model: string;
+    generatedAt: string;
+  };
+  aiDraftReply?: {
+    text: string;
+    confidence: number;
+    needsHumanReview: boolean;
+    model: string;
+    source: string;
+    tone: string;
+    generatedAt: string;
+    wasUsed?: boolean;
+    wasEdited?: boolean;
+  };
   updates: Array<{
     id: string;
     message: string;
