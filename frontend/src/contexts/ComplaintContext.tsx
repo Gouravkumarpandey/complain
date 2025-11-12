@@ -184,19 +184,47 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
     return teamMapping[category];
   };
 
-  // Helper function to auto-assign complaints to agents
+  // Helper function to auto-assign complaints to agents with defensive checks
   const autoAssignComplaint = (complaint: Complaint): string => {
-    // Mock agent assignment logic
-    const agents = {
-      'Billing': ['Sarah Johnson', 'Mike Chen', 'Lisa Rodriguez'],
-      'Technical': ['Alex Kumar', 'David Park', 'Emma Wilson'],
-      'Service': ['John Smith', 'Maria Garcia', 'Tom Brown'],
-      'Product': ['Rachel Green', 'Steven Taylor', 'Amy Liu'],
-      'General': ['Chris Davis', 'Nicole White', 'Mark Johnson']
-    };
+    try {
+      // Mock agent assignment logic
+      const agents = {
+        'Billing': ['Sarah Johnson', 'Mike Chen', 'Lisa Rodriguez'],
+        'Technical': ['Alex Kumar', 'David Park', 'Emma Wilson'],
+        'Service': ['John Smith', 'Maria Garcia', 'Tom Brown'],
+        'Product': ['Rachel Green', 'Steven Taylor', 'Amy Liu'],
+        'General': ['Chris Davis', 'Nicole White', 'Mark Johnson']
+      };
 
-    const categoryAgents = agents[complaint.category];
-    return categoryAgents[Math.floor(Math.random() * categoryAgents.length)];
+      if (!complaint) {
+        console.warn('autoAssignComplaint: complaint is undefined or null', { complaint });
+        return '';
+      }
+
+      const category = complaint.category || 'General';
+      const categoryAgents = agents[category as keyof typeof agents];
+
+      if (!categoryAgents) {
+        console.warn('autoAssignComplaint: no agents found for category', { category });
+        return '';
+      }
+
+      if (!Array.isArray(categoryAgents)) {
+        console.warn('autoAssignComplaint: categoryAgents is not an array', { categoryAgents });
+        return '';
+      }
+
+      if (categoryAgents.length === 0) {
+        console.info('autoAssignComplaint: no available agents for category', { category });
+        return '';
+      }
+
+      const randomIndex = Math.floor(Math.random() * categoryAgents.length);
+      return categoryAgents[randomIndex];
+    } catch (err) {
+      console.error('autoAssignComplaint: unexpected error', err, { complaint });
+      return '';
+    }
   };
 
   const createComplaint = async (title: string, description: string, userId: string): Promise<Complaint> => {

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, Settings } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { aiService } from '../../services/aiService';
+import { safeFetchJson } from '../../services/apiService';
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -25,35 +27,42 @@ interface ChatMessage {
   entities?: EntityType[];
   intents?: IntentType[];
   fallback?: boolean;
+  troubleshootingStep?: number;
+  offerComplaint?: boolean;
+  sentiment?: string; // Positive, Neutral, Negative
+  category?: string; // Billing, Technical, Service, Product, General
+  priority?: string; // Low, Medium, High, Urgent
 }
 
-interface WatsonResponse {
+interface AIResponse {
   success: boolean;
   response?: string;
-  context?: Record<string, unknown>;
-  sessionId?: string;
   complaintDetected?: boolean;
   shouldGenerateComplaint?: boolean;
-  entities?: EntityType[];
-  intents?: IntentType[];
+  troubleshootingSteps?: string[];
+  currentStep?: number;
+  offerComplaint?: boolean;
+  model?: string;
   fallback?: boolean;
 }
 
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [useWatson, setUseWatson] = useState(true);
-  const [watsonSessionId, setWatsonSessionId] = useState<string | null>(null);
-  const [watsonContext, setWatsonContext] = useState<Record<string, unknown>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      text: "Hello! I'm your AI assistant. I can help you file complaints, check status, or answer questions using advanced AI. How can I help you today?",
+      text: "Hello! I'm your AI assistant powered byFreddy AI. I'm here to help solve your issues. Please describe your problem, and I'll guide you through some solutions before filing a complaint if needed. What seems to be the issue?",
       sender: 'bot',
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [troubleshootingMode, setTroubleshootingMode] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [troubleshootingSteps, setTroubleshootingSteps] = useState<string[]>([]);
+  const [waitingForComplaintConfirmation, setWaitingForComplaintConfirmation] = useState(false);
+  const [messageIdCounter, setMessageIdCounter] = useState(2); // Start from 2 since initial message is '1'
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { createComplaint } = useComplaints();
@@ -65,8 +74,10 @@ export function ChatBot() {
   }, [messages]);
 
   const addMessage = (text: string, sender: 'user' | 'bot', metadata?: Partial<ChatMessage>) => {
+    const newCounter = messageIdCounter + 1;
+    setMessageIdCounter(newCounter);
     const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `msg-${Date.now()}-${newCounter}`,
       text,
       sender,
       timestamp: new Date(),
@@ -75,11 +86,11 @@ export function ChatBot() {
     setMessages((prev) => [...prev, newMessage]);
   };
 
-  const callWatsonAssistant = async (message: string): Promise<WatsonResponse> => {
+  const callAIAssistant = async (message: string, conversationHistory: ChatMessage[] = []): Promise<AIResponse> => {
     try {
       if (!user) throw new Error('User not authenticated');
 
-      const response = await fetch('/api/auth/chat-watson', {
+      const response = await fetch('/api/auth/chat-ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,18 +99,17 @@ export function ChatBot() {
         body: JSON.stringify({
           userId: user.id,
           message,
-          context: watsonContext,
+          conversationHistory: conversationHistory.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          }))
         }),
       });
 
       const data = await response.json();
-
-      if (data.sessionId) setWatsonSessionId(data.sessionId);
-      if (data.context) setWatsonContext(data.context);
-
       return data;
     } catch (error) {
-      console.error('Watson API call failed:', error);
+      console.error('AI API call failed:', error);
       return {
         success: false,
         response: "I'm experiencing some technical difficulties. Let me try to help you anyway.",
@@ -108,15 +118,40 @@ export function ChatBot() {
     }
   };
 
-  const generateWatsonComplaint = async () => {
-    if (!user) return;
+  const generateAIComplaint = async () => {
+    if (!user) {
+      console.error('Cannot generate complaint: User not authenticated');
+      addMessage("Please log in to file a complaint.", 'bot');
+      return;
+    }
 
     try {
+      console.log('Starting complaint generation...', {
+        userId: user.id,
+        messageCount: messages.length,
+        troubleshootingSteps: troubleshootingSteps.length
+      });
+
       const conversationHistory = messages
         .map((msg) => `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.text}`)
         .join('\n');
 
-      const response = await fetch('/api/auth/generate-complaint-watson', {
+      // Prepare chatbot conversation for storage
+      const chatbotConversation = messages.map(msg => ({
+        sender: msg.sender,
+        text: msg.text,
+        timestamp: msg.timestamp,
+        troubleshootingStep: msg.troubleshootingStep,
+        metadata: {
+          complaintDetected: msg.complaintDetected,
+          offerComplaint: msg.offerComplaint
+        }
+      }));
+
+      console.log('Sending complaint generation request to backend...');
+
+      // Use safeFetchJson to handle errors gracefully
+      const data = await safeFetchJson('/api/auth/generate-complaint-ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,39 +161,88 @@ export function ChatBot() {
           userId: user.id,
           conversationHistory,
           currentMessage: inputValue,
-          context: watsonContext,
+          chatbotConversation, // Include full conversation for ticket storage
+          troubleshootingSteps: troubleshootingSteps.length > 0 ? troubleshootingSteps : undefined,
+          troubleshootingAttempted: troubleshootingSteps.length > 0
         }),
       });
 
-      const data = await response.json();
-
-      if (data.success && data.complaintData) {
-        const complaint = await createComplaint(
-          data.complaintData.title,
-          data.complaintData.description,
-          user.id
-        );
-
-        addMessage(
-          `Perfect! I've analyzed our conversation and created a complaint for you (Ticket #${complaint.id}). ${
-            data.watsonResponse || 'Your issue has been properly categorized and will receive appropriate attention.'
-          }`,
-          'bot',
-          { complaintDetected: true, entities: data.entities, intents: data.intents }
-        );
-
-        addNotification(
-          'success',
-          'Smart Complaint Filed',
-          `Watson AI created Ticket #${complaint.id} with ${data.complaintData.confidence || 0.8} confidence.`
-        );
+      if (!data || !data.success || !data.complaintData) {
+        console.warn('AI service returned no result or error', data);
+        throw new Error(data?.error || 'Failed to generate complaint');
       }
-    } catch (error) {
-      console.error('Watson complaint generation failed:', error);
+
+      // Add conversation history to the description
+      let enhancedDescription = data.complaintData.description;
+      
+      if (troubleshootingSteps.length > 0) {
+        enhancedDescription += `\n\n--- Troubleshooting Attempted ---\nThe user tried ${troubleshootingSteps.length} troubleshooting steps:\n`;
+        troubleshootingSteps.forEach((step, idx) => {
+          enhancedDescription += `${idx + 1}. ${step}\n`;
+        });
+        enhancedDescription += `\nAll troubleshooting steps were attempted but the issue persists.`;
+      }
+
+      const complaint = await createComplaint(
+        data.complaintData.title,
+        enhancedDescription,
+        user.id
+      );
+
+      if (!complaint || !complaint.id) {
+        console.warn('createComplaint failed or returned no id', complaint);
+        throw new Error('Failed to create complaint record');
+      }
+
+      // Create detailed success message with ticket info
+      const ticketMessage = `✅ **Complaint Ticket Created Successfully!**
+
+**Ticket ID:** #${complaint.id || 'Generated'}
+
+**Problem Description:**
+${data.complaintData.description}
+
+**Category:** ${data.complaintData.category || 'General'}
+**Priority:** ${data.complaintData.priority || 'Medium'}
+${troubleshootingSteps.length > 0 ? `\n**Troubleshooting Steps Attempted:** ${troubleshootingSteps.length} steps tried` : ''}
+
+${data.response || 'Your issue has been properly categorized and our support team will review it shortly. You can track the progress of your ticket in your dashboard.'}
+
+Our team will review the conversation history and troubleshooting steps you've tried to provide the best solution.`;
+
       addMessage(
-        "I had trouble creating the complaint automatically, but I can still help you file one manually. Could you describe your issue?",
+        ticketMessage,
+        'bot',
+        { complaintDetected: true }
+      );
+
+      addNotification(
+        'success',
+        'Smart Complaint Filed',
+        `AI created Ticket #${complaint.id} with ${data.complaintData.confidence || 0.9} confidence (${data.model || 'DeepSeek R1'}).`
+      );
+
+      // Reset troubleshooting state
+      setTroubleshootingMode(false);
+      setCurrentStepIndex(0);
+      setTroubleshootingSteps([]);
+      setWaitingForComplaintConfirmation(false);
+    } catch (error) {
+      console.error('AI complaint generation failed:', error);
+      
+      // More detailed error logging
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      
+      addMessage(
+        "I'm having trouble connecting to our complaint system right now. Let me try a different approach. Please describe your issue again, and I'll make sure it gets properly recorded.",
         'bot'
       );
+      
+      // Set a flag to try manual complaint on next message
+      setWaitingForComplaintConfirmation(true);
     }
   };
 
@@ -174,32 +258,138 @@ export function ChatBot() {
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || loading) return;
-    const userMessage = inputValue;
+    const userMessage = inputValue.trim();
     setInputValue('');
-    addMessage(userMessage, 'user');
+    
+    // Analyze sentiment and classify the message
+    let sentimentData = null;
+    try {
+      sentimentData = await aiService.classifyComplaint(userMessage);
+      console.log('Message Analysis:', sentimentData);
+    } catch (error) {
+      console.error('Failed to analyze message:', error);
+    }
+    
+    // Add user message with sentiment and classification
+    addMessage(userMessage, 'user', {
+      sentiment: sentimentData?.sentiment,
+      category: sentimentData?.category,
+      priority: sentimentData?.priority
+    });
+    
     setLoading(true);
 
     try {
-      if (useWatson) {
-        const watsonResponse = await callWatsonAssistant(userMessage);
+      // Check if user wants to file a complaint
+      if (waitingForComplaintConfirmation) {
+        const confirmation = userMessage.toLowerCase();
+        if (confirmation.includes('yes') || confirmation.includes('file') || confirmation.includes('create')) {
+          setWaitingForComplaintConfirmation(false);
+          addMessage("Perfect! I'm creating a complaint ticket for you based on our conversation...", 'bot');
+          await generateAIComplaint();
+          setLoading(false);
+          return;
+        } else if (confirmation.includes('no') || confirmation.includes('solved') || confirmation.includes('fixed')) {
+          setWaitingForComplaintConfirmation(false);
+          setTroubleshootingMode(false);
+          setCurrentStepIndex(0);
+          setTroubleshootingSteps([]);
+          addMessage("Great! I'm glad I could help resolve your issue. If you need anything else, feel free to ask!", 'bot');
+          setLoading(false);
+          return;
+        }
+      }
 
-        if (watsonResponse.success) {
-          addMessage(watsonResponse.response || "I understand. How can I help you further?", 'bot', {
-            entities: watsonResponse.entities,
-            intents: watsonResponse.intents,
-          });
+      // Check if in troubleshooting mode
+      if (troubleshootingMode && troubleshootingSteps.length > 0) {
+        const response = userMessage.toLowerCase();
+        
+        // Check if issue is resolved
+        if (response.includes('work') || response.includes('fixed') || response.includes('solved') || 
+            response.includes('better') || response.includes('good')) {
+          setTroubleshootingMode(false);
+          setCurrentStepIndex(0);
+          setTroubleshootingSteps([]);
+          addMessage("Excellent! I'm happy to hear that resolved your issue. Is there anything else I can help you with?", 'bot');
+          setLoading(false);
+          return;
+        }
 
-          if (watsonResponse.complaintDetected && watsonResponse.shouldGenerateComplaint) {
-            await generateWatsonComplaint();
-          }
+        // Move to next troubleshooting step
+        if (currentStepIndex < troubleshootingSteps.length - 1) {
+          const nextIndex = currentStepIndex + 1;
+          setCurrentStepIndex(nextIndex);
+          addMessage(
+            `Okay, let's try the next solution:\n\n**Step ${nextIndex + 1}/${troubleshootingSteps.length}:** ${troubleshootingSteps[nextIndex]}\n\nPlease try this and let me know if it helps!`,
+            'bot',
+            { troubleshootingStep: nextIndex + 1 }
+          );
+          setLoading(false);
+          return;
         } else {
-          const basicResponse = await callBasicAI(userMessage);
-          addMessage(basicResponse, 'bot', { fallback: true });
+          // All steps exhausted
+          setTroubleshootingMode(false);
+          addMessage(
+            "I've walked you through all the troubleshooting steps I have. Since the issue persists, I recommend filing a complaint so our technical team can investigate further.\n\n**Would you like me to file a complaint ticket for you?** (Yes/No)",
+            'bot',
+            { offerComplaint: true }
+          );
+          setWaitingForComplaintConfirmation(true);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Get AI response with troubleshooting
+      const aiResponse = await callAIAssistant(userMessage, messages.filter(m => m.sender !== 'bot' || !m.fallback));
+
+      if (aiResponse.success) {
+        // Add empathetic prefix based on sentiment
+        let responsePrefix = '';
+        if (sentimentData?.sentiment === 'Negative') {
+          responsePrefix = "I understand your frustration and I'm here to help. ";
+        } else if (sentimentData?.sentiment === 'Positive') {
+          responsePrefix = "Thank you for reaching out! ";
+        }
+        
+        // Check if AI provided troubleshooting steps
+        if (aiResponse.troubleshootingSteps && aiResponse.troubleshootingSteps.length > 0) {
+          setTroubleshootingMode(true);
+          setTroubleshootingSteps(aiResponse.troubleshootingSteps);
+          setCurrentStepIndex(0);
+          
+          const firstStep = aiResponse.troubleshootingSteps[0];
+          const priorityNote = sentimentData?.priority === 'Urgent' || sentimentData?.priority === 'High' 
+            ? ' I see this is urgent, so I\'ll do my best to help you quickly.' 
+            : '';
+          
+          addMessage(
+            `${responsePrefix}I understand you're experiencing: "${userMessage}"${priorityNote}\n\nLet me help you troubleshoot this issue. I have ${aiResponse.troubleshootingSteps.length} solutions for you to try.\n\n**Step 1/${aiResponse.troubleshootingSteps.length}:** ${firstStep}\n\nPlease try this and let me know if it works!`,
+            'bot',
+            { troubleshootingStep: 1 }
+          );
+        } else if (aiResponse.offerComplaint) {
+          // AI suggests filing complaint immediately
+          addMessage(
+            responsePrefix + (aiResponse.response || "Would you like me to file a complaint for this issue?"), 
+            'bot', 
+            { offerComplaint: true }
+          );
+          setWaitingForComplaintConfirmation(true);
+        } else {
+          // Regular response
+          addMessage(
+            responsePrefix + (aiResponse.response || "I understand. How can I help you further?"), 
+            'bot', 
+            {
+              complaintDetected: aiResponse.complaintDetected,
+              fallback: aiResponse.fallback
+            }
+          );
         }
       } else {
-        // Basic AI
-        const response = await callBasicAI(userMessage);
-        addMessage(response, 'bot');
+        const basicResponse = await callBasicAI(userMessage);
+        addMessage(basicResponse, 'bot', { fallback: true });
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -232,36 +422,69 @@ export function ChatBot() {
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Bot className="w-5 h-5" />
-              <h3 className="font-semibold">AI Assistant</h3>
+              <h3 className="font-semibold">FreddyAI Assistant</h3>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setUseWatson(!useWatson)}
-                className={`px-2 py-1 rounded text-xs ${useWatson ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                title={useWatson ? 'Using Watson AI' : 'Using Basic AI'}
-              >
-                {useWatson ? 'Watson' : 'Basic'}
-              </button>
               <Settings className="cursor-pointer" />
             </div>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            {messages.map((message) => (
-              <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className="bg-white p-3 rounded-xl max-w-[80%]">
-                  <p className="text-sm leading-relaxed">{message.text}</p>
-                  {message.entities && message.entities.length > 0 && (
-                    <div className="mt-1 text-xs opacity-75">Entities: {message.entities.map((e) => e.entity).join(', ')}</div>
-                  )}
-                  {message.intents && message.intents.length > 0 && (
-                    <div className="mt-1 text-xs opacity-75">Intent: {message.intents[0]?.intent}</div>
-                  )}
-                  <p className="text-xs opacity-50 mt-1">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            {messages.map((message) => {
+              // Prefer server-provided unique ids
+              const serverId = message.id;
+              // Stable fallback: use timestamp + sender + contentHash to avoid collisions
+              const ts = message.timestamp?.getTime() || Date.now();
+              const sender = message.sender || '';
+              // compute a cheap stable fallback id (do not use Date.now() alone)
+              const contentHash = (message.text || '').slice(0, 20).replace(/\s/g, '');
+              const fallbackId = `${ts}-${sender}-${contentHash}`;
+              const key = serverId || fallbackId || uuidv4();
+
+              return (
+                <div key={key} className={`flex items-start gap-3 ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className="bg-white p-3 rounded-xl max-w-[80%] shadow-sm">
+                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    
+                    {/* Sentiment and Classification Badges */}
+                    {message.sender === 'user' && (message.sentiment || message.category || message.priority) && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {message.sentiment && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            message.sentiment === 'Positive' ? 'bg-green-100 text-green-700' :
+                            message.sentiment === 'Negative' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {message.sentiment === 'Positive' ? '😊' : message.sentiment === 'Negative' ? '😟' : '😐'} {message.sentiment}
+                          </span>
+                        )}
+                        {message.category && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            {message.category}
+                          </span>
+                        )}
+                        {message.priority && (message.priority === 'High' || message.priority === 'Urgent') && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            message.priority === 'Urgent' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            ⚠️ {message.priority}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {message.entities && message.entities.length > 0 && (
+                      <div className="mt-1 text-xs opacity-75">Entities: {message.entities.map((e) => e.entity).join(', ')}</div>
+                    )}
+                    {message.intents && message.intents.length > 0 && (
+                      <div className="mt-1 text-xs opacity-75">Intent: {message.intents[0]?.intent}</div>
+                    )}
+                    <p className="text-xs opacity-50 mt-1">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {loading && (
               <div className="flex items-start gap-3">
@@ -301,12 +524,6 @@ export function ChatBot() {
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            {useWatson && watsonSessionId && (
-              <div className="mt-2 text-xs text-gray-500 flex items-center">
-                <Bot className="w-3 h-3 mr-1" />
-                Watson Session: {watsonSessionId.substring(0, 8)}...
-              </div>
-            )}
           </div>
         </div>
       )}

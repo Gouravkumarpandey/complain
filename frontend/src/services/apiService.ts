@@ -5,6 +5,45 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 console.log(`API Service initialized with base URL: ${API_BASE_URL}`);
 
+/**
+ * Safe fetch wrapper that handles JSON parsing errors and logs raw responses
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function safeFetchJson(url: string, options: RequestInit = {}): Promise<any> {
+  try {
+    const res = await fetch(url, options);
+    // read raw text to allow logging of HTML error pages or empty bodies
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error('API error', { url, status: res.status, statusText: res.statusText, body: text });
+      // throw a structured error so callers can handle
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err: any = new Error(`API ${res.status}: ${res.statusText}`);
+      err.name = 'ApiError';
+      err.data = { status: res.status, body: text };
+      throw err;
+    }
+
+    if (!text) {
+      // empty body: return empty object
+      return {};
+    }
+
+    // parse JSON safely
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      console.error('Failed to parse JSON response', { url, text });
+      throw parseErr;
+    }
+  } catch (err) {
+    // Re-throw after logging so upper layers can decide fallback behavior
+    console.error('safeFetchJson failed', { url, error: err });
+    throw err;
+  }
+}
+
 export interface ApiResponse<T> {
   data?: T;
   error?: string;

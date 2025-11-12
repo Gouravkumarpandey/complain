@@ -1,7 +1,9 @@
 import { useState } from 'react';
 // Trans and t removed after migration; using i18n.t directly
-import { Complaint, useComplaints } from '../../contexts/ComplaintContext';
+import { Complaint as ContextComplaint, useComplaints } from '../../contexts/ComplaintContext';
+import { Complaint as TypeComplaint } from '../../types/complaint';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { AIReplyPanel } from './AIReplyPanel';
 import { 
   ArrowLeft, 
   Clock, 
@@ -17,11 +19,42 @@ import {
 } from 'lucide-react';
 
 interface ComplaintDetailsProps {
-  complaint: Complaint;
+  complaint: ContextComplaint;
   onBack: () => void;
   onUpdate?: (ticketId: string, status: string, comment: string) => void;
   isAgent?: boolean;
 }
+
+// Helper function to convert context complaint to type complaint for AIReplyPanel
+const convertComplaintForAI = (complaint: ContextComplaint): TypeComplaint => {
+  return {
+    id: complaint.id,
+    title: complaint.title,
+    description: complaint.description,
+    status: complaint.status,
+    priority: complaint.priority,
+    category: complaint.category,
+    userId: complaint.userId,
+    assignedTo: complaint.assignedTo,
+    createdAt: complaint.createdAt.toISOString(),
+    updatedAt: complaint.updatedAt.toISOString(),
+    escalationReason: complaint.escalationReason,
+    isEscalated: complaint.isEscalated,
+    aiAnalysis: {
+      sentiment: complaint.sentiment,
+      category: complaint.category,
+    },
+    updates: complaint.updates.map(update => ({
+      id: update.id,
+      message: update.message,
+      author: update.author,
+      authorId: update.author, // Using author as authorId for now
+      timestamp: update.timestamp.toISOString(),
+      type: update.type,
+      isInternal: false
+    }))
+  };
+};
 
 export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false }: ComplaintDetailsProps) {
   const [newComment, setNewComment] = useState('');
@@ -220,6 +253,21 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
                   </div>
                 </div>
               </div>
+
+              {/* AI Reply Panel - Agent Only */}
+              {isAgent && (
+                <div className="mt-6">
+                  <AIReplyPanel 
+                    complaint={convertComplaintForAI(complaint)} 
+                    onUpdate={() => {
+                      // Refresh the page to show updated data
+                      // TODO: Replace with proper state management
+                      window.location.reload();
+                    }}
+                    isAgent={isAgent}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

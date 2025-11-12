@@ -1034,164 +1034,10 @@ export const processChatForComplaint = async (req, res) => {
   }
 };
 
-// IBM Watson Assistant Integration
-// Using dynamic imports for compatibility
-let AssistantV2;
-let IamAuthenticator;
-
-// Load Watson modules
-const loadWatsonModules = async () => {
+// Send message to AI Assistant (DeepSeek R1)
+export const chatWithAI = async (req, res) => {
   try {
-    const watsonPkg = await import('ibm-watson/assistant/v2.js');
-    const authPkg = await import('ibm-watson/auth/index.js');
-    
-    AssistantV2 = watsonPkg.default;
-    IamAuthenticator = authPkg.IamAuthenticator;
-    
-    return true;
-  } catch (error) {
-    console.error("Error loading Watson modules:", error);
-    return false;
-  }
-};
-
-// Watson Assistant configuration
-let watsonAssistant;
-
-// Initialize Watson
-const initializeWatson = async () => {
-  try {
-    // Debug environment variables
-    console.log('Watson Configuration Debug:');
-    console.log('- API Key:', process.env.WATSON_API_KEY ? 
-      `${process.env.WATSON_API_KEY.substring(0, 5)}...${process.env.WATSON_API_KEY.substring(process.env.WATSON_API_KEY.length - 5)}` : 
-      'MISSING');
-    console.log('- Region:', process.env.WATSON_REGION || 'Not set (using default)');
-    console.log('- Service Instance ID:', process.env.WATSON_SERVICE_INSTANCE_ID || 'MISSING');
-    console.log('- Assistant ID:', process.env.WATSON_ASSISTANT_ID || 'MISSING');
-    console.log('- Skill ID:', process.env.WATSON_SKILL_ID || 'MISSING');
-    console.log('- Draft Environment ID:', process.env.WATSON_DRAFT_ENVIRONMENT_ID || 'MISSING');
-    console.log('- Live Environment ID:', process.env.WATSON_LIVE_ENVIRONMENT_ID || 'MISSING');
-    
-    if (!process.env.WATSON_API_KEY) {
-      throw new Error('Watson API key is missing in environment variables');
-    }
-    
-    if (!process.env.WATSON_SERVICE_INSTANCE_ID) {
-      throw new Error('Watson service instance ID is missing in environment variables');
-    }
-    
-    if (!process.env.WATSON_ASSISTANT_ID) {
-      throw new Error('Watson assistant ID is missing in environment variables');
-    }
-    
-    // Load Watson modules
-    const modulesLoaded = await loadWatsonModules();
-    if (!modulesLoaded) {
-      throw new Error('Failed to load Watson modules');
-    }
-    
-    // Use au-syd as default region if not specified
-    const region = process.env.WATSON_REGION || 'au-syd';
-    const serviceUrl = `https://${region}.assistant.watson.cloud.ibm.com/instances/${process.env.WATSON_SERVICE_INSTANCE_ID}/v2`;
-    
-    console.log('- Service URL:', serviceUrl);
-    
-    watsonAssistant = new AssistantV2({
-      version: '2023-06-15',
-      authenticator: new IamAuthenticator({
-        apikey: process.env.WATSON_API_KEY,
-      }),
-      serviceUrl: serviceUrl,
-      disableSslVerification: false,
-    });
-    console.log('Watson Assistant configured successfully');
-    return true;
-  } catch (error) {
-    console.warn('Watson Assistant not configured, using fallback:', error.message);
-    console.error('Watson initialization error details:', error);
-    return false;
-  }
-};
-
-// Define Watson constants
-const WATSON_ASSISTANT_ID = process.env.WATSON_ASSISTANT_ID;
-
-// Initialize Watson when the server starts
-initializeWatson().then(success => {
-  if (success) {
-    console.log('Watson Assistant initialized successfully at startup');
-  } else {
-    console.warn('Failed to initialize Watson Assistant at startup, will try again when needed');
-  }
-});
-
-// Watson Assistant session management
-const watsonSessions = new Map();
-
-// Create Watson session
-const createWatsonSession = async (userId) => {
-  try {
-    // Ensure Watson Assistant is initialized
-    if (!watsonAssistant) {
-      const initialized = await initializeWatson();
-      if (!initialized) {
-        console.error('Cannot create Watson session: Failed to initialize Watson Assistant');
-        throw new Error('Watson Assistant initialization failed');
-      }
-    }
-    
-    if (!WATSON_ASSISTANT_ID) {
-      console.error('Cannot create Watson session: Assistant ID not configured');
-      throw new Error('Watson Assistant ID not configured');
-    }
-    
-    // Check for existing session
-    if (watsonSessions.has(userId)) {
-      console.log(`Using existing Watson session for user ${userId}`);
-      return watsonSessions.get(userId);
-    }
-    
-    console.log(`Creating new Watson session for user ${userId} with assistant ${WATSON_ASSISTANT_ID}`);
-    
-    const response = await watsonAssistant.createSession({
-      assistantId: WATSON_ASSISTANT_ID,
-    });
-    
-    if (!response || !response.result || !response.result.session_id) {
-      console.error('Invalid response from Watson createSession:', response);
-      throw new Error('Failed to create Watson session: Invalid response');
-    }
-    
-    const sessionId = response.result.session_id;
-    console.log(`Watson session created successfully: ${sessionId.substring(0, 8)}...`);
-    
-    watsonSessions.set(userId, sessionId);
-    
-    // Auto-delete session after 1 hour to prevent memory leaks
-    setTimeout(() => {
-      watsonSessions.delete(userId);
-    }, 3600000);
-
-    return sessionId;
-  } catch (error) {
-    console.error('Error creating Watson session:', error);
-    if (error.body) {
-      try {
-        const errorDetails = JSON.parse(error.body);
-        console.error('Watson error details:', errorDetails);
-      } catch (e) {
-        console.error('Watson error body (raw):', error.body);
-      }
-    }
-    throw error;
-  }
-};
-
-// Send message to Watson Assistant
-export const chatWithWatson = async (req, res) => {
-  try {
-    const { userId, message, context = {} } = req.body;
+    const { userId, message, conversationHistory = [] } = req.body;
 
     if (!userId || !message) {
       return res.status(400).json({ 
@@ -1204,61 +1050,69 @@ export const chatWithWatson = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Try to initialize Watson if not already initialized
-    if (!watsonAssistant) {
-      const initialized = await initializeWatson();
-      if (!initialized) {
-        return res.json({
-          success: true,
-          response: "Hello! I'm here to help you with your concerns. Watson Assistant is currently being configured. How can I assist you today?",
-          fallback: true,
-          sessionId: userId
-        });
+    // Use DeepSeek R1 to provide troubleshooting assistance
+    const deepseekService = (await import('../services/deepseekService.js')).default;
+    
+    // Enhanced prompt to request troubleshooting steps
+    const enhancedMessage = `Customer message: "${message}"
+
+If this is a technical issue or problem, provide 5-7 troubleshooting steps that the customer can try to solve their issue. Format your response as:
+
+TROUBLESHOOTING_MODE: [true/false]
+STEPS:
+1. [First solution step in detail]
+2. [Second solution step in detail]
+3. [Third solution step in detail]
+4. [Fourth solution step in detail]
+5. [Fifth solution step in detail]
+[Continue with more steps if needed]
+
+RESPONSE: [Your friendly message explaining you're here to help them through these steps]
+
+If this is NOT a technical issue requiring troubleshooting, just respond normally without the TROUBLESHOOTING_MODE marker.`;
+
+    const systemContext = {
+      userName: user.name,
+      userRole: user.role,
+      userEmail: user.email
+    };
+
+    const result = await deepseekService.chat(enhancedMessage, conversationHistory, systemContext);
+    
+    // Parse the response to extract troubleshooting steps
+    const responseText = result.response || '';
+    const troubleshootingMatch = responseText.match(/TROUBLESHOOTING_MODE:\s*(true|false)/i);
+    const isTroubleshooting = troubleshootingMatch && troubleshootingMatch[1].toLowerCase() === 'true';
+    
+    let troubleshootingSteps = [];
+    let cleanResponse = responseText;
+    
+    if (isTroubleshooting) {
+      // Extract steps
+      const stepsMatch = responseText.match(/STEPS:([\s\S]*?)(?:RESPONSE:|$)/i);
+      if (stepsMatch) {
+        const stepsText = stepsMatch[1];
+        const stepLines = stepsText.split('\n').filter(line => line.trim().match(/^\d+\./));
+        troubleshootingSteps = stepLines.map(line => line.replace(/^\d+\.\s*/, '').trim()).filter(step => step.length > 0);
+      }
+      
+      // Extract clean response
+      const responseMatch = responseText.match(/RESPONSE:\s*([\s\S]*?)$/i);
+      if (responseMatch) {
+        cleanResponse = responseMatch[1].trim();
+      } else {
+        cleanResponse = "Let me help you troubleshoot this issue step by step.";
       }
     }
-
-    const sessionId = await createWatsonSession(userId);
-
-    const response = await watsonAssistant.message({
-      assistantId: WATSON_ASSISTANT_ID,
-      sessionId: sessionId,
-      input: {
-        message_type: 'text',
-        text: message,
-        options: {
-          return_context: true,
-        },
-      },
-      context: {
-        ...context,
-        user_info: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        }
-      },
-    });
-
-    const watsonResponse = response.result.output.generic;
-    const updatedContext = response.result.context;
-    const intents = response.result.output.intents || [];
-    const entities = response.result.output.entities || [];
-
-    const isComplaintDetected = intents.some(intent => 
-      intent.intent.includes('complaint') || 
-      intent.intent.includes('issue') || 
-      intent.intent.includes('problem')
-    );
     
     res.json({
-      success: true,
-      response: watsonResponse.map(msg => msg.text).join(' ') || "I understand. Could you tell me more about your concern?",
-      context: updatedContext,
-      sessionId: sessionId,
-      complaintDetected: isComplaintDetected,
-      entities: entities,
-      intents: intents,
+      success: result.success,
+      response: cleanResponse,
+      complaintDetected: result.complaintDetected,
+      troubleshootingSteps: troubleshootingSteps.length > 0 ? troubleshootingSteps : undefined,
+      offerComplaint: troubleshootingSteps.length === 0 && result.complaintDetected,
+      model: result.model,
+      fallback: result.fallback || false,
       user: {
         id: user._id,
         name: user.name,
@@ -1267,22 +1121,21 @@ export const chatWithWatson = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Watson chat error:", error);
+    console.error("DeepSeek chat error:", error);
     
     res.json({
       success: true,
       response: "I'm here to help you! Could you please tell me more about your concern?",
-      error: "Watson Assistant temporarily unavailable",
-      fallback: true,
-      sessionId: userId
+      error: "AI Assistant temporarily unavailable",
+      fallback: true
     });
   }
 };
 
-// Generate complaint from Watson conversation
-export const generateComplaintFromWatson = async (req, res) => {
+// Generate complaint from conversation (DeepSeek R1 powered)
+export const generateComplaintFromAI = async (req, res) => {
   try {
-    const { userId, conversationHistory, currentMessage, context } = req.body;
+    const { userId, conversationHistory, currentMessage } = req.body;
 
     if (!userId || !conversationHistory) {
       return res.status(400).json({ 
@@ -1295,166 +1148,55 @@ export const generateComplaintFromWatson = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (!watsonAssistant) {
-      // Fallback complaint generation
-      const complaintData = {
-        title: `Issue reported by ${user.name}`,
-        description: `${conversationHistory}\n\nLatest message: ${currentMessage}`,
-        category: 'general',
-        priority: 'medium',
-        tags: ['watson-fallback', 'auto-generated'],
-        source: 'watson-chat',
-        confidence: 0.7
-      };
+    // Use DeepSeek R1
+    const deepseekService = (await import('../services/deepseekService.js')).default;
+    
+    const fullConversation = currentMessage 
+      ? `${conversationHistory}\n\nLatest message: ${currentMessage}`
+      : conversationHistory;
 
-      return res.json({
-        success: true,
-        watsonResponse: "I've noted your concern and will help create a complaint ticket for you.",
-        complaintData: complaintData,
-        fallback: true
+    const userInfo = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    const result = await deepseekService.generateComplaint(fullConversation, userInfo);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: "Error generating complaint from conversation"
       });
     }
 
-    const sessionId = await createWatsonSession(userId);
-
-    const response = await watsonAssistant.message({
-      assistantId: WATSON_ASSISTANT_ID,
-      sessionId: sessionId,
-      input: {
-        message_type: 'text',
-        text: currentMessage,
-        options: {
-          return_context: true,
-        },
-      },
-      context: {
-        ...context,
-        action: 'extract_complaint_data',
-        conversation_history: conversationHistory,
-        user_info: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        }
-      },
-    });
-
-    const watsonResponse = response.result.output.generic;
-    const entities = response.result.output.entities || [];
-    const intents = response.result.output.intents || [];
-
     const complaintData = {
-      title: extractTitle(conversationHistory, currentMessage, entities),
-      description: formatComplaintDescription(conversationHistory, currentMessage),
-      category: extractCategory(intents, entities),
-      priority: extractPriority(intents, entities),
-      tags: extractTags(entities, intents),
-      source: 'watson-chat',
-      extractedEntities: entities,
-      watsonIntents: intents,
-      confidence: calculateConfidence(intents)
+      ...result.complaint,
+      tags: ['ai-generated', 'deepseek', 'chatbot'],
+      source: 'chat-conversation',
+      aiModel: result.model,
+      confidence: result.fallback ? 0.7 : 0.9
     };
 
     res.json({
       success: true,
-      watsonResponse: watsonResponse.map(msg => msg.text).join(' '),
+      response: "I've analyzed the conversation and prepared a complaint ticket for you.",
       complaintData: complaintData,
-      entities: entities,
-      intents: intents,
-      sessionId: sessionId
+      user: userInfo,
+      model: result.model,
+      fallback: result.fallback || false
     });
 
   } catch (error) {
-    console.error("Watson complaint generation error:", error);
+    console.error("Complaint generation error:", error);
     
     res.status(500).json({
       success: false,
-      message: "Error generating complaint from Watson conversation",
+      message: "Error generating complaint from conversation",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
-
-// Helper functions for Watson complaint extraction
-const extractTitle = (history, message, entities) => {
-  const products = entities.filter(e => e.entity === 'product' || e.entity === 'service');
-  const issues = entities.filter(e => e.entity === 'issue_type' || e.entity === 'problem');
-  
-  if (products.length > 0 && issues.length > 0) {
-    return `${issues[0].value} with ${products[0].value}`;
-  }
-  
-  return message.split(' ').slice(0, 8).join(' ') + '...';
-};
-
-const formatComplaintDescription = (history, message) => {
-  return `Conversation History:\n${history}\n\nCurrent Issue:\n${message}`;
-};
-
-const extractCategory = (intents, entities) => {
-  const intentCategoryMap = {
-    'billing_issue': 'billing',
-    'technical_problem': 'technical',
-    'service_complaint': 'service',
-    'product_issue': 'product',
-    'account_problem': 'account'
-  };
-
-  for (const intent of intents) {
-    if (intentCategoryMap[intent.intent]) {
-      return intentCategoryMap[intent.intent];
-    }
-  }
-
-  const categoryEntities = entities.filter(e => e.entity === 'category' || e.entity === 'department');
-  if (categoryEntities.length > 0) {
-    return categoryEntities[0].value.toLowerCase();
-  }
-
-  return 'general';
-};
-
-const extractPriority = (intents, entities) => {
-  const urgentIntents = ['urgent_issue', 'critical_problem', 'emergency'];
-  const highPriorityEntities = entities.filter(e => 
-    e.value && (e.value.includes('urgent') || e.value.includes('critical') || e.value.includes('emergency'))
-  );
-
-  if (urgentIntents.some(urgent => intents.some(intent => intent.intent === urgent)) || 
-      highPriorityEntities.length > 0) {
-    return 'high';
-  }
-
-  const highConfidenceIntents = intents.filter(intent => intent.confidence > 0.8);
-  if (highConfidenceIntents.length > 0) {
-    return 'medium';
-  }
-
-  return 'low';
-};
-
-const extractTags = (entities, intents) => {
-  const tags = ['watson-generated', 'auto-complaint'];
-  
-  entities.forEach(entity => {
-    if (entity.value && entity.value.length > 2) {
-      tags.push(entity.value.toLowerCase().replace(/\s+/g, '-'));
-    }
-  });
-
-  intents.forEach(intent => {
-    tags.push(intent.intent.replace(/_/g, '-'));
-  });
-
-  return [...new Set(tags)];
-};
-
-const calculateConfidence = (intents) => {
-  if (intents.length === 0) return 0.5;
-  
-  const avgConfidence = intents.reduce((sum, intent) => sum + intent.confidence, 0) / intents.length;
-  return Math.round(avgConfidence * 100) / 100;
 };
 
 // Facebook signup with role selection
