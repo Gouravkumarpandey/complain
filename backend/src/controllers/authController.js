@@ -1037,7 +1037,7 @@ export const processChatForComplaint = async (req, res) => {
 // Send message to AI Assistant (DeepSeek R1)
 export const chatWithAI = async (req, res) => {
   try {
-    const { userId, message, conversationHistory = [] } = req.body;
+    const { userId, message, conversationHistory = [], conversationState = {} } = req.body;
 
     if (!userId || !message) {
       return res.status(400).json({ 
@@ -1050,67 +1050,143 @@ export const chatWithAI = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Use DeepSeek R1 to provide troubleshooting assistance
+    const messageLower = message.toLowerCase().trim();
+    
+    console.log('Chatbot State:', {
+      message: messageLower,
+      state: conversationState,
+      historyLength: conversationHistory.length
+    });
+
+    // ============================================
+    // STRUCTURED FLOW: Problem → 3 Steps → Resolution Check → Complaint Filing
+    // ============================================
+
+    // STEP 1: Detect if user is reporting a technical problem (initial message)
+    const technicalKeywords = ['internet', 'wifi', 'connection', 'slow', 'down', 'not working', 'broken', 'error', 
+                               'laptop', 'computer', 'phone', 'device', 'dth', 'tv', 'signal', 'service', 'start', 'won\'t'];
+    const hasTechnicalIssue = technicalKeywords.some(keyword => messageLower.includes(keyword));
+    
+    if (hasTechnicalIssue && !conversationState.troubleshootingStarted) {
+      // User just described their problem - show first 3 troubleshooting steps
+      const allSteps = generateQuickTroubleshootingSteps(messageLower);
+      const firstThreeSteps = allSteps.slice(0, 3);
+      
+      return res.json({
+        success: true,
+        response: `I understand you're experiencing: "${message}"\n\n📋 Here are 3 solutions to try:\n\n${firstThreeSteps.map((step, i) => `${i + 1}. ${step}`).join('\n\n')}\n\nPlease try these steps and let me know - did this resolve your problem?`,
+        conversationState: {
+          troubleshootingStarted: true,
+          problemDescription: message,
+          allSteps: allSteps,
+          currentStepIndex: 3, // We showed first 3 steps
+          waitingForResolution: true
+        },
+        model: 'structured-flow'
+      });
+    }
+
+    // STEP 2: User responds to "did it resolve?" question
+    if (conversationState.waitingForResolution) {
+      
+      // Check if user says YES (problem is resolved)
+      const positiveResponses = ['yes', 'yeah', 'yep', 'sure', 'worked', 'fixed', 'solved', 'resolved', 'good', 'great', 'perfect', 'thank'];
+      const isResolved = positiveResponses.some(word => messageLower.includes(word)) && 
+                         !messageLower.includes('not') && 
+                         !messageLower.includes('no') &&
+                         !messageLower.includes('didn\'t');
+      
+      if (isResolved) {
+        return res.json({
+          success: true,
+          response: "🎉 Wonderful! I'm so glad the solution worked for you! If you need any other assistance in the future, feel free to reach out. Have a great day!",
+          conversationState: {
+            resolved: true,
+            problemDescription: conversationState.problemDescription
+          },
+          model: 'structured-flow'
+        });
+      }
+      
+      // Check if user says NO (problem NOT resolved)
+      const negativeResponses = ['no', 'nope', 'not', 'nothing', 'didn\'t', 'doesn\'t', 'still', 'same', 'persist', 'issue'];
+      const isNotResolved = negativeResponses.some(word => messageLower.includes(word));
+      
+      if (isNotResolved) {
+        return res.json({
+          success: true,
+          response: "I understand the issue is still not resolved. Let me file a complaint for you right away so our technical team can assist you further.\n\n📝 Creating your complaint ticket...",
+          shouldGenerateComplaint: true,
+          conversationState: {
+            resolved: false,
+            problemDescription: conversationState.problemDescription,
+            troubleshootingAttempted: true
+          },
+          model: 'structured-flow'
+        });
+      }
+      
+      // User's response is unclear - ask again
+      return res.json({
+        success: true,
+        response: "I'd like to help you better. Could you please let me know - did any of the solutions I provided work for you? Just reply with 'yes' if it's fixed, or 'no' if you still need help.",
+        conversationState: conversationState,
+        model: 'structured-flow'
+      });
+    }
+
+    // STEP 3: Handle direct complaint requests
+    const complaintKeywords = ['complaint', 'complain', 'register', 'file', 'raise', 'ticket', 'issue'];
+    const wantsComplaint = complaintKeywords.some(keyword => messageLower.includes(keyword));
+    
+    if (wantsComplaint && conversationState.problemDescription) {
+      return res.json({
+        success: true,
+        response: "Got it! I'm filing your complaint now based on the issue you described.\n\n📝 Creating your complaint ticket...",
+        shouldGenerateComplaint: true,
+        conversationState: {
+          resolved: false,
+          problemDescription: conversationState.problemDescription,
+          directComplaintRequest: true
+        },
+        model: 'structured-flow'
+      });
+    }
+
+    // STEP 4: Handle generic greeting or unclear messages
+    if (messageLower.match(/^(hi|hello|hey|hy|helo|hii)$/)) {
+      return res.json({
+        success: true,
+        response: "Hello! 👋 I'm here to help you solve any issues. Please describe your problem, and I'll guide you through some solutions before filing a complaint if needed. What seems to be the issue?",
+        model: 'structured-flow'
+      });
+    }
+
+    // STEP 5: Fallback - ask user to describe their problem
+    if (!conversationState.problemDescription) {
+      return res.json({
+        success: true,
+        response: "I'm here to assist you! Could you please describe the issue you're facing? For example:\n• 'My internet is not working'\n• 'My DTH signal is down'\n• 'My laptop won't start'\n\nOnce you describe your problem, I'll provide troubleshooting steps to help you!",
+        model: 'structured-flow'
+      });
+    }
+
+    // STEP 6: For any other complex queries, use AI but maintain context
     const deepseekService = (await import('../services/deepseekService.js')).default;
     
-    // Enhanced prompt to request troubleshooting steps
-    const enhancedMessage = `Customer message: "${message}"
-
-If this is a technical issue or problem, provide 5-7 troubleshooting steps that the customer can try to solve their issue. Format your response as:
-
-TROUBLESHOOTING_MODE: [true/false]
-STEPS:
-1. [First solution step in detail]
-2. [Second solution step in detail]
-3. [Third solution step in detail]
-4. [Fourth solution step in detail]
-5. [Fifth solution step in detail]
-[Continue with more steps if needed]
-
-RESPONSE: [Your friendly message explaining you're here to help them through these steps]
-
-If this is NOT a technical issue requiring troubleshooting, just respond normally without the TROUBLESHOOTING_MODE marker.`;
-
     const systemContext = {
       userName: user.name,
       userRole: user.role,
-      userEmail: user.email
+      userEmail: user.email,
+      conversationState: conversationState
     };
 
-    const result = await deepseekService.chat(enhancedMessage, conversationHistory, systemContext);
-    
-    // Parse the response to extract troubleshooting steps
-    const responseText = result.response || '';
-    const troubleshootingMatch = responseText.match(/TROUBLESHOOTING_MODE:\s*(true|false)/i);
-    const isTroubleshooting = troubleshootingMatch && troubleshootingMatch[1].toLowerCase() === 'true';
-    
-    let troubleshootingSteps = [];
-    let cleanResponse = responseText;
-    
-    if (isTroubleshooting) {
-      // Extract steps
-      const stepsMatch = responseText.match(/STEPS:([\s\S]*?)(?:RESPONSE:|$)/i);
-      if (stepsMatch) {
-        const stepsText = stepsMatch[1];
-        const stepLines = stepsText.split('\n').filter(line => line.trim().match(/^\d+\./));
-        troubleshootingSteps = stepLines.map(line => line.replace(/^\d+\.\s*/, '').trim()).filter(step => step.length > 0);
-      }
-      
-      // Extract clean response
-      const responseMatch = responseText.match(/RESPONSE:\s*([\s\S]*?)$/i);
-      if (responseMatch) {
-        cleanResponse = responseMatch[1].trim();
-      } else {
-        cleanResponse = "Let me help you troubleshoot this issue step by step.";
-      }
-    }
+    const result = await deepseekService.chat(message, conversationHistory, systemContext);
     
     res.json({
       success: result.success,
-      response: cleanResponse,
-      complaintDetected: result.complaintDetected,
-      troubleshootingSteps: troubleshootingSteps.length > 0 ? troubleshootingSteps : undefined,
-      offerComplaint: troubleshootingSteps.length === 0 && result.complaintDetected,
+      response: result.response,
+      conversationState: conversationState, // Preserve state
       model: result.model,
       fallback: result.fallback || false,
       user: {
@@ -1121,7 +1197,7 @@ If this is NOT a technical issue requiring troubleshooting, just respond normall
     });
 
   } catch (error) {
-    console.error("DeepSeek chat error:", error);
+    console.error("Chatbot error:", error);
     
     res.json({
       success: true,
@@ -1131,6 +1207,58 @@ If this is NOT a technical issue requiring troubleshooting, just respond normall
     });
   }
 };
+
+// Helper function to generate quick troubleshooting steps
+function generateQuickTroubleshootingSteps(issueLower) {
+  // Internet/WiFi issues
+  if (issueLower.includes('internet') || issueLower.includes('wifi') || issueLower.includes('connection')) {
+    return [
+      "**Restart your router**: Unplug your router, wait 30 seconds, then plug it back in. Wait 2 minutes for it to fully restart.",
+      "**Check cables**: Ensure all cables (power, ethernet) are securely connected to your router and modem.",
+      "**Move closer to router**: If using WiFi, move closer to the router and check if signal strength improves.",
+      "**Restart your device**: Turn off your device completely, wait 10 seconds, then turn it back on.",
+      "**Check for service outages**: Contact your ISP or check their website/app for reported outages in your area.",
+      "**Forget and reconnect WiFi**: On your device, forget the WiFi network, then reconnect with the password.",
+      "**Factory reset router**: As a last resort, press the reset button on your router for 10 seconds (note: you'll need to reconfigure)."
+    ];
+  }
+  
+  // DTH/TV service issues
+  if (issueLower.includes('dth') || issueLower.includes('tv') || issueLower.includes('television')) {
+    return [
+      "**Check power connections**: Ensure your set-top box and TV are properly plugged in and powered on. Look for indicator lights on the set-top box.",
+      "**Verify dish alignment**: Go outside and visually check if the satellite dish is properly aligned. Strong winds or storms can misalign it.",
+      "**Check cable connections**: Ensure the cable from the dish to the set-top box is securely connected at both ends. Look for any visible damage.",
+      "**Restart set-top box**: Unplug the set-top box, wait 30 seconds, plug it back in, and wait for it to fully reboot (3-5 minutes).",
+      "**Check account status**: Log into your DTH provider's website/app to ensure your subscription is active and payment is up to date.",
+      "**Test with different channel**: Switch to different channels to see if it's a specific channel issue or all channels.",
+      "**Contact provider support**: If the above steps don't work, contact your DTH provider's technical support for signal strength check."
+    ];
+  }
+  
+  // Laptop/Computer issues
+  if (issueLower.includes('laptop') || issueLower.includes('computer') || issueLower.includes('start')) {
+    return [
+      "**Check power connections**: Ensure the laptop is plugged into a working power outlet and the charger is securely connected. Try a different outlet.",
+      "**Perform hard reset**: Remove the charger and battery (if removable), then hold the power button for 30 seconds. Reconnect charger (without battery) and try to power on.",
+      "**Check for indicator lights**: Look for any LED lights on the laptop. If charging light is on but laptop won't start, there may be a display or power button issue.",
+      "**Test display**: Connect an external monitor via HDMI. If the external display works, your laptop screen or internal display cable may be faulty.",
+      "**Listen for sounds**: When you press the power button, listen for fan noise, beeps, or hard drive sounds. This helps identify if it's a display issue or complete power failure.",
+      "**Check RAM**: If comfortable, open the laptop and reseat the RAM modules. Faulty RAM can prevent booting.",
+      "**Seek professional help**: If none of these work, the issue may be hardware failure (motherboard, power supply) requiring professional repair."
+    ];
+  }
+  
+  // Generic troubleshooting for other issues
+  return [
+    "**Restart the device**: Turn off the device completely, wait 30 seconds, then turn it back on.",
+    "**Check connections**: Verify all cables and connections are secure.",
+    "**Update software**: Check if there are any pending software or firmware updates.",
+    "**Clear cache/data**: Clear temporary files or cache that might be causing issues.",
+    "**Check for conflicts**: Ensure no other software or devices are causing conflicts.",
+    "**Contact support**: If the issue persists, contact customer support with error codes or messages you're seeing."
+  ];
+}
 
 // Generate complaint from conversation (DeepSeek R1 powered)
 export const generateComplaintFromAI = async (req, res) => {
