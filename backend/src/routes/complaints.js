@@ -95,17 +95,35 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 
 // Create new complaint
 router.post('/', authenticate, asyncHandler(async (req, res) => {
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('🆕 NEW COMPLAINT CREATION REQUEST');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('📥 REQUEST BODY:', JSON.stringify(req.body, null, 2));
+  console.log('👤 REQUEST USER:', JSON.stringify({
+    id: req.user?._id,
+    email: req.user?.email,
+    role: req.user?.role,
+    name: req.user?.name
+  }, null, 2));
+  console.log('📋 HEADERS:', JSON.stringify({
+    'content-type': req.headers['content-type'],
+    'authorization': req.headers.authorization ? 'Bearer ***' : 'MISSING',
+    'origin': req.headers.origin
+  }, null, 2));
+  console.log('═══════════════════════════════════════════════════════');
+
   const { error } = validateComplaint(req.body);
   if (error) {
+    console.error('❌ VALIDATION ERROR:', error.details[0].message);
     return res.status(400).json({ error: error.details[0].message });
   }
 
   const { title, description, category, attachments } = req.body;
 
-  console.log('🆕 NEW COMPLAINT CREATION REQUEST');
-  console.log('   User:', req.user?.email, '(ID:', req.user?._id, ')');
+  console.log('✅ Validation passed');
   console.log('   Title:', title);
   console.log('   Category:', category);
+  console.log('   Description length:', description?.length || 0);
 
   // Use AI service to analyze the complaint (with fallback)
   let aiAnalysis = { priority: 'Medium', sentiment: 'Neutral', category: category || 'General Inquiry', keywords: [] };
@@ -129,6 +147,11 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   };
   const slaTarget = new Date();
   slaTarget.setHours(slaTarget.getHours() + slaHours[aiAnalysis.priority]);
+
+  console.log('🏗️  Creating complaint object...');
+  console.log('   User ID for complaint:', req.user._id);
+  console.log('   Category:', category || aiAnalysis.category);
+  console.log('   Priority:', aiAnalysis.priority);
 
   const complaint = new Complaint({
     user: req.user._id, // Updated to match the schema field name
@@ -155,8 +178,26 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     }]
   });
 
-  // Save the complaint first to get its ID
-  await complaint.save();
+  console.log('💾 Attempting to save complaint to MongoDB...');
+  console.log('   Complaint object created:', {
+    hasUser: !!complaint.user,
+    hasTitle: !!complaint.title,
+    hasDescription: !!complaint.description,
+    hasCategory: !!complaint.category
+  });
+
+  try {
+    await complaint.save();
+    console.log('✅ COMPLAINT SAVED SUCCESSFULLY!');
+    console.log('   Complaint ID:', complaint._id);
+    console.log('   Complaint Number:', complaint.complaintId);
+  } catch (saveError) {
+    console.error('❌ MONGODB SAVE ERROR:', saveError);
+    console.error('   Error name:', saveError.name);
+    console.error('   Error message:', saveError.message);
+    console.error('   Error stack:', saveError.stack);
+    throw saveError;
+  }
   
   // Generate AI summary if description is long enough
   if (description && description.length > 100) {

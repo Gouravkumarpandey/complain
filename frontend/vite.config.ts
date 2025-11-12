@@ -26,8 +26,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    exclude: ['lucide-react'],
-    include: ['@lingui/core']
+    exclude: ['lucide-react']
   },
   define: {
     'process.env': {},

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -272,61 +272,102 @@ export function ChatBot() {
 
   return (
     <div>
-      {/* Chat Toggle Button */}
+      {/* Freshdesk-style Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 z-50"
+        className="fixed bottom-5 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-2xl hover:bg-slate-700 transition-all duration-300 z-50 flex items-center justify-center"
+        style={{ boxShadow: '0 4px 12px rgba(30, 41, 59, 0.4)' }}
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-16 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bot className="w-5 h-5" />
-              <h3 className="font-semibold">AI Assistant</h3>
+        <div 
+          className="fixed bottom-24 right-5 w-[380px] h-[600px] bg-white rounded-2xl flex flex-col z-50 overflow-hidden"
+          style={{ 
+            boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          {/* Freshdesk-style Header */}
+          <div className="bg-gradient-to-br from-slate-800 to-slate-700 text-white px-5 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                  <Bot className="w-5 h-5 text-slate-800" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base">Support Chat</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-xs text-white/90">We're online</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+            <p className="text-xs text-white/80 leading-relaxed">
+              Hi there! 👋 How can we help you today?
+            </p>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          {/* Freshdesk-style Messages Area */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#f8f9fa]" style={{ 
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#cbd5e1 transparent'
+          }}>
             {messages.map((message) => {
-              // Prefer server-provided unique ids
               const serverId = message.id;
-              // Stable fallback: use timestamp + sender + contentHash to avoid collisions
               const ts = message.timestamp?.getTime() || Date.now();
               const sender = message.sender || '';
-              // compute a cheap stable fallback id (do not use Date.now() alone)
               const contentHash = (message.text || '').slice(0, 20).replace(/\s/g, '');
               const fallbackId = `${ts}-${sender}-${contentHash}`;
               const key = serverId || fallbackId || uuidv4();
 
               return (
-                <div key={key} className={`flex items-start gap-3 ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`p-3 rounded-xl max-w-[80%] shadow-sm ${
-                    message.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white'
-                  }`}>
-                    <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
-                    <p className="text-xs opacity-50 mt-1">
+                <div key={key} className={`flex items-end gap-2.5 ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                  {/* Avatar */}
+                  {message.sender === 'bot' && (
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100">
+                      <Bot className="w-4 h-4 text-slate-800" />
+                    </div>
+                  )}
+                  {message.sender === 'user' && (
+                    <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col max-w-[75%]">
+                    <div className={`px-4 py-2.5 rounded-2xl ${
+                      message.sender === 'user' 
+                        ? 'bg-slate-800 text-white rounded-br-md' 
+                        : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
+                    }`}>
+                      <p className="text-[13px] leading-relaxed whitespace-pre-line">{message.text}</p>
+                    </div>
+                    <span className={`text-[11px] mt-1 px-1 ${message.sender === 'user' ? 'text-right text-gray-500' : 'text-left text-gray-500'}`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                    </span>
                   </div>
                 </div>
               );
             })}
 
             {loading && (
-              <div className="flex items-start gap-3">
-                <div className="bg-white border border-gray-200 text-blue-500 p-2 rounded-full">
-                  <Bot className="w-4 h-4" />
+              <div className="flex items-end gap-2.5">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
+                  <Bot className="w-4 h-4 text-slate-800" />
                 </div>
-                <div className="bg-white border border-gray-200 p-3 rounded-xl">
+                <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-md shadow-sm border border-gray-100">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="w-2 h-2 bg-slate-800 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-slate-800 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-slate-800 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
                 </div>
               </div>
@@ -335,26 +376,29 @@ export function ChatBot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="border-t border-gray-200 p-4 bg-white">
-            <div className="flex gap-2">
+          {/* Freshdesk-style Input Area */}
+          <div className="border-t border-gray-200 px-4 py-3 bg-white">
+            <div className="flex gap-2 items-end">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                placeholder="Type a message..."
+                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
                 disabled={loading}
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || loading}
-                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="w-10 h-10 bg-slate-800 text-white rounded-full hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
+            <p className="text-[10px] text-gray-400 text-center mt-2">
+              Powered by QuickFix AI
+            </p>
           </div>
         </div>
       )}
