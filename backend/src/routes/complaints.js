@@ -5,6 +5,7 @@ import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { validateComplaint, validateComplaintUpdate } from '../validators/complaintValidators.js';
 import aiService from '../services/aiService.js';
+import { sendComplaintConfirmationEmail } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -101,8 +102,23 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
 
   const { title, description, category, attachments } = req.body;
 
-  // Use AI service to analyze the complaint
-  const aiAnalysis = await aiService.classifyComplaint(description);
+  console.log('🆕 NEW COMPLAINT CREATION REQUEST');
+  console.log('   User:', req.user?.email, '(ID:', req.user?._id, ')');
+  console.log('   Title:', title);
+  console.log('   Category:', category);
+
+  // Use AI service to analyze the complaint (with fallback)
+  let aiAnalysis = { priority: 'Medium', sentiment: 'Neutral', category: category || 'General Inquiry', keywords: [] };
+  try {
+    if (aiService && typeof aiService.classifyComplaint === 'function') {
+      aiAnalysis = await aiService.classifyComplaint(description);
+    } else {
+      console.log('⚠️ AI service not available, using default classification');
+    }
+  } catch (error) {
+    console.error('❌ AI classification failed:', error.message);
+    console.log('   Using fallback classification');
+  }
 
   // Calculate SLA target based on priority
   const slaHours = {
@@ -179,7 +195,35 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   
   // Get updated complaint after assignment
   const updatedComplaint = await Complaint.findById(complaint._id)
-    .populate('assignedTo', 'name email');
+    .populate('assignedTo', 'name email')
+    .populate('user', 'name email');
+  
+  console.log('🔍 DEBUG: About to send email confirmation...');
+  console.log('   User email:', updatedComplaint.user?.email);
+  console.log('   User name:', updatedComplaint.user?.name);
+  console.log('   Complaint ID:', updatedComplaint.complaintId);
+  
+  // Send complaint confirmation email to user
+  if (!updatedComplaint.user || !updatedComplaint.user.email) {
+    console.error('❌ Cannot send email: User or user email is missing');
+  } else {
+    try {
+      await sendComplaintConfirmationEmail(
+        updatedComplaint.user.email,
+        updatedComplaint.user.name,
+        updatedComplaint.complaintId,
+        updatedComplaint.title,
+        updatedComplaint.description,
+        updatedComplaint.category,
+        updatedComplaint.priority
+      );
+      console.log(`✅ Confirmation email sent to ${updatedComplaint.user.email} for complaint ${updatedComplaint.complaintId}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send complaint confirmation email:', emailError.message);
+      console.error('   Full error:', emailError);
+      // Continue even if email fails - complaint is still created
+    }
+  }
   
   res.status(201).json(updatedComplaint);
 }));

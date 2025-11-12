@@ -302,9 +302,10 @@ complaintSchema.virtual('isOverdue').get(function() {
 // Pre-save middleware to generate complaint ID
 complaintSchema.pre('save', async function(next) {
   if (!this.complaintId) {
-    const count = await this.constructor.countDocuments();
-    const year = new Date().getFullYear();
-    this.complaintId = `CMP-${year}-${String(count + 1).padStart(6, '0')}`;
+    // Use timestamp + random component for truly unique IDs
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    this.complaintId = `CMP-${timestamp}${random}`;
   }
   
   // Set SLA targets based on priority
