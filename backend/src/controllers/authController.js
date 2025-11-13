@@ -361,7 +361,7 @@ export const decodeGoogleToken = async (req, res) => {
 // Google signup with role selection
 export const googleSignupWithRole = async (req, res) => {
   try {
-    const { token, role = "user" } = req.body;
+    const { token, role = "user", organization } = req.body;
 
     if (!token) {
       return res.status(400).json({ message: "Google token is required" });
@@ -371,6 +371,13 @@ export const googleSignupWithRole = async (req, res) => {
     if (!["user", "admin", "agent", "analytics"].includes(role)) {
       return res.status(400).json({
         message: "Invalid role. Must be 'user', 'admin', 'agent', or 'analytics'",
+      });
+    }
+
+    // Validate organization for non-user roles
+    if (role !== "user" && !organization) {
+      return res.status(400).json({
+        message: "Organization name is required for agent, admin, and analytics roles",
       });
     }
 
@@ -410,19 +417,27 @@ export const googleSignupWithRole = async (req, res) => {
     }
 
     // Create new user with selected role
-    const user = await User.create({
+    const userData = {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: Math.random().toString(36).slice(-8), // dummy password
       role: role,
       isGoogleUser: true,
-    });
+    };
+
+    // Add organization if provided
+    if (organization) {
+      userData.organization = organization.trim();
+    }
+
+    const user = await User.create(userData);
     
     console.log("New Google user created with role:", {
       id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
+      organization: user.organization,
     });
 
     res.status(201).json({

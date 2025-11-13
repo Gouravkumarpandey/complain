@@ -69,4 +69,6 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Export 'auth' as an alias for 'authenticate' for backward compatibility
+export const auth = authenticate;
 export { authenticate, authorize, optionalAuth };

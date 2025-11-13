@@ -8,6 +8,8 @@ export interface User {
   name: string;
   email: string;
   role: "user" | "agent" | "admin" | "analytics";
+  planType?: "Free" | "Pro" | "Premium";
+  planExpiresAt?: string | null;
 }
 
 // OTP verification pending interface
@@ -32,7 +34,8 @@ export interface AuthContextType {
   googleLogin: (token: string) => Promise<boolean>;
   googleSignupWithRole: (
     token: string,
-    role: "user" | "agent" | "admin" | "analytics"
+    role: "user" | "agent" | "admin" | "analytics",
+    organization?: string
   ) => Promise<boolean>;
   decodeGoogleToken: (token: string) => Promise<{ name: string; email: string } | null>;
   loginWithFacebook: (code: string, isSignup?: boolean) => Promise<boolean>;

@@ -5,13 +5,14 @@ import {
   Search, Calendar, X, Shield, Home, 
   Inbox, HelpCircle, Menu,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
-  TrendingUp, BarChart3, Activity
+  TrendingUp, BarChart3, Activity, Crown, Zap
 } from 'lucide-react';
 import { ComplaintForm } from '../complaints/ComplaintForm';
 // Trans removed after migration
 import { Notifications } from '../notifications/Notifications';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
+import subscriptionService from '../../services/subscriptionService';
 import { 
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -56,6 +57,8 @@ export function UserDashboard() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState('');
 
   // Update user profile when user changes
   useEffect(() => {
@@ -85,6 +88,26 @@ export function UserDashboard() {
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
+  };
+
+  const handleUpgradePlan = async (planType: 'Pro' | 'Premium') => {
+    setUpgradingPlan(planType);
+    setSubscriptionError('');
+
+    try {
+      // Redirect to Stripe checkout
+      await subscriptionService.redirectToCheckout(
+        planType,
+        (error) => {
+          setSubscriptionError(error.message || 'Failed to initiate payment');
+          setUpgradingPlan(null);
+        }
+      );
+    } catch (err) {
+      setSubscriptionError('Failed to initiate payment');
+      console.error('Error upgrading plan:', err);
+      setUpgradingPlan(null);
+    }
   };
 
   // Handle profile save
@@ -1095,6 +1118,187 @@ export function UserDashboard() {
                         </label>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Subscription & Billing */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Subscription & Billing</h3>
+                    <p className="text-sm text-gray-600 mt-1">Manage your subscription plan and billing</p>
+                  </div>
+                  <div className="p-6">
+                    {/* Current Plan Display */}
+                    <div className="bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-lg p-6 mb-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
+                            {user?.planType === 'Premium' ? (
+                              <Crown className="w-6 h-6 text-yellow-400" />
+                            ) : user?.planType === 'Pro' ? (
+                              <Zap className="w-6 h-6 text-blue-400" />
+                            ) : (
+                              <Star className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Current Plan</p>
+                            <p className="text-2xl font-bold text-gray-900">{user?.planType || 'Free'}</p>
+                            {user?.planExpiresAt && new Date(user.planExpiresAt) > new Date() && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Expires on {new Date(user.planExpiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {user?.planType !== 'Free' && (
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">Billing Cycle</p>
+                            <p className="text-lg font-semibold text-gray-900">Monthly</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Subscription Error */}
+                    {subscriptionError && (
+                      <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-red-800">{subscriptionError}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upgrade Options */}
+                    {user?.planType !== 'Premium' && (
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-gray-900 mb-4">Upgrade Your Plan</h4>
+                        
+                        {/* Pro Plan */}
+                        {user?.planType !== 'Pro' && (
+                          <div className="border-2 border-blue-200 rounded-lg p-5 hover:border-blue-400 transition-all">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                  <Zap className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h5 className="font-semibold text-gray-900">Pro Plan</h5>
+                                  <p className="text-sm text-gray-600">For growing teams</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold text-gray-900">$4.99</p>
+                                <p className="text-sm text-gray-600">/month</p>
+                              </div>
+                            </div>
+                            <ul className="space-y-2 mb-4">
+                              <li className="flex items-start gap-2 text-sm">
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-gray-700">AI-powered diagnosis</span>
+                              </li>
+                              <li className="flex items-start gap-2 text-sm">
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-gray-700">Unlimited complaints</span>
+                              </li>
+                              <li className="flex items-start gap-2 text-sm">
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-gray-700">Priority support (24h)</span>
+                              </li>
+                              <li className="flex items-start gap-2 text-sm">
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-gray-700">Analytics dashboard</span>
+                              </li>
+                            </ul>
+                            <button
+                              onClick={() => handleUpgradePlan('Pro')}
+                              disabled={upgradingPlan === 'Pro'}
+                              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                              {upgradingPlan === 'Pro' ? (
+                                <>
+                                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Processing...
+                                </>
+                              ) : (
+                                'Upgrade to Pro'
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Premium Plan */}
+                        <div className="border-2 border-purple-200 rounded-lg p-5 hover:border-purple-400 transition-all">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <Crown className="w-5 h-5 text-purple-600" />
+                              </div>
+                              <div>
+                                <h5 className="font-semibold text-gray-900">Premium Plan</h5>
+                                <p className="text-sm text-gray-600">For large enterprises</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-gray-900">$9.99</p>
+                              <p className="text-sm text-gray-600">/month</p>
+                            </div>
+                          </div>
+                          <ul className="space-y-2 mb-4">
+                            <li className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-gray-700">Everything in Pro, plus:</span>
+                            </li>
+                            <li className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-gray-700">Team management (10 users)</span>
+                            </li>
+                            <li className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-gray-700">Advanced analytics & reporting</span>
+                            </li>
+                            <li className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-gray-700">Custom branding</span>
+                            </li>
+                            <li className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-gray-700">Dedicated account manager</span>
+                            </li>
+                          </ul>
+                          <button
+                            onClick={() => handleUpgradePlan('Premium')}
+                            disabled={upgradingPlan === 'Premium'}
+                            className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            {upgradingPlan === 'Premium' ? (
+                              <>
+                                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Processing...
+                              </>
+                            ) : (
+                              user?.planType === 'Pro' ? 'Upgrade to Premium' : 'Upgrade to Premium'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Already on Premium */}
+                    {user?.planType === 'Premium' && (
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6 text-center">
+                        <Crown className="w-12 h-12 text-purple-600 mx-auto mb-3" />
+                        <h5 className="font-semibold text-gray-900 mb-2">You're on our best plan!</h5>
+                        <p className="text-gray-600">Enjoy all premium features and priority support.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

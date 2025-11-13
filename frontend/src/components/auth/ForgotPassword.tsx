@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 // i18n removed
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import apiService from '../../services/apiService';
 
 
 export function ForgotPassword() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
@@ -188,22 +187,12 @@ export function ForgotPassword() {
               </div>
               
               <div className="text-center mt-6">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    console.log('Back to Login button clicked');
-                    try {
-                      console.log('Attempting to navigate to /login');
-                      navigate('/login');
-                      console.log('Navigation to /login successful');
-                    } catch (error) {
-                      console.error('Navigation error:', error);
-                    }
-                  }}
-                  className="flex items-center justify-center mx-auto text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                <Link 
+                  to="/login"
+                  className="inline-flex items-center justify-center text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to Login
-                </button>
+                </Link>
               </div>
             </form>
           </div>

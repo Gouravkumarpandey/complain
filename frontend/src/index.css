@@ -85,6 +85,11 @@
   animation-name: fade-in;
 }
 
+/* Fade in animation for conditional rendering */
+.animate-fadeIn {
+  animation: fade-in 0.3s ease-in-out;
+}
+
 /* Custom scrollbar for chat */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

@@ -365,6 +365,8 @@ import analyticsRoutes from "./routes/analytics.js";
 import adminRoutes from "./routes/admin.js";
 import agentsRoutes from "./routes/agents.js";
 import aiRoutes from "./routes/ai.js";
+import subscriptionsRoutes from "./routes/subscriptions.js";
+import paymentsRoutes from "./routes/payments.js";
 
 // Health check endpoint that works even when DB is down
 app.get('/api/health', (req, res) => {
@@ -385,6 +387,8 @@ app.use("/api/notifications", notificationsRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/subscriptions", subscriptionsRoutes);
+app.use("/api/payments", paymentsRoutes);
 
 // Enhanced Health check
 app.get("/api/health", async (req, res) => {
