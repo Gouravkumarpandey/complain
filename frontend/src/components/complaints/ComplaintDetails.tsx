@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Complaint, useComplaints } from '../../contexts/ComplaintContext';
+// Trans and t removed after migration; using i18n.t directly
+import { Complaint as ContextComplaint, useComplaints } from '../../contexts/ComplaintContext';
+import { Complaint as TypeComplaint } from '../../types/complaint';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { AIReplyPanel } from './AIReplyPanel';
 import { 
   ArrowLeft, 
   Clock, 
@@ -16,11 +19,42 @@ import {
 } from 'lucide-react';
 
 interface ComplaintDetailsProps {
-  complaint: Complaint;
+  complaint: ContextComplaint;
   onBack: () => void;
   onUpdate?: (ticketId: string, status: string, comment: string) => void;
   isAgent?: boolean;
 }
+
+// Helper function to convert context complaint to type complaint for AIReplyPanel
+const convertComplaintForAI = (complaint: ContextComplaint): TypeComplaint => {
+  return {
+    id: complaint.id,
+    title: complaint.title,
+    description: complaint.description,
+    status: complaint.status,
+    priority: complaint.priority,
+    category: complaint.category,
+    userId: complaint.userId,
+    assignedTo: complaint.assignedTo,
+    createdAt: complaint.createdAt.toISOString(),
+    updatedAt: complaint.updatedAt.toISOString(),
+    escalationReason: complaint.escalationReason,
+    isEscalated: complaint.isEscalated,
+    aiAnalysis: {
+      sentiment: complaint.sentiment,
+      category: complaint.category,
+    },
+    updates: complaint.updates.map(update => ({
+      id: update.id,
+      message: update.message,
+      author: update.author,
+      authorId: update.author, // Using author as authorId for now
+      timestamp: update.timestamp.toISOString(),
+      type: update.type,
+      isInternal: false
+    }))
+  };
+};
 
 export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false }: ComplaintDetailsProps) {
   const [newComment, setNewComment] = useState('');
@@ -109,7 +143,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
         </button>
-        <h1 className="text-3xl font-bold text-gray-800">Complaint Details</h1>
+  <h1 className="text-3xl font-bold text-gray-800">Complaint Details</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -141,7 +175,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
             </div>
 
             <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Description</h3>
+  <h3 className="text-lg font-semibold text-gray-800 mb-3">Description</h3>
               <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
                 {complaint.description}
               </p>
@@ -190,7 +224,7 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
                   <textarea
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder={isAgent ? "Add a comment or update..." : "Add a comment..."}
+                    placeholder={isAgent ? 'Add a comment or update' : 'Add a comment'}
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
@@ -201,11 +235,11 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
                         onChange={(e) => setNewStatus(e.target.value as typeof complaint.status)}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       >
-                        <option value="Open">Open</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="Resolved">Resolved</option>
-                        <option value="Closed">Closed</option>
+            <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
                       </select>
                     )}
                     <button
@@ -219,6 +253,21 @@ export function ComplaintDetails({ complaint, onBack, onUpdate, isAgent = false 
                   </div>
                 </div>
               </div>
+
+              {/* AI Reply Panel - Agent Only */}
+              {isAgent && (
+                <div className="mt-6">
+                  <AIReplyPanel 
+                    complaint={convertComplaintForAI(complaint)} 
+                    onUpdate={() => {
+                      // Refresh the page to show updated data
+                      // TODO: Replace with proper state management
+                      window.location.reload();
+                    }}
+                    isAgent={isAgent}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

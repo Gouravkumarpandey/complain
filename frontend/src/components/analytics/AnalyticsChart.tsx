@@ -1,6 +1,6 @@
-import React from 'react';
 import { Complaint } from '../../contexts/ComplaintContext';
 import { BarChart3, PieChart } from 'lucide-react';
+// Trans removed after migration
 
 interface AnalyticsChartProps {
   title: string;
@@ -90,7 +90,7 @@ export function AnalyticsChart({ title, type, data }: AnalyticsChartProps) {
       </div>
 
       <div className="space-y-4">
-        {trendData.map((item, index) => (
+        {trendData.map((item) => (
           <div key={item.date} className="flex items-center gap-3">
             <div className="w-12 text-sm text-gray-600">{item.date}</div>
             <div className="flex-1">

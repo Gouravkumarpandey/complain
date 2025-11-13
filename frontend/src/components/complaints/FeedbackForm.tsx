@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Star, Send } from 'lucide-react';
+// Trans and t removed after migration
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 
@@ -17,12 +18,12 @@ export function FeedbackForm({ complaintId, onClose }: FeedbackFormProps) {
 
   const handleSubmit = () => {
     if (rating === 0) {
-      addNotification('error', 'Rating Required', 'Please provide a rating before submitting feedback.');
+      addNotification('error', 'Rating required', 'Please provide a rating before submitting feedback');
       return;
     }
 
     submitFeedback(complaintId, rating, comment);
-    addNotification('success', 'Feedback Submitted', 'Thank you for your feedback! It helps us improve our service.');
+    addNotification('success', 'Feedback submitted', 'Thank you for your feedback! It helps us improve our service.');
     onClose();
   };
 
@@ -51,11 +52,11 @@ export function FeedbackForm({ complaintId, onClose }: FeedbackFormProps) {
 
   const getRatingText = (rating: number) => {
     switch (rating) {
-      case 1: return 'Very Dissatisfied';
+      case 1: return 'Very dissatisfied';
       case 2: return 'Dissatisfied';
       case 3: return 'Neutral';
       case 4: return 'Satisfied';
-      case 5: return 'Very Satisfied';
+      case 5: return 'Very satisfied';
       default: return 'Please rate your experience';
     }
   };
@@ -63,8 +64,8 @@ export function FeedbackForm({ complaintId, onClose }: FeedbackFormProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">How was your experience?</h3>
-        <p className="text-gray-600 mb-6">Your feedback helps us improve our service quality.</p>
+  <h3 className="text-xl font-semibold text-gray-800 mb-4">How was your experience?</h3>
+  <p className="text-gray-600 mb-6">Your feedback helps us improve our service quality.</p>
         
         {/* Rating Stars */}
         <div className="mb-6">
@@ -81,12 +82,12 @@ export function FeedbackForm({ complaintId, onClose }: FeedbackFormProps) {
         {/* Comment */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Additional Comments (Optional)
+            Additional comments (optional)
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Tell us more about your experience..."
+            placeholder={'Tell us more about your experience'}
             rows={4}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
           />
