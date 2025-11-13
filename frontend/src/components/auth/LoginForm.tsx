@@ -7,11 +7,19 @@ import validateGoogleConfig from '../../services/googleAuthDebug';
 // @ts-expect-error - Missing type declarations for this JS module
 import setupGoogleAuth from '../../utils/googleAuthSetup';
 import { OTPVerification } from './OTPVerification';
+import { GoogleRoleSelection } from './GoogleRoleSelection';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
 
 export function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Google role selection state
+  const [pendingGoogleAuth, setPendingGoogleAuth] = useState<{
+    token: string;
+    name: string;
+    email: string;
+  } | null>(null);
   
   // Debug Google Sign-In configuration on component mount
   useEffect(() => {
@@ -28,8 +36,8 @@ export function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // Get auth context including OTP verification
-  const { login, register, googleLogin, pendingVerification, cancelVerification } = useAuth();
+  // Get auth context including OTP verification and role selection
+  const { login, register, googleLogin, googleSignupWithRole, decodeGoogleToken, pendingVerification, cancelVerification } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,20 +70,75 @@ export function LoginForm() {
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       if (credentialResponse.credential) {
-        console.log('Google credential received, attempting login...');
-        const success = await googleLogin(credentialResponse.credential);
-        if (!success) {
-          setError('Google authentication failed');
+        console.log('Google credential received...');
+        
+        // If it's login mode, try to log in directly
+        if (isLogin) {
+          console.log('Attempting Google login...');
+          const success = await googleLogin(credentialResponse.credential);
+          if (!success) {
+            setError('Google authentication failed. Account may not exist.');
+          } else {
+            console.log('Google authentication successful, redirecting to dashboard...');
+            redirectToDashboard();
+          }
         } else {
-          console.log('Google authentication successful, redirecting to dashboard...');
-          // Use the redirect utility to navigate based on user role
-          redirectToDashboard();
+          // If it's signup mode, show role selection
+          console.log('Signup mode - decoding Google token for role selection...');
+          const userInfo = await decodeGoogleToken(credentialResponse.credential);
+          
+          if (userInfo) {
+            // Store the token and user info for later use after role selection
+            setPendingGoogleAuth({
+              token: credentialResponse.credential,
+              name: userInfo.name,
+              email: userInfo.email,
+            });
+          } else {
+            setError('Failed to decode Google user information');
+          }
         }
       }
     } catch (err) {
-      console.error('Google login error:', err);
-      setError('Google login failed. Please try again.');
+      console.error('Google authentication error:', err);
+      setError('Google authentication failed. Please try again.');
     }
+  };
+
+  // Handle role selection completion
+  const handleRoleSelected = async (role: 'user' | 'agent' | 'admin' | 'analytics', organization?: string) => {
+    if (!pendingGoogleAuth) return;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const success = await googleSignupWithRole(
+        pendingGoogleAuth.token,
+        role,
+        organization
+      );
+
+      if (success) {
+        console.log('Google signup successful, redirecting to dashboard...');
+        setPendingGoogleAuth(null);
+        redirectToDashboard();
+      } else {
+        setError('Failed to complete Google signup. Email may already be registered.');
+        setPendingGoogleAuth(null);
+      }
+    } catch (err) {
+      console.error('Google signup error:', err);
+      setError('An error occurred during signup. Please try again.');
+      setPendingGoogleAuth(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel role selection
+  const handleCancelRoleSelection = () => {
+    setPendingGoogleAuth(null);
   };
 
   const handleFacebookLogin = () => {
@@ -116,6 +179,20 @@ export function LoginForm() {
     // Redirect to the dashboard based on user role
     redirectToDashboard();
   };
+
+  // Show Google role selection screen if pending
+  if (pendingGoogleAuth) {
+    return (
+      <GoogleRoleSelection
+        userInfo={{
+          name: pendingGoogleAuth.name,
+          email: pendingGoogleAuth.email,
+        }}
+        onRoleSelected={handleRoleSelected}
+        onCancel={handleCancelRoleSelection}
+      />
+    );
+  }
 
   // Show OTP verification screen if there's a pending verification
   if (pendingVerification) {

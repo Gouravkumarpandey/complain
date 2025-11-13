@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+// i18n removed
+// Trans and t removed after migration
 import { 
   Clock, CheckCircle, Bell, User, MessageCircle, 
   Search, Calendar, X, Shield, Home, 
@@ -14,7 +16,6 @@ import { useSocket } from '../../hooks/useSocket';
 import { 
   getStatusColor,
   getPriorityColor,
-  getConnectionStatusColor,
   getNavItemClasses,
   getMessageSendButtonClasses,
   getProgressBarStyle
@@ -25,13 +26,15 @@ export function AgentDashboard() {
   const { complaints } = useComplaints();
   const { isConnected, socket, joinComplaintRoom, updateComplaint, sendMessage } = useSocket();
   const [activeView, setActiveView] = useState('my-tickets');
+  // This context is synchronous; no loading state provided by useComplaints
+  const complaintsLoading = false;
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [showChatBot, setShowChatBot] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Loading state comes from useComplaints hook
   const [messageText, setMessageText] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedComplaintForMessage, setSelectedComplaintForMessage] = useState<Complaint | null>(null);
@@ -82,12 +85,16 @@ export function AgentDashboard() {
     // Let the SocketContext handle reconnection
   }, [isConnected, socket]);
 
-  // Update filtered complaints to show only assigned tickets
+  // Update filtered complaints to show tickets assigned to this agent or unassigned
   useEffect(() => {
-    setLoading(true);
     if (complaints && user) {
-      // Filter complaints to show only tickets assigned to this agent
-      const assignedComplaints = complaints.filter(c => c.assignedTo === user.id);
+      // Filter complaints to show only tickets assigned to this agent (by id or name) or unassigned
+      const assignedComplaints = complaints.filter(c => {
+        const assigned = c.assignedTo;
+        const isMine = assigned === user.id || assigned === user.name;
+        const isUnassigned = !assigned || assigned === '' || assigned === 'Unassigned';
+        return isMine || isUnassigned;
+      });
       setFilteredComplaints(assignedComplaints);
       
       // Join socket rooms for all assigned complaints to receive real-time updates
@@ -103,10 +110,11 @@ export function AgentDashboard() {
         try {
           if (user?.id) {
             const result = await agentService.refreshAvailability(user.id);
-            if (result.data) {
+            const availability = result?.data?.availability;
+            if (typeof availability === 'string') {
               setAgentProfile(prev => ({
                 ...prev,
-                availability: result.data.availability
+                availability
               }));
             }
           }
@@ -117,7 +125,6 @@ export function AgentDashboard() {
       
       refreshAvailability();
     }
-    setLoading(false);
   }, [complaints, user, isConnected, joinComplaintRoom]);
 
   const handleLogout = () => {
@@ -199,15 +206,16 @@ export function AgentDashboard() {
     try {
       const result = await agentService.updateAvailability(user.id, status);
       
-      if (result.data) {
+      const availability = result?.data?.availability;
+      if (typeof availability === 'string') {
         setAgentProfile(prev => ({
           ...prev,
-          availability: result.data.availability
+          availability
         }));
-        
+
         // Inform the user of the status change
         alert(`Your availability status has been updated to ${status}`);
-      } else if (result.error) {
+      } else if (result && result.error) {
         console.error('Error updating availability:', result.error);
         alert(`Failed to update availability: ${result.error}`);
       }
@@ -277,7 +285,7 @@ export function AgentDashboard() {
           <button 
             onClick={() => setActiveView('my-tickets')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${getNavItemClasses(activeView === 'my-tickets')}`}
-            title="My Assigned Tickets"
+            title="Agent Dashboard"
           >
             <Inbox className="w-5 h-5" />
           </button>
@@ -332,7 +340,7 @@ export function AgentDashboard() {
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
               {activeView === 'dashboard' && 'Agent Dashboard'}
-              {activeView === 'my-tickets' && 'My Assigned Tickets'}
+              {activeView === 'my-tickets' && 'Agent Dashboard'}
               {activeView === 'performance' && 'Performance Metrics'}
               {activeView === 'profile' && 'Profile Management'}
             </h1>
@@ -350,6 +358,7 @@ export function AgentDashboard() {
                   <UserCheck className="w-4 h-4" />
                   <span>Available</span>
                 </button>
+
                 <button 
                   onClick={() => updateAvailability('busy')}
                   className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'busy' ? 'bg-orange-500 text-white' : 'hover:bg-gray-200'}`}
@@ -358,36 +367,31 @@ export function AgentDashboard() {
                   <Activity className="w-4 h-4" />
                   <span>Busy</span>
                 </button>
+
                 <button 
                   onClick={() => updateAvailability('offline')}
-                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'offline' ? 'bg-gray-500 text-white' : 'hover:bg-gray-200'}`}
+                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'offline' ? 'bg-gray-400 text-white' : 'hover:bg-gray-200'}`}
                   title="Set as Offline"
                 >
                   <UserX className="w-4 h-4" />
                   <span>Offline</span>
                 </button>
               </div>
-            </div>
-            
-            {/* Socket Connection Status Indicator with debug info */}
-            <div className="flex items-center gap-1.5 text-sm group relative">
-              <div className={`w-2.5 h-2.5 rounded-full ${getConnectionStatusColor(isConnected)}`}></div>
-              <span className="text-gray-600">{isConnected ? 'Connected' : 'Disconnected'}</span>
-              
-              {/* Debug tooltip */}
-              <div className="hidden group-hover:block absolute top-full left-0 mt-1 w-64 bg-gray-800 text-white p-2 rounded text-xs z-50">
-                <p>Socket ID: {socket?.id || 'Not connected'}</p>
-                <p>Auth token: {localStorage.getItem('token') ? '✓ Present' : '✗ Missing'}</p>
-                <p>User ID: {user?.id || 'Unknown'}</p>
-                <button 
-                  className="mt-1 bg-blue-500 hover:bg-blue-600 px-2 py-0.5 rounded text-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (socket) {
-                      socket.disconnect();
-                      setTimeout(() => socket.connect(), 500);
+
+              <div className="text-sm text-gray-700">
+                <p><strong>Socket ID: </strong> {socket?.id || 'Not Connected'}</p>
+                <p><strong>Auth Token: </strong> {localStorage.getItem('token') ? 'Present' : 'Missing'}</p>
+                <p><strong>User ID: </strong> {user?.id || 'Unknown'}</p>
+                <button
+                  onClick={() => {
+                    try {
+                      socket?.disconnect();
+                      setTimeout(() => socket?.connect(), 500);
+                    } catch (err) {
+                      console.warn('Reconnect failed', err);
                     }
                   }}
+                  className="ml-3 bg-gray-100 px-3 py-1 rounded-lg"
                 >
                   Reconnect
                 </button>
@@ -521,7 +525,7 @@ export function AgentDashboard() {
                   </button>
                 </div>
                 <div className="p-6">
-                  {loading ? (
+                  {complaintsLoading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="text-gray-500 mt-2">Loading tickets...</p>
@@ -678,7 +682,7 @@ export function AgentDashboard() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">My Assigned Tickets</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Agent Dashboard</h3>
                   <p className="text-sm text-gray-600">Manage all tickets assigned to you</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -716,7 +720,7 @@ export function AgentDashboard() {
                   </div>
                 </div>
                 
-                {loading ? (
+                {complaintsLoading ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="text-gray-500 mt-4">Loading your assigned tickets...</p>

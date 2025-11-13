@@ -78,6 +78,42 @@ const complaintSchema = new mongoose.Schema({
     confidence: Number,
     analyzedAt: Date
   },
+  // AI-generated summary and reply
+  aiSummary: {
+    text: String,
+    confidence: {
+      type: Number,
+      min: 0,
+      max: 1
+    },
+    model: String,
+    generatedAt: Date
+  },
+  aiDraftReply: {
+    text: String,
+    confidence: {
+      type: Number,
+      min: 0,
+      max: 1
+    },
+    needsHumanReview: {
+      type: Boolean,
+      default: true
+    },
+    model: String,
+    source: String,
+    tone: String,
+    generatedAt: Date,
+    // Track if agent used/edited this draft
+    wasUsed: {
+      type: Boolean,
+      default: false
+    },
+    wasEdited: {
+      type: Boolean,
+      default: false
+    }
+  },
   resolution: {
     description: String,
     resolvedBy: {
@@ -177,7 +213,7 @@ const complaintSchema = new mongoose.Schema({
     },
     senderRole: {
       type: String,
-      enum: ['user', 'agent', 'admin', 'analytics'],
+      enum: ['user', 'agent', 'admin', 'analytics', 'bot'],
       required: true
     },
     text: {
@@ -191,6 +227,39 @@ const complaintSchema = new mongoose.Schema({
       default: Date.now
     },
     isRead: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  // Store original chatbot conversation that led to this ticket
+  chatbotConversation: [{
+    sender: {
+      type: String,
+      enum: ['user', 'bot'],
+      required: true
+    },
+    text: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    troubleshootingStep: Number,
+    metadata: mongoose.Schema.Types.Mixed
+  }],
+  troubleshootingAttempted: {
+    type: Boolean,
+    default: false
+  },
+  troubleshootingSteps: [{
+    step: String,
+    attempted: {
+      type: Boolean,
+      default: false
+    },
+    successful: {
       type: Boolean,
       default: false
     }
@@ -233,9 +302,10 @@ complaintSchema.virtual('isOverdue').get(function() {
 // Pre-save middleware to generate complaint ID
 complaintSchema.pre('save', async function(next) {
   if (!this.complaintId) {
-    const count = await this.constructor.countDocuments();
-    const year = new Date().getFullYear();
-    this.complaintId = `CMP-${year}-${String(count + 1).padStart(6, '0')}`;
+    // Use timestamp + random component for truly unique IDs
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    this.complaintId = `CMP-${timestamp}${random}`;
   }
   
   // Set SLA targets based on priority
