@@ -29,6 +29,8 @@ export function UserDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState({
     name: user?.name || 'User',
     email: user?.email || 'user@example.com',
@@ -169,10 +171,36 @@ export function UserDashboard() {
     }
   };
 
+  // Handle photo upload
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setSaveError('Image size must be less than 5MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setProfilePhoto(result);
+        localStorage.setItem('userProfilePhoto', result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle photo removal
+  const handlePhotoRemove = () => {
+    setProfilePhoto(null);
+    localStorage.removeItem('userProfilePhoto');
+  };
+
   // Load saved settings on mount
   useEffect(() => {
     const savedProfile = localStorage.getItem('userProfile');
     const savedSettings = localStorage.getItem('userSettings');
+    const savedPhoto = localStorage.getItem('userProfilePhoto');
     
     if (savedProfile) {
       try {
@@ -190,6 +218,10 @@ export function UserDashboard() {
       } catch (e) {
         console.error('Failed to parse saved settings:', e);
       }
+    }
+    
+    if (savedPhoto) {
+      setProfilePhoto(savedPhoto);
     }
   }, []);
 
@@ -309,72 +341,96 @@ export function UserDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Freshdesk-style Clean Sidebar */}
-      <div className="bg-slate-800 w-16 flex flex-col items-center py-4 space-y-4">
-        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-          <Shield className="w-5 h-5 text-white" />
+      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+        <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <span className="text-white font-semibold text-lg">QuickFix</span>
+            )}
+          </div>
         </div>
         
-        <div className="space-y-2">
+        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
           <button 
             onClick={() => setActiveView('dashboard')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'dashboard' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Dashboard"
           >
-            <Home className="w-5 h-5" />
+            <Home className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('complaints')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'complaints' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="My Complaints"
           >
-            <Inbox className="w-5 h-5" />
+            <Inbox className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">My Tickets</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('new-complaint')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'new-complaint' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="File New Complaint"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">New Ticket</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('profile')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Profile Management"
           >
-            <User className="w-5 h-5" />
+            <User className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Profile</span>}
+          </button>
+          
+          <button 
+            onClick={() => setActiveView('profile')}
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 bg-slate-700 text-amber-400 hover:bg-slate-600 transition-colors border border-amber-400/20`}
+            title="Upgrade Plan"
+          >
+            <Crown className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Upgrade</span>}
           </button>
           
           <button 
             onClick={() => setShowNotifications(true)}
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Notifications"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Notifications</span>}
           </button>
           
           <button 
             onClick={() => setShowChatBot(true)}
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="AI Assistant"
           >
-            <Bot className="w-5 h-5" />
+            <Bot className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">AI Assistant</span>}
           </button>
           
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+          <button 
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Help & Support"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
           </button>
         </div>
       </div>
@@ -384,7 +440,11 @@ export function UserDashboard() {
         {/* Freshdesk-style Clean Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <button 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
@@ -396,13 +456,14 @@ export function UserDashboard() {
           </div>
           
           <div className="flex items-center gap-4">
-              <button 
+            <button 
               onClick={() => setActiveView('new-complaint')}
               className="text-slate-800 hover:text-slate-900 font-medium text-sm flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg"
             >
               <Plus className="w-4 h-4" />
               New Complaint
-            </button>            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+            </button>
+            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
               <Search className="w-5 h-5" />
             </button>
             
@@ -427,9 +488,13 @@ export function UserDashboard() {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
               >
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                  {userProfile.name?.charAt(0).toUpperCase() || 'U'}
-                </div>
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
                 <div className="text-left">
                   <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
                   <p className="text-xs text-gray-500">{userProfile.role}</p>
@@ -959,16 +1024,36 @@ export function UserDashboard() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div className="p-6">
                   <div className="flex items-start gap-6">
-                    <div className="relative">
-                      <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                        {userProfile.name?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                      <button className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50">
+                    <div className="relative group">
+                      {profilePhoto ? (
+                        <>
+                          <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+                          <button
+                            onClick={handlePhotoRemove}
+                            className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Remove photo"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                          {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
+                      <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
                         <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                      </button>
+                      </label>
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
                     </div>
                     <div className="flex-1">
                       <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
