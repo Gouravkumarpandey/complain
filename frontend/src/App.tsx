@@ -144,7 +144,6 @@ function AppContent() {
       <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
-  {/* <Route path="/language-settings" element={<LanguageSwitchInstructions />} /> */}
       
       {/* Pricing and Payment Routes */}
       <Route path="/pricing" element={<PricingPlans />} />
