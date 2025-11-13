@@ -2371,6 +2371,5 @@ SOFTWARE.
 
 ---
 
-**Built with ❤️ by the QuickFix Team**
 
 *Making complaint management smarter, faster, and more efficient through the power of AI and modern web technologies.*
