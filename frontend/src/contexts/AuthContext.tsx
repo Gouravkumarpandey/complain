@@ -309,13 +309,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Google signup with role
   const googleSignupWithRole = async (
     token: string,
-    role: "user" | "agent" | "admin" | "analytics"
+    role: "user" | "agent" | "admin" | "analytics",
+    organization?: string
   ): Promise<boolean> => {
     try {
+      const body: { token: string; role: string; organization?: string } = { token, role };
+      if (organization) {
+        body.organization = organization;
+      }
+
       const response = await fetch(`${API_BASE_URL}/auth/google-signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, role }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) return false;

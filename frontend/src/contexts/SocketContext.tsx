@@ -32,8 +32,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   // Request browser notification permission once
   useEffect(() => {
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission();
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch((err) => {
+        console.error('Notification permission request failed:', err);
+      });
     }
   }, []);
 

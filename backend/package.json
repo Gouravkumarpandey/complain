@@ -16,6 +16,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@octokit/oauth-app": "^8.0.1",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "compression": "^1.7.4",
@@ -26,7 +27,6 @@
     "express-session": "^1.18.2",
     "google-auth-library": "^10.3.0",
     "helmet": "^7.0.0",
-    "ibm-watson": "^11.0.0",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
@@ -36,7 +36,8 @@
     "nodemailer": "^6.9.4",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "stripe": "^17.5.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",

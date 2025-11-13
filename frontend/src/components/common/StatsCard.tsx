@@ -1,10 +1,11 @@
-import React from 'react';
+// React import not required with the new JSX transform
 import { DivideIcon as LucideIcon } from 'lucide-react';
 
 interface StatsCardProps {
   title: string;
   value: number | string;
-  icon: LucideIcon;
+  // icon should be a component type (the lucide-react exports are components)
+  icon: typeof LucideIcon;
   color: 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'emerald';
   subtitle?: string;
 }

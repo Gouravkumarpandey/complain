@@ -1,205 +1,289 @@
-class AIService {
-  constructor() {
-    this.keywords = {
-      billing: ['bill', 'charge', 'payment', 'refund', 'invoice', 'money', 'cost', 'price', 'fee', 'subscription', 'credit', 'debit'],
-      technical: ['error', 'bug', 'crash', 'login', 'password', 'app', 'website', 'connection', 'loading', 'server', 'database', 'api'],
-      service: ['support', 'staff', 'representative', 'customer service', 'help', 'agent', 'response time', 'waiting', 'queue'],
-      product: ['defective', 'broken', 'quality', 'delivery', 'shipping', 'wrong item', 'damaged', 'missing', 'packaging'],
-    };
+import axios from 'axios';
+import deepseekService from './deepseekService.js';
 
-    this.urgentKeywords = ['urgent', 'emergency', 'critical', 'down', 'outage', 'immediately', 'asap', 'loss', 'security breach'];
-    this.negativeKeywords = ['angry', 'frustrated', 'terrible', 'worst', 'hate', 'disappointed', 'unacceptable', 'furious', 'disgusted'];
-    this.positiveKeywords = ['thank', 'great', 'excellent', 'satisfied', 'good', 'appreciate', 'helpful', 'amazing', 'wonderful'];
-  }
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+const USE_DEEPSEEK = process.env.USE_DEEPSEEK !== 'false'; // Use DeepSeek by default
 
-  async classifyComplaint(text) {
-    const lowercaseText = text.toLowerCase();
-    const words = lowercaseText.split(/\s+/);
+/**
+ * AI service client for QuickFix
+ */
+const aiService = {
+  /**
+   * Classify text into categories
+   * @param {string} text - Text to classify
+   * @param {string[]} [labels] - Optional custom labels
+   * @returns {Promise<Object>} Classification result
+   * 
+   * @example
+   * const result = await aiService.classify(
+   *   "I can't log into my account",
+   *   ["login", "billing", "technical"]
+   * );
+   * console.log(result.top_label); // "login"
+   */
+  async classify(text, labels = null) {
+    // Use DeepSeek if available
+    if (USE_DEEPSEEK && deepseekService.apiKey) {
+      try {
+        const prompt = `Classify the following text into one of these categories: ${labels?.join(', ') || 'Account, Billing, Technical, Delivery, General'}.
+        
+Text: "${text}"
+
+Respond with just the category name and a confidence score (0-1) in JSON format:
+{"category": "...", "confidence": 0.XX}`;
+
+        const response = await axios.post(
+          `${deepseekService.apiUrl}/chat/completions`,
+          {
+            model: deepseekService.model,
+            messages: [
+              { role: 'system', content: 'You are a text classification assistant. Respond only with valid JSON.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.3,
+            max_tokens: 100
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${deepseekService.apiKey}`,
+              'Content-Type': 'application/json',
+              ...(deepseekService.isOpenRouter && {
+                'HTTP-Referer': 'http://localhost:5001',
+                'X-Title': 'QuickFix Complaint System'
+              })
+            }
+          }
+        );
+
+        const aiResponse = response.data.choices[0].message.content;
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        const result = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
+        
+        return {
+          top_label: result.category || 'General',
+          confidence: result.confidence || 0.85,
+          model: 'deepseek-r1'
+        };
+      } catch (error) {
+        console.warn('DeepSeek classification failed, using fallback:', error.message);
+      }
+    }
     
-    // Category classification with scoring
+    // Fallback: keyword-based classification
+    const textLower = text.toLowerCase();
     let category = 'General';
-    let maxScore = 0;
-    const foundKeywords = [];
-
-    for (const [cat, keywords] of Object.entries(this.keywords)) {
-      const matchedKeywords = keywords.filter(keyword => lowercaseText.includes(keyword));
-      const score = matchedKeywords.length;
-      
-      if (score > maxScore) {
-        maxScore = score;
-        category = cat.charAt(0).toUpperCase() + cat.slice(1);
-        foundKeywords.push(...matchedKeywords);
-      }
-    }
-
-    // Sentiment analysis
-    let sentiment = 'Neutral';
-    const negativeScore = this.negativeKeywords.filter(keyword => lowercaseText.includes(keyword)).length;
-    const positiveScore = this.positiveKeywords.filter(keyword => lowercaseText.includes(keyword)).length;
-
-    if (negativeScore > positiveScore) {
-      sentiment = 'Negative';
-    } else if (positiveScore > negativeScore) {
-      sentiment = 'Positive';
-    }
-
-    // Priority assignment with enhanced logic
-    let priority = 'Low';
-    const urgentScore = this.urgentKeywords.filter(keyword => lowercaseText.includes(keyword)).length;
+    let confidence = 0.7;
     
-    // Check for specific high-priority scenarios
-    const hasDataLoss = lowercaseText.includes('data') && (lowercaseText.includes('lost') || lowercaseText.includes('missing'));
-    const hasSecurityIssue = lowercaseText.includes('security') || lowercaseText.includes('breach') || lowercaseText.includes('hack');
-    const hasFinancialImpact = lowercaseText.includes('money') && (lowercaseText.includes('lost') || lowercaseText.includes('charged'));
-
-    if (urgentScore > 0 || hasDataLoss || hasSecurityIssue || hasFinancialImpact) {
-      priority = 'Urgent';
-    } else if (sentiment === 'Negative' && (category === 'Technical' || category === 'Billing')) {
-      priority = 'High';
-    } else if (sentiment === 'Negative' || category === 'Technical' || category === 'Billing') {
-      priority = 'Medium';
+    if (textLower.includes('password') || textLower.includes('login') || textLower.includes('access')) {
+      category = 'Account';
+      confidence = 0.85;
+    } else if (textLower.includes('payment') || textLower.includes('bill') || textLower.includes('charge')) {
+      category = 'Billing';
+      confidence = 0.85;
+    } else if (textLower.includes('slow') || textLower.includes('error') || textLower.includes('crash')) {
+      category = 'Technical';
+      confidence = 0.8;
+    } else if (textLower.includes('delivery') || textLower.includes('shipping') || textLower.includes('order')) {
+      category = 'Delivery';
+      confidence = 0.8;
     }
-
-    // Calculate confidence score based on keyword matches and text length
-    const textLength = words.length;
-    const keywordDensity = foundKeywords.length / textLength;
-    const sentimentStrength = Math.abs(negativeScore - positiveScore) / textLength;
     
-    const confidence = Math.min(0.95, 
-      0.3 + // base confidence
-      (keywordDensity * 0.4) + // keyword relevance
-      (sentimentStrength * 0.2) + // sentiment clarity
-      (urgentScore > 0 ? 0.1 : 0) // urgency bonus
-    );
-
     return {
-      category,
-      sentiment,
-      priority,
-      confidence,
-      keywords: [...new Set(foundKeywords)] // remove duplicates
+      top_label: category,
+      confidence: confidence,
+      model: 'keyword-fallback'
     };
-  }
+  },
 
-  async generateResponse(intent, text, context) {
-    const lowercaseText = text.toLowerCase();
-    
-    // Enhanced response generation with context awareness
-    const responses = {
-      greeting: [
-        "Hello! I'm here to help you with your complaints and inquiries. How can I assist you today?",
-        "Hi there! I'm your AI assistant for the complaint management system. What can I help you with?",
-        "Welcome! I'm here to guide you through the complaint process. How may I assist you?"
-      ],
-      
-      file_complaint: [
-        "I'd be happy to help you file a complaint. Could you please provide more details about the issue you're experiencing?",
-        "Let me assist you in filing your complaint. Please describe the problem you're facing in detail.",
-        "I'll help you submit your complaint. What specific issue would you like to report?"
-      ],
-      
-      check_status: [
-        "I can help you check the status of your complaints. Let me retrieve that information for you.",
-        "Let me look up the current status of your complaints and any recent updates.",
-        "I'll check on your complaint status right away."
-      ],
-      
-      escalation: [
-        "I understand your frustration. Let me escalate this to our priority queue and ensure it gets immediate attention from a senior agent.",
-        "This issue requires immediate attention. I'm escalating it to our specialized team for urgent handling.",
-        "I'm sorry you're experiencing this issue. Let me escalate this complaint to ensure it receives priority treatment."
-      ],
-      
-      faq_billing: [
-        "For billing inquiries, you can view your invoice in your account dashboard. If you notice any discrepancies, please file a detailed complaint.",
-        "Billing issues are handled by our specialized billing team. I can help you file a complaint that will be routed directly to them.",
-        "I can assist with billing-related questions. Would you like me to help you file a billing complaint or check existing ones?"
-      ],
-      
-      faq_technical: [
-        "For technical issues, please try refreshing the page or clearing your browser cache first. If the problem persists, I'll help you file a technical complaint.",
-        "Technical problems can be frustrating. Let me help you document this issue properly so our technical team can resolve it quickly.",
-        "I understand technical issues can impact your work. Would you like me to help you file a technical support complaint?"
-      ],
-      
-      feedback: [
-        "Thank you for your feedback! Your input helps us improve our services. Is there anything specific you'd like us to address?",
-        "We appreciate your feedback. Would you like to submit formal feedback for any of your resolved complaints?",
-        "Your feedback is valuable to us. I can help you submit detailed feedback for any completed complaints."
-      ],
-      
-      default: [
-        "I'm here to help with complaint management. I can assist you with filing complaints, checking status, or answering questions about our process.",
-        "How can I assist you today? I can help with complaint submission, status updates, or general inquiries.",
-        "I'm your complaint management assistant. What would you like to do today?"
-      ]
-    };
-
-    // Determine intent based on keywords
-    let responseKey = 'default';
-    
-    if (lowercaseText.includes('hello') || lowercaseText.includes('hi') || lowercaseText.includes('hey')) {
-      responseKey = 'greeting';
-    } else if (lowercaseText.includes('status') || lowercaseText.includes('update') || lowercaseText.includes('progress')) {
-      responseKey = 'check_status';
-    } else if (lowercaseText.includes('complaint') || lowercaseText.includes('issue') || lowercaseText.includes('problem') || lowercaseText.includes('file')) {
-      responseKey = 'file_complaint';
-    } else if (lowercaseText.includes('billing') || lowercaseText.includes('payment') || lowercaseText.includes('charge')) {
-      responseKey = 'faq_billing';
-    } else if (lowercaseText.includes('technical') || lowercaseText.includes('error') || lowercaseText.includes('bug')) {
-      responseKey = 'faq_technical';
-    } else if (lowercaseText.includes('escalate') || lowercaseText.includes('urgent') || lowercaseText.includes('supervisor')) {
-      responseKey = 'escalation';
-    } else if (lowercaseText.includes('feedback') || lowercaseText.includes('review') || lowercaseText.includes('rate')) {
-      responseKey = 'feedback';
+  /**
+   * Analyze text sentiment
+   * @param {string} text - Text to analyze
+   * @returns {Promise<Object>} Sentiment analysis result
+   * 
+   * @example
+   * const result = await aiService.sentiment(
+   *   "I'm very frustrated with this service"
+   * );
+   * console.log(result.label); // "NEGATIVE"
+   */
+  async sentiment(text) {
+    try {
+      const response = await axios.post(`${AI_SERVICE_URL}/sentiment`, {
+        text
+      }, {
+        timeout: 5000
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Service - Sentiment analysis failed:', error.message);
+      // Return neutral fallback
+      return {
+        label: 'NEUTRAL',
+        score: 0.5,
+        model: 'fallback',
+        error: true
+      };
     }
+  },
 
-    // Select a random response from the appropriate category
-    const responseArray = responses[responseKey];
-    const randomIndex = Math.floor(Math.random() * responseArray.length);
-    
-    return responseArray[randomIndex];
-  }
+  /**
+   * Get text embedding
+   * @param {string} text - Text to embed
+   * @returns {Promise<Object>} Embedding vector and dimensions
+   * 
+   * @example
+   * const result = await aiService.embed(
+   *   "Customer service issue"
+   * );
+   * console.log(result.dimensions); // 384
+   */
+  async embed(text) {
+    try {
+      const response = await axios.post(`${AI_SERVICE_URL}/embed`, {
+        text
+      }, {
+        timeout: 5000
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Service - Embedding failed:', error.message);
+      throw new Error('AI Service unavailable');
+    }
+  },
 
-  async suggestCategories(text) {
-    const analysis = await this.classifyComplaint(text);
-    const suggestions = [analysis.category];
-    
-    // Add alternative suggestions based on keywords
-    const lowercaseText = text.toLowerCase();
-    
-    for (const [cat, keywords] of Object.entries(this.keywords)) {
-      const category = cat.charAt(0).toUpperCase() + cat.slice(1);
-      const matchCount = keywords.filter(keyword => lowercaseText.includes(keyword)).length;
-      
-      if (matchCount > 0 && !suggestions.includes(category)) {
-        suggestions.push(category);
+  /**
+   * Summarize long text
+   * @param {string} text - Text to summarize (minimum 50 characters)
+   * @param {number} [max_length=120] - Maximum summary length (30-500)
+   * @param {number} [min_length=30] - Minimum summary length (10-200)
+   * @returns {Promise<Object>} Summary result with summary text, model, and lengths
+   * 
+   * @example
+   * const result = await aiService.summarize(
+   *   "I have been waiting for 3 weeks for my refund. This is the third time I've contacted support and nobody has helped me...",
+   *   80,
+   *   30
+   * );
+   * console.log(result.summary); // "Customer waiting 3 weeks for refund after multiple support contacts."
+   * console.log(result.model); // "facebook/bart-large-cnn"
+   */
+  async summarize(text, max_length = 120, min_length = 30) {
+    try {
+      const response = await axios.post(`${AI_SERVICE_URL}/summarize`, {
+        text,
+        max_length,
+        min_length
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Service - Summarization failed:', error.message);
+      // Return fallback when AI service unavailable
+      return {
+        summary: text.substring(0, max_length) + '...',
+        model: 'fallback-truncation',
+        input_length: text.length,
+        summary_length: Math.min(text.length, max_length),
+        error: true
+      };
+    }
+  },
+
+  /**
+   * Generate draft reply for support ticket
+   * @param {string} text - Ticket/complaint text
+   * @param {string[]} [kb_context=[]] - Optional knowledge base context snippets
+   * @param {string} [tone='polite'] - Response tone (polite, friendly, professional, empathetic)
+   * @returns {Promise<Object>} Generated reply with confidence score and review flag
+   * 
+   * @example
+   * const result = await aiService.generateReply(
+   *   "My internet has been down for 2 days!",
+   *   ["Standard outage resolution: 24-48 hours", "Customers get bill credits for outages > 24h"],
+   *   "empathetic"
+   * );
+   * console.log(result.draft_reply); // "I sincerely apologize for the internet outage..."
+   * console.log(result.confidence); // 0.85
+   * console.log(result.needs_human_review); // false
+   * 
+   * // IMPORTANT: Always check needs_human_review before using!
+   * if (result.needs_human_review) {
+   *   // Route to human agent for review
+   * }
+   */
+  async generateReply(text, kb_context = [], tone = 'polite') {
+    // Use DeepSeek if available
+    if (USE_DEEPSEEK && deepseekService.apiKey) {
+      try {
+        const contextText = kb_context.length > 0 
+          ? '\n\nRelevant Knowledge Base:\n' + kb_context.join('\n') 
+          : '';
+        
+        const toneDescriptions = {
+          polite: 'polite and professional',
+          friendly: 'friendly and warm',
+          professional: 'professional and concise',
+          empathetic: 'empathetic and understanding'
+        };
+        
+        const prompt = `You are a ${toneDescriptions[tone] || 'polite and professional'} customer support agent. Write a helpful response to this customer complaint:
+
+${text}${contextText}
+
+Requirements:
+- Address the customer's concern directly
+- Provide clear next steps or solutions
+- Keep response under 150 words
+- Be actionable and specific`;
+
+        const response = await axios.post(
+          `${deepseekService.apiUrl}/chat/completions`,
+          {
+            model: deepseekService.model,
+            messages: [
+              { role: 'system', content: `You are a ${toneDescriptions[tone] || 'polite and professional'} customer support agent.` },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 300
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${deepseekService.apiKey}`,
+              'Content-Type': 'application/json',
+              ...(deepseekService.isOpenRouter && {
+                'HTTP-Referer': 'http://localhost:5001',
+                'X-Title': 'QuickFix Complaint System'
+              })
+            }
+          }
+        );
+
+        const draft_reply = response.data.choices[0].message.content.trim();
+        const confidence = kb_context.length > 0 ? 0.9 : 0.85;
+        
+        return {
+          draft_reply,
+          confidence,
+          model: 'deepseek-r1',
+          needs_human_review: confidence < 0.8,
+          tone_used: tone,
+          source: 'DeepSeek R1'
+        };
+      } catch (error) {
+        console.warn('DeepSeek reply generation failed, using fallback:', error.message);
       }
     }
     
-    return suggestions.slice(0, 3); // Return top 3 suggestions
+    // Fallback template
+    return {
+      draft_reply: 'Thank you for contacting us. A support representative will respond to your inquiry shortly.',
+      confidence: 0.5,
+      model: 'fallback-template',
+      needs_human_review: true,
+      tone_used: tone,
+      source: 'Fallback Template'
+    };
   }
+};
 
-  async extractKeywords(text) {
-    const lowercaseText = text.toLowerCase();
-    const allKeywords = [];
-    
-    // Extract keywords from all categories
-    for (const keywords of Object.values(this.keywords)) {
-      const found = keywords.filter(keyword => lowercaseText.includes(keyword));
-      allKeywords.push(...found);
-    }
-    
-    // Add urgent and sentiment keywords
-    const urgentFound = this.urgentKeywords.filter(keyword => lowercaseText.includes(keyword));
-    const negativeFound = this.negativeKeywords.filter(keyword => lowercaseText.includes(keyword));
-    const positiveFound = this.positiveKeywords.filter(keyword => lowercaseText.includes(keyword));
-    
-    allKeywords.push(...urgentFound, ...negativeFound, ...positiveFound);
-    
-    // Return unique keywords
-    return [...new Set(allKeywords)];
-  }
-}
-
-export { AIService };
+export default aiService;

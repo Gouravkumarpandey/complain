@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play } from 'lucide-react';
+// i18n removed
+import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
+import HomePageChatBot from './HomePageChatBot';
+// Trans removed
+// useLanguage removed
 
 export function HomePage() {
+  // Language logic removed
+  
   return (
     <div className="bg-white">
       {/* Navigation */}
@@ -15,14 +21,70 @@ export function HomePage() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1">AI-Powered Support</span>
+              <span className="text-sm text-gray-500 ml-1">AI Powered Support</span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How It Works</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">About us</a>
+              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Plans</a>
+              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How it works</a>
+              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">About Us</a>
+              
+              {/* Language Selector */}
+              <div className="relative group">
+                <button className="flex items-center text-gray-600 hover:text-gray-900 border-r border-gray-200 pr-4 mr-2">
+                  <Globe className="w-4 h-4 mr-1" />
+                  <span className="text-sm">EN</span>
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-36 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <div className="py-1">
+                    <button 
+                      onClick={async () => {
+                        console.log('HomePage: Switching to English');
+                        try {
+                          // setLocale removed
+                          console.log('HomePage: Switched to English successfully');
+                        } catch (e) {
+                          console.error('HomePage: Error switching to English:', e);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      🇬🇧 English
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        console.log('HomePage: Switching to Spanish');
+                        try {
+                          // setLocale removed
+                          console.log('HomePage: Switched to Spanish successfully');
+                        } catch (e) {
+                          console.error('HomePage: Error switching to Spanish:', e);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      🇪🇸 Español
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        console.log('HomePage: Switching to French');
+                        try {
+                          // setLocale removed
+                          console.log('HomePage: Switched to French successfully');
+                        } catch (e) {
+                          console.error('HomePage: Error switching to French:', e);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      🇫🇷 Français
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
               <Link
                 to="/login"
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
@@ -41,15 +103,13 @@ export function HomePage() {
             {/* Left side - Text content */}
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                The agentic AI solution for modern{' '}
-                <span className="text-orange-500">customer service</span>
+                The agentic AI solution for modern <span className="text-orange-500">customer service</span>
               </h1>
               <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                With QuickFix, AI agents and human agents work as one—resolving every issue, 
-                instantly and intelligently.
+                With QuickFix AI, agents and human agents work as one, resolving issues fast.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-16">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
                 <Link
                   to="/login"
                   className="bg-orange-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
@@ -78,7 +138,7 @@ export function HomePage() {
 
           {/* Trust Bar - moved below hero content */}
           <div className="text-center mt-24">
-            <p className="text-sm text-gray-500 mb-6">TRUSTED BY 73,000+ BUSINESSES WORLDWIDE</p>
+            <p className="text-sm text-gray-500 mb-6">Trusted by 73,000 businesses worldwide</p>
             <div className="relative overflow-hidden">
               <div className="flex animate-scroll gap-8 items-center opacity-60">
                 {/* First set of logos */}
@@ -111,11 +171,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Seamless support. Smarter agents. Faster resolutions.
+              Seamless support, smarter agents, faster resolutions
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              Unify every channel, cut the noise, and give agents an easy-to-use platform to 
-              resolve requests without missing a beat. With QuickFix, you don't just keep up, you stay ahead.
+              Unify every channel, cut the noise, and give agents an easy tool
             </p>
           </div>
 
@@ -126,8 +185,7 @@ export function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Turn email tickets into instant resolutions</h3>
               <p className="text-gray-600">
-                Answer email queries with Email AI agents that read every incoming email ticket, 
-                understand the request, respond with the right solution, and auto-resolve the ticket.
+                Answer email queries with email AI agents that read every incoming message
               </p>
             </div>
 
@@ -137,8 +195,7 @@ export function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Auto-resolve issues with conversational AI agents</h3>
               <p className="text-gray-600">
-                Deploy intelligent chatbots that understand context, provide accurate solutions, 
-                and escalate to human agents when needed.
+                Deploy intelligent chatbots that understand context, provide instant answers
               </p>
             </div>
 
@@ -148,8 +205,7 @@ export function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Empower support teams with intelligent assistance</h3>
               <p className="text-gray-600">
-                Give your human agents AI-powered insights, suggested responses, 
-                and automated workflows to resolve issues faster.
+                Give your human agents AI-powered insights and suggested responses
               </p>
             </div>
           </div>
@@ -164,8 +220,7 @@ export function HomePage() {
               See QuickFix in action
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Watch how our AI-powered complaint management system transforms customer support 
-              and delivers exceptional experiences at scale.
+              Watch how our AI-powered complaint management system transforms support
             </p>
           </div>
 
@@ -186,8 +241,8 @@ export function HomePage() {
             {/* Video description */}
             <div className="text-center mt-8">
               <p className="text-gray-600 text-lg">
-                Discover how QuickFix revolutionizes customer support with intelligent automation
-              </p>
+                  Discover how QuickFix revolutionizes customer support with AI
+                </p>
             </div>
           </div>
         </div>
@@ -201,9 +256,7 @@ export function HomePage() {
               Meet Freddy AI
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
-              From AI agents that resolve routine queries instantly to AI-powered assistance 
-              for human agents, Freddy AI combines automation and intelligence to help your 
-              team work more efficiently, scale effortlessly, and deliver great experiences across every channel.
+              From AI agents that resolve routine queries instantly to AI that helps with complex issues
             </p>
             <Link
               to="/login"
@@ -274,10 +327,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              The full customer service experience
+              The Full Customer Service Experience
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-10">
-              Everything you need to support customers and empower teams—all in one place, available out of the box
+              Everything you need to support customers and empower teams.
             </p>
             
             {/* Customer Experience Video */}
@@ -305,34 +358,315 @@ export function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <MessageSquare className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat and voice</h3>
-              <p className="text-gray-600">Connect seamlessly across chat and voice channels</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat and Voice</h3>
+              <p className="text-gray-600">Connect seamlessly across chat and voice channels.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Users className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Self-service</h3>
-              <p className="text-gray-600">Empower customers with comprehensive self-service options</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Self Service</h3>
+              <p className="text-gray-600">Empower customers with comprehensive self-service options.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified context</h3>
-              <p className="text-gray-600">Get complete customer context across all touchpoints</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified Context</h3>
+              <p className="text-gray-600">Get complete customer context across all touchpoints.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <CheckCircle className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Advanced workflows</h3>
-              <p className="text-gray-600">Automate complex processes with intelligent workflows</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Advanced Workflows</h3>
+              <p className="text-gray-600">Automate complex processes with intelligent workflows.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics and insights</h3>
-              <p className="text-gray-600">Make data-driven decisions with powerful analytics</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics and Insights</h3>
+              <p className="text-gray-600">Make data-driven decisions with powerful analytics.</p>
             </div>
             <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
               <Shield className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Security & compliance</h3>
-              <p className="text-gray-600">Enterprise-grade security and compliance features</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Security & Compliance</h3>
+              <p className="text-gray-600">Enterprise-grade security and compliance features.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Plans Section */}
+      <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Choose the Perfect Plan for Your Business
+            </h2>
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              From small teams to large enterprises, we have a plan that fits your needs
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-gray-500 to-gray-600 p-6 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <MessageSquare className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
+                  <h3 className="text-2xl font-bold">Free</h3>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">₹0</span>
+                  <span className="text-white/80">/month</span>
+                </div>
+                <p className="text-white/90 mt-2">Perfect for getting started</p>
+              </div>
+
+              <div className="p-6">
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Basic issue reporting</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Up to 5 complaints/month</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Community support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Email notifications</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Standard response (48-72h)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Basic complaint tracking</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Mobile app access</span>
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="w-full block text-center bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                >
+                  Get Started Free
+                </Link>
+              </div>
+            </div>
+
+            {/* Pro Plan - Highlighted */}
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-blue-500 relative transform md:scale-105 transition-all duration-300 hover:shadow-3xl hover:-translate-y-2">
+              <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-4 py-1 rounded-bl-lg">
+                MOST POPULAR
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <Users className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
+                  <h3 className="text-2xl font-bold">Pro</h3>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">₹499</span>
+                  <span className="text-white/80">/month</span>
+                </div>
+                <p className="text-white/90 mt-2">For growing teams</p>
+              </div>
+
+              <div className="p-6">
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 font-medium">Everything in Free, plus:</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">AI-powered diagnosis</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Unlimited complaints</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Live chat support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Priority support (24h)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Analytics dashboard</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Email & SMS notifications</span>
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="w-full block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Upgrade to Pro
+                </Link>
+              </div>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <Shield className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
+                  <h3 className="text-2xl font-bold">Premium</h3>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">₹999</span>
+                  <span className="text-white/80">/month</span>
+                </div>
+                <p className="text-white/90 mt-2">For large enterprises</p>
+              </div>
+
+              <div className="p-6">
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 font-medium">Everything in Pro, plus:</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Video call support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Team management (10 users)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Real-time monitoring</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Advanced analytics</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Custom branding</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Dedicated account manager</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">API access & integrations</span>
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="w-full block text-center bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Upgrade to Premium
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Comparison Table */}
+          <div className="mt-16 bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="p-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Detailed Feature Comparison</h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left py-4 px-6 font-semibold text-gray-900">Feature</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Free</th>
+                      <th className="text-center py-4 px-6 font-semibold text-blue-600">Pro</th>
+                      <th className="text-center py-4 px-6 font-semibold text-purple-600">Premium</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Complaint Limit</td>
+                      <td className="text-center py-4 px-6">5/month</td>
+                      <td className="text-center py-4 px-6 text-blue-600 font-semibold">Unlimited</td>
+                      <td className="text-center py-4 px-6 text-purple-600 font-semibold">Unlimited</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">AI Diagnosis</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Live Chat Support</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Video Call Support</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Response Time</td>
+                      <td className="text-center py-4 px-6 text-sm">48-72 hours</td>
+                      <td className="text-center py-4 px-6 text-sm text-blue-600">24 hours</td>
+                      <td className="text-center py-4 px-6 text-sm text-purple-600">Instant</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Analytics Dashboard</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Team Management</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6 text-sm text-purple-600">Up to 10 users</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Custom Branding</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">API Access</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Real-time Alerts</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-gray-600 mb-4">
+              Need a custom plan for your organization?
+            </p>
+            <button className="text-orange-500 font-semibold hover:text-orange-600 inline-flex items-center gap-2">
+              Contact us for enterprise pricing
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </section>
@@ -442,16 +776,15 @@ export function HomePage() {
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-orange-500 to-red-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Get started with QuickFix
-          </h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Get Started with QuickFix
+            </h2>
           
           <div className="grid md:grid-cols-3 gap-8 mt-16">
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">Free to try. Fast to scale.</h3>
+              <h3 className="text-2xl font-bold mb-4">Free to Try, Fast to Scale</h3>
               <p className="text-white/90 mb-6">
-                Experience the power of QuickFix with a free trial. No credit card needed. 
-                Set up in minutes and see immediate value.
+                Experience the power of QuickFix with a free trial. No credit card required.
               </p>
               <Link
                 to="/login"
@@ -464,8 +797,7 @@ export function HomePage() {
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
               <h3 className="text-2xl font-bold mb-4">See rapid impact in action</h3>
               <p className="text-white/90 mb-6">
-                Let our product experts show you how QuickFix can solve your specific challenges. 
-                Get a personalized walkthrough tailored to your needs.
+                Let our product experts show you how QuickFix can solve your toughest challenges.
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Book a demo
@@ -473,9 +805,9 @@ export function HomePage() {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-4">Learn, explore, get inspired</h3>
+              <h3 className="text-2xl font-bold mb-4">Learn, Explore, Get Inspired</h3>
               <p className="text-white/90 mb-6">
-                Check out the interactive product tour to explore QuickFix's capabilities.
+                Check out the interactive product tour to explore QuickFix's features and benefits.
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 Take the tour
@@ -498,8 +830,7 @@ export function HomePage() {
                 <span className="text-2xl font-bold">QuickFix</span>
               </div>
               <p className="text-gray-300 mb-6 max-w-md">
-                AI-powered complaint management system that revolutionizes customer support with 
-                intelligent automation, real-time analytics, and seamless resolution workflows.
+                AI-powered complaint management system that revolutionizes customer service.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">
@@ -533,7 +864,7 @@ export function HomePage() {
                 <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">AI Chat Support</a></li>
                 <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Analytics Dashboard</a></li>
                 <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Mobile App</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">API & Integrations</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">API Integrations</a></li>
               </ul>
             </div>
 
@@ -576,7 +907,7 @@ export function HomePage() {
               {/* Copyright */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">
-                  © 2025 QuickFix Inc. All Rights Reserved
+                  2025 QuickFix Inc. All rights reserved.
                 </p>
               </div>
 
@@ -593,6 +924,9 @@ export function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Homepage Chatbot */}
+      <HomePageChatBot />
     </div>
   );
 }

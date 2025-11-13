@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+// i18n removed
+// Trans and t removed after migration
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -24,14 +26,13 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
 
     setLoading(true);
     try {
-      const complaint = await createComplaint(formData.title, formData.description, user.id);
-      addNotification('success', 'Complaint Filed Successfully', 
-        `Your complaint has been classified as ${complaint.category} with ${complaint.priority} priority.`);
+  const complaint = await createComplaint(formData.title, formData.description, user.id);
+  addNotification('success', 'Complaint filed successfully', `Your complaint has been classified as ${complaint.category} with priority ${complaint.priority}.`);
       setFormData({ title: '', description: '' });
       onSuccess?.();
     } catch {
       // We're not using the error parameter, so we omit it completely
-      addNotification('error', 'Error', 'Failed to file complaint. Please try again.');
+  addNotification('error', 'Error', 'Failed to file complaint. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,7 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
             id="title"
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Brief summary of your complaint"
+            placeholder={'Brief summary of your complaint'}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             required
           />
@@ -65,14 +66,14 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
           id="description"
           value={formData.description}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Please provide a detailed description of your complaint..."
+          placeholder={'Please provide a detailed description of your complaint'}
           rows={6}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
           required
         />
         <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
           <Sparkles className="w-4 h-4" />
-          <span>Our AI will automatically categorize and prioritize your complaint</span>
+          <span>Our AI will automatically categorize and prioritize your complaint.</span>
         </div>
       </div>
 

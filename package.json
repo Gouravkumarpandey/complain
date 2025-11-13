@@ -25,6 +25,9 @@
     "clean": "rimraf backend/dist frontend/dist backend/node_modules frontend/node_modules node_modules"
   },
   "devDependencies": {
+    "@lingui/cli": "^5.5.0",
+    "@lingui/macro": "^5.5.0",
+    "babel-plugin-macros": "^3.1.0",
     "concurrently": "^8.2.2",
     "rimraf": "^5.0.1"
   },
@@ -45,5 +48,9 @@
     "express"
   ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@lingui/core": "^5.5.0",
+    "@lingui/react": "^5.5.0"
+  }
 }

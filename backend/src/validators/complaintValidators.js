@@ -4,7 +4,16 @@ const validateComplaint = (complaint) => {
   const schema = Joi.object({
     title: Joi.string().min(5).max(200).required(),
     description: Joi.string().min(10).max(5000).required(),
-    category: Joi.string().valid('Billing', 'Technical', 'Service', 'Product', 'General').optional(),
+    category: Joi.string().valid(
+      'Technical Support',
+      'Billing',
+      'Product Quality',
+      'Customer Service',
+      'Delivery',
+      'General Inquiry',
+      'Refund Request',
+      'Account Issues'
+    ).optional(),
     attachments: Joi.array().items(Joi.string()).optional()
   });
 

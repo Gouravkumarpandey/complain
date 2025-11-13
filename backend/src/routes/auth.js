@@ -9,8 +9,8 @@ import {
   facebookSignupWithRole,
   generateComplaintFromChat,
   processChatForComplaint,
-  chatWithWatson,
-  generateComplaintFromWatson,
+  chatWithAI,
+  generateComplaintFromAI,
   refreshToken,
   verifyOTP,
   resendOTP,
@@ -57,8 +57,10 @@ router.post("/facebook-signup", facebookSignupWithRole);
 router.post("/generate-complaint-from-chat", generateComplaintFromChat);
 router.post("/process-chat", processChatForComplaint);
 
-// IBM Watson Assistant integration
-router.post("/chat-watson", chatWithWatson);
-router.post("/generate-complaint-watson", generateComplaintFromWatson);
+// DeepSeek R1 AI Assistant integration
+router.post("/chat-ai", chatWithAI);
+router.post("/chat-watson", chatWithAI); // Backward compatibility alias
+router.post("/generate-complaint-ai", generateComplaintFromAI);
+router.post("/generate-complaint-watson", generateComplaintFromAI); // Backward compatibility alias
 
 export default router;

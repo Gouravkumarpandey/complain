@@ -1,5 +1,5 @@
-import React from 'react';
 import { Complaint } from '../../contexts/ComplaintContext';
+// Trans removed after migration
 import { ComplaintCard } from './ComplaintCard';
 
 interface ComplaintListProps {
@@ -18,7 +18,7 @@ export function ComplaintList({ complaints, showActions, isAdmin = false, isAgen
           <span className="text-gray-400 text-2xl">📋</span>
         </div>
         <h3 className="text-lg font-medium text-gray-600 mb-2">No complaints found</h3>
-        <p className="text-gray-500">No complaints match your current filters.</p>
+        <p className="text-gray-500">No complaints match your current filters</p>
       </div>
     );
   }

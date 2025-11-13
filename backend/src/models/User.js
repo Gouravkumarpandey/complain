@@ -31,6 +31,33 @@ const userSchema = new mongoose.Schema(
     // Facebook OAuth fields  
     isFacebookUser: { type: Boolean, default: false },
     facebookId: { type: String },
+    
+    // Organization field (for agents, admins, analytics)
+    organization: { type: String, default: null },
+    
+    // Subscription fields
+    planType: {
+      type: String,
+      enum: ['Free', 'Pro', 'Premium'],
+      default: 'Free',
+    },
+    planExpiresAt: { 
+      type: Date,
+      default: null 
+    },
+    subscriptionId: { 
+      type: String, // For Razorpay subscription ID
+      default: null 
+    },
+    paymentHistory: [{
+      orderId: String,
+      paymentId: String,
+      amount: Number,
+      currency: String,
+      status: String,
+      planType: String,
+      createdAt: { type: Date, default: Date.now }
+    }]
   },
   { timestamps: true }
 );

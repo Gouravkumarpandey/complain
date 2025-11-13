@@ -1,4 +1,5 @@
 import { useState } from 'react';
+// Trans removed after full migration
 import { Complaint, useComplaints } from '../../contexts/ComplaintContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { 
