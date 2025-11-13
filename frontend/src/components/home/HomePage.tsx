@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 // i18n removed
 import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
+import HomePageChatBot from './HomePageChatBot';
 // Trans removed
 // useLanguage removed
 
@@ -26,6 +27,7 @@ export function HomePage() {
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
+              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Plans</a>
               <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How it works</a>
               <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">About Us</a>
               
@@ -388,6 +390,287 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Pricing Plans Section */}
+      <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Choose the Perfect Plan for Your Business
+            </h2>
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              From small teams to large enterprises, we have a plan that fits your needs
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-gray-500 to-gray-600 p-6 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <MessageSquare className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
+                  <h3 className="text-2xl font-bold">Free</h3>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">₹0</span>
+                  <span className="text-white/80">/month</span>
+                </div>
+                <p className="text-white/90 mt-2">Perfect for getting started</p>
+              </div>
+
+              <div className="p-6">
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Basic issue reporting</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Up to 5 complaints/month</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Community support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Email notifications</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Standard response (48-72h)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Basic complaint tracking</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Mobile app access</span>
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="w-full block text-center bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                >
+                  Get Started Free
+                </Link>
+              </div>
+            </div>
+
+            {/* Pro Plan - Highlighted */}
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-blue-500 relative transform md:scale-105 transition-all duration-300 hover:shadow-3xl hover:-translate-y-2">
+              <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-4 py-1 rounded-bl-lg">
+                MOST POPULAR
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <Users className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
+                  <h3 className="text-2xl font-bold">Pro</h3>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">₹499</span>
+                  <span className="text-white/80">/month</span>
+                </div>
+                <p className="text-white/90 mt-2">For growing teams</p>
+              </div>
+
+              <div className="p-6">
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 font-medium">Everything in Free, plus:</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">AI-powered diagnosis</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Unlimited complaints</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Live chat support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Priority support (24h)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Analytics dashboard</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Email & SMS notifications</span>
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="w-full block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Upgrade to Pro
+                </Link>
+              </div>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <Shield className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
+                  <h3 className="text-2xl font-bold">Premium</h3>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">₹999</span>
+                  <span className="text-white/80">/month</span>
+                </div>
+                <p className="text-white/90 mt-2">For large enterprises</p>
+              </div>
+
+              <div className="p-6">
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 font-medium">Everything in Pro, plus:</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Video call support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Team management (10 users)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Real-time monitoring</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Advanced analytics</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Custom branding</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">Dedicated account manager</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">API access & integrations</span>
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="w-full block text-center bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Upgrade to Premium
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Comparison Table */}
+          <div className="mt-16 bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="p-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Detailed Feature Comparison</h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left py-4 px-6 font-semibold text-gray-900">Feature</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Free</th>
+                      <th className="text-center py-4 px-6 font-semibold text-blue-600">Pro</th>
+                      <th className="text-center py-4 px-6 font-semibold text-purple-600">Premium</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Complaint Limit</td>
+                      <td className="text-center py-4 px-6">5/month</td>
+                      <td className="text-center py-4 px-6 text-blue-600 font-semibold">Unlimited</td>
+                      <td className="text-center py-4 px-6 text-purple-600 font-semibold">Unlimited</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">AI Diagnosis</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Live Chat Support</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Video Call Support</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Response Time</td>
+                      <td className="text-center py-4 px-6 text-sm">48-72 hours</td>
+                      <td className="text-center py-4 px-6 text-sm text-blue-600">24 hours</td>
+                      <td className="text-center py-4 px-6 text-sm text-purple-600">Instant</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Analytics Dashboard</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Team Management</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6 text-sm text-purple-600">Up to 10 users</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Custom Branding</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">API Access</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-4 px-6 text-gray-700">Real-time Alerts</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6">—</td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-gray-600 mb-4">
+              Need a custom plan for your organization?
+            </p>
+            <button className="text-orange-500 font-semibold hover:text-orange-600 inline-flex items-center gap-2">
+              Contact us for enterprise pricing
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials - Auto-scrolling carousel */}
       <section id="reviews" className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -641,6 +924,9 @@ export function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Homepage Chatbot */}
+      <HomePageChatBot />
     </div>
   );
 }

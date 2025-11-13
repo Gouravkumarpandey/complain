@@ -20,6 +20,9 @@ import { ChatBot } from './components/chatbot/ChatBot';
 import { useAuth } from './hooks/useAuth';
 import { Notifications } from './components/notifications/Notifications';
 import { useNotificationPermission } from './hooks/useSocket';
+import { PricingPlans } from './components/subscription/PricingPlans';
+import { PaymentSuccess } from './components/subscription/PaymentSuccess';
+import { PaymentCancel } from './components/subscription/PaymentCancel';
 // import { LanguageSwitchInstructions } from './components/common/LanguageSwitchInstructions'; (removed)
 
 // Protected Route Component
@@ -142,6 +145,25 @@ function AppContent() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
   {/* <Route path="/language-settings" element={<LanguageSwitchInstructions />} /> */}
+      
+      {/* Pricing and Payment Routes */}
+      <Route path="/pricing" element={<PricingPlans />} />
+      <Route 
+        path="/payment/success" 
+        element={
+          <ProtectedRoute>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/payment/cancel" 
+        element={
+          <ProtectedRoute>
+            <PaymentCancel />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* Protected Routes */}
       <Route 
