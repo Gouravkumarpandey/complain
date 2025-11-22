@@ -140,29 +140,93 @@ export const sendComplaintConfirmationEmail = async (to, name, complaintId, titl
     const mailOptions = {
       from: `"QuickFix Support" <${process.env.EMAIL_USER}>`,
       to,
-      subject: `Complaint Ticket Created - ${complaintId}`,
+      subject: `✅ Complaint Accepted - We're Working On It! [Ticket: ${complaintId}]`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <p>Hello ${name},</p>
-          
-          <p>Thank you for contacting QuickFix Support.</p>
-          
-          <p>We have received your request and created a new support ticket for you.</p>
-          
-          <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #4a6cf7;">
-            <p style="margin: 5px 0;"><strong>Ticket ID:</strong> ${complaintId}</p>
-            <p style="margin: 5px 0;"><strong>Title:</strong> ${title}</p>
-            <p style="margin: 5px 0;"><strong>Category:</strong> ${category}</p>
-            <p style="margin: 5px 0;"><strong>Priority:</strong> ${priority} ${priority === 'High' || priority === 'Urgent' || priority === 'Critical' ? '🔴' : priority === 'Medium' ? '🟡' : '🟢'}</p>
-            <p style="margin: 5px 0;"><strong>Description:</strong> ${description}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <!-- Header with checkmark -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <div style="display: inline-block; width: 60px; height: 60px; background-color: #10b981; border-radius: 50%; line-height: 60px; font-size: 35px; color: white;">
+                ✓
+              </div>
+              <h2 style="color: #10b981; margin-top: 15px; margin-bottom: 5px;">Complaint Accepted!</h2>
+              <p style="color: #6b7280; margin: 0;">We're working on resolving your issue</p>
+            </div>
+
+            <p style="color: #374151; font-size: 16px;">Hello ${name},</p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+              Thank you for reaching out to QuickFix Support. We have <strong>accepted your complaint</strong> and our team is already <strong>working on it</strong>.
+            </p>
+            
+            <!-- Complaint Details Box -->
+            <div style="margin: 25px 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;">
+              <h3 style="margin: 0 0 15px 0; color: white; font-size: 16px;">📋 Your Complaint Details</h3>
+              <table style="width: 100%; color: white;">
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Ticket ID:</strong></td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; font-size: 18px;">${complaintId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Title:</strong></td>
+                  <td style="padding: 8px 0; text-align: right;">${title}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Category:</strong></td>
+                  <td style="padding: 8px 0; text-align: right;">${category}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Priority:</strong></td>
+                  <td style="padding: 8px 0; text-align: right;">
+                    <span style="background-color: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 12px; font-weight: bold;">
+                      ${priority} ${priority === 'High' || priority === 'Urgent' || priority === 'Critical' ? '🔴' : priority === 'Medium' ? '🟡' : '🟢'}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- What Happens Next -->
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #1f2937; margin-top: 0; font-size: 16px;">🚀 What Happens Next?</h3>
+              <ul style="color: #4b5563; line-height: 1.8; padding-left: 20px;">
+                <li>Our support team is <strong>actively reviewing</strong> your complaint</li>
+                <li>You'll receive updates as we make progress</li>
+                <li>Expected response time: <strong>Within 24 hours</strong></li>
+                <li>We'll notify you via email when there's an update</li>
+              </ul>
+            </div>
+
+            <!-- Description -->
+            <div style="margin: 20px 0; padding: 15px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
+              <p style="margin: 0; color: #92400e;"><strong>Your Issue:</strong></p>
+              <p style="margin: 10px 0 0 0; color: #78350f;">${description}</p>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                📊 Track Your Complaint
+              </a>
+              <p style="color: #6b7280; font-size: 13px; margin-top: 10px;">Click to view live updates on your dashboard</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="border-top: 2px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                Need urgent assistance? Reply to this email or contact us at <strong>${process.env.EMAIL_USER}</strong>
+              </p>
+              <p style="color: #374151; font-size: 15px; margin-top: 20px;">
+                Thank you for choosing QuickFix! 🙏<br>
+                <strong>The QuickFix Support Team</strong>
+              </p>
+            </div>
           </div>
           
-          <p>Our support team will get back to you within 24 hours.</p>
-          
-          <p>You can check the status of your ticket or add more details here:<br>
-          👉 <a href="${dashboardUrl}" style="color: #4a6cf7; text-decoration: none; font-weight: bold;">View Ticket</a></p>
-          
-          <p style="margin-top: 30px;">Thanks,<br>The QuickFix Support Team</p>
+          <!-- Bottom Note -->
+          <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
+            This is an automated confirmation email. Please do not reply to this message.
+          </p>
         </div>
       `
     };
