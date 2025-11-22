@@ -9,6 +9,74 @@ import { sendComplaintConfirmationEmail } from '../services/emailService.js';
 
 const router = express.Router();
 
+// Get all complaints for the logged-in user (user's complaint history)
+router.get('/my-complaints', authenticate, asyncHandler(async (req, res) => {
+  const {
+    status,
+    category,
+    priority,
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = req.query;
+
+  // Build filter object - only for current user
+  const filter = { user: req.user._id };
+
+  // Apply additional filters
+  if (status) filter.status = status;
+  if (category) filter.category = category;
+  if (priority) filter.priority = priority;
+
+  // Calculate pagination
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // Build sort object
+  const sort = {};
+  sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+  // Fetch complaints
+  const complaints = await Complaint.find(filter)
+    .populate('user', 'name username email')
+    .populate('assignedTo', 'name username email')
+    .populate('resolution.resolvedBy', 'name username email')
+    .sort(sort)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const total = await Complaint.countDocuments(filter);
+
+  // Get statistics for user's complaints
+  const stats = {
+    total: total,
+    open: await Complaint.countDocuments({ user: req.user._id, status: 'Open' }),
+    inProgress: await Complaint.countDocuments({ user: req.user._id, status: 'In Progress' }),
+    resolved: await Complaint.countDocuments({ user: req.user._id, status: 'Resolved' }),
+    closed: await Complaint.countDocuments({ user: req.user._id, status: 'Closed' })
+  };
+
+  res.json({
+    success: true,
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      username: req.user.username,
+      email: req.user.email,
+      role: req.user.role
+    },
+    complaints,
+    stats,
+    pagination: {
+      current: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      total,
+      hasNext: parseInt(page) < Math.ceil(total / parseInt(limit)),
+      hasPrev: parseInt(page) > 1
+    }
+  });
+}));
+
 // Get all complaints (with filters)
 router.get('/', authenticate, asyncHandler(async (req, res) => {
   const {
@@ -56,8 +124,8 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
   const complaints = await Complaint.find(filter)
-    .populate('userId', 'firstName lastName email')
-    .populate('assignedTo', 'firstName lastName email')
+    .populate('user', 'name username email')
+    .populate('assignedTo', 'name username email')
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit));
@@ -77,16 +145,16 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
 // Get complaint by ID
 router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const complaint = await Complaint.findById(req.params.id)
-    .populate('userId', 'firstName lastName email profile')
-    .populate('assignedTo', 'firstName lastName email department')
-    .populate('updates.authorId', 'firstName lastName email');
+    .populate('user', 'name username email')
+    .populate('assignedTo', 'name username email')
+    .populate('updates.updatedBy', 'name email');
 
   if (!complaint) {
     return res.status(404).json({ error: 'Complaint not found' });
   }
 
-  // Check permissions
-  if (req.user.role === 'user' && complaint.userId.toString() !== req.user._id.toString()) {
+  // Check permissions (user field contains the user who created the complaint)
+  if (req.user.role === 'user' && complaint.user.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
@@ -140,38 +208,48 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
 
   // Calculate SLA target based on priority
   const slaHours = {
-    'Urgent': 4,
+    'Critical': 4,
     'High': 24,
     'Medium': 48,
     'Low': 72
   };
-  const slaTarget = new Date();
-  slaTarget.setHours(slaTarget.getHours() + slaHours[aiAnalysis.priority]);
+  const targetHours = slaHours[aiAnalysis.priority] || 48;
 
   console.log('🏗️  Creating complaint object...');
   console.log('   User ID for complaint:', req.user._id);
   console.log('   Category:', category || aiAnalysis.category);
   console.log('   Priority:', aiAnalysis.priority);
+  console.log('   Target resolution hours:', targetHours);
 
   const complaint = new Complaint({
-    user: req.user._id, // Updated to match the schema field name
+    user: req.user._id, // Links complaint to the authenticated user
     title,
     description,
     category: category || aiAnalysis.category,
     priority: aiAnalysis.priority,
-    sentiment: aiAnalysis.sentiment,
-    slaTarget,
+    status: 'Open',
     attachments: attachments || [],
+    sla: {
+      resolutionTime: {
+        target: targetHours,
+        actual: null,
+        met: null
+      },
+      responseTime: {
+        target: Math.min(4, targetHours / 4),
+        actual: null,
+        met: null
+      }
+    },
     aiAnalysis: {
-      confidence: aiAnalysis.confidence,
-      suggestedCategory: aiAnalysis.category,
-      suggestedPriority: aiAnalysis.priority,
+      sentiment: aiAnalysis.sentiment || 'Neutral',
+      confidence: aiAnalysis.confidence || 0.7,
       keywords: aiAnalysis.keywords || [],
-      processedAt: new Date()
+      analyzedAt: new Date()
     },
     updates: [{
       message: 'Complaint has been created and classified automatically.',
-      updatedBy: req.user._id, // Updated to match the schema field
+      updatedBy: req.user._id,
       updateType: 'status_change',
       createdAt: new Date(),
       isInternal: false
@@ -236,8 +314,8 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   
   // Get updated complaint after assignment
   const updatedComplaint = await Complaint.findById(complaint._id)
-    .populate('assignedTo', 'name email')
-    .populate('user', 'name email');
+    .populate('assignedTo', 'name username email')
+    .populate('user', 'name username email');
   
   console.log('🔍 DEBUG: About to send email confirmation...');
   console.log('   User email:', updatedComplaint.user?.email);
@@ -396,17 +474,16 @@ router.post('/:id/updates', authenticate, asyncHandler(async (req, res) => {
     return res.status(404).json({ error: 'Complaint not found' });
   }
 
-  // Check permissions
-  if (req.user.role === 'user' && complaint.userId.toString() !== req.user._id.toString()) {
+  // Check permissions (user field contains the user who created the complaint)
+  if (req.user.role === 'user' && complaint.user.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
   complaint.updates.push({
     message,
-    author: `${req.user.firstName} ${req.user.lastName}`,
-    authorId: req.user._id,
+    updatedBy: req.user._id,
     timestamp: new Date(),
-    type,
+    updateType: type,
     isInternal,
     attachments: attachments || []
   });
@@ -481,7 +558,7 @@ router.post('/:id/feedback', authenticate, asyncHandler(async (req, res) => {
   }
 
   // Only the complaint owner can submit feedback
-  if (complaint.userId.toString() !== req.user._id.toString()) {
+  if (complaint.user.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'Only the complaint owner can submit feedback' });
   }
 
@@ -783,7 +860,7 @@ router.get('/stats/dashboard', authenticate, asyncHandler(async (req, res) => {
 // Generate AI draft reply for a complaint
 router.post('/:id/generate-reply', authenticate, authorize('agent', 'admin'), asyncHandler(async (req, res) => {
   const complaint = await Complaint.findById(req.params.id)
-    .populate('user', 'firstName lastName email');
+    .populate('user', 'name username email');
 
   if (!complaint) {
     return res.status(404).json({ error: 'Complaint not found' });
@@ -995,7 +1072,7 @@ router.post('/:id/send-reply', authenticate, authorize('agent', 'admin'), asyncH
   }
 
   const complaint = await Complaint.findById(req.params.id)
-    .populate('user', 'firstName lastName email');
+    .populate('user', 'name username email');
 
   if (!complaint) {
     return res.status(404).json({ error: 'Complaint not found' });
@@ -1019,7 +1096,7 @@ router.post('/:id/send-reply', authenticate, authorize('agent', 'admin'), asyncH
         subject: `Re: Your complaint - ${complaint.title}`,
         html: `
           <h2>Response to Your Complaint</h2>
-          <p>Dear ${complaint.user.firstName || 'Customer'},</p>
+          <p>Dear ${complaint.user.name || 'Customer'},</p>
           <p>${reply.replace(/\n/g, '<br>')}</p>
           <hr>
           <p><small>Complaint ID: ${complaint._id}<br>

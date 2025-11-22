@@ -1,4 +1,4 @@
-import { User } from "../models/User.js";
+import { User, getUserModelByRole, findUserByEmail, findUserById } from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import fetch from "node-fetch";
@@ -68,8 +68,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
+    // Check if user already exists in ANY collection
+    const { user: existingUser } = await findUserByEmail(email);
+    if (existingUser) {
       return res
         .status(400)
         .json({ message: "User already exists with this email" });
@@ -88,8 +89,18 @@ export const registerUser = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
     
-    const user = await User.create({
+    // Get the appropriate model based on role
+    const UserModel = getUserModelByRole(role);
+    console.log(`Using model for collection: ${UserModel.collection.name}`);
+    
+    // Generate unique username
+    const username = await UserModel.generateUsername(email, name);
+    console.log(`Generated username: ${username}`);
+    
+    // Create user in the role-specific collection
+    const user = await UserModel.create({
       name: name.trim(),
+      username: username,
       email: email.toLowerCase().trim(),
       password,
       role,
@@ -107,9 +118,11 @@ export const registerUser = async (req, res) => {
       // We continue even if email fails, but log the error
     }
 
-    console.log("User registered (unverified):", {
+    console.log("User registered (unverified) in collection:", {
+      collection: UserModel.collection.name,
       id: user._id,
       name: user.name,
+      username: user.username,
       email: user.email,
       role: user.role,
     });
@@ -120,6 +133,7 @@ export const registerUser = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
         role: user.role,
         isVerified: false
@@ -143,7 +157,8 @@ export const loginUser = async (req, res) => {
         .json({ message: "Please provide email and password" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Find user across all collections
+    const { user, model } = await findUserByEmail(email);
 
     if (user && (await user.matchPassword(password))) {
       // Check if user is verified (except for OAuth users who are pre-verified)
@@ -166,7 +181,8 @@ export const loginUser = async (req, res) => {
         });
       }
       
-      console.log("User logged in successfully:", {
+      console.log("User logged in successfully from collection:", {
+        collection: model?.collection?.name || 'unknown',
         id: user._id,
         name: user.name,
         email: user.email,
@@ -182,6 +198,7 @@ export const loginUser = async (req, res) => {
         user: {
           id: user._id,
           name: user.name || `${user.firstName} ${user.lastName}`,
+          username: user.username,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
@@ -234,16 +251,19 @@ export const googleLogin = async (req, res) => {
       return res.status(400).json({ message: "Required user information not available from Google" });
     }
 
-    let user = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user: existingUser } = await findUserByEmail(email);
+    let user = existingUser;
 
     if (!user) {
-      // Create user if not exists
-      user = await User.create({
+      // Create user if not exists - Google users go to 'users' collection by default
+      const UserModel = getUserModelByRole('user');
+      user = await UserModel.create({
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password: Math.random().toString(36).slice(-8), // dummy password
         role: "user",
         isGoogleUser: true, // Mark as Google user
+        isVerified: true, // Google users are pre-verified
       });
       
       console.log("New Google user created:", {
@@ -328,7 +348,7 @@ export const decodeGoogleToken = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user: existingUser } = await findUserByEmail(email);
 
     res.json({
       success: true,
@@ -408,7 +428,7 @@ export const googleSignupWithRole = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user: existingUser } = await findUserByEmail(email);
     
     if (existingUser) {
       return res.status(409).json({ 
@@ -416,13 +436,15 @@ export const googleSignupWithRole = async (req, res) => {
       });
     }
 
-    // Create new user with selected role
+    // Create new user with selected role in appropriate collection
+    const UserModel = getUserModelByRole(role);
     const userData = {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: Math.random().toString(36).slice(-8), // dummy password
       role: role,
       isGoogleUser: true,
+      isVerified: true, // Google users are pre-verified
     };
 
     // Add organization if provided
@@ -430,7 +452,7 @@ export const googleSignupWithRole = async (req, res) => {
       userData.organization = organization.trim();
     }
 
-    const user = await User.create(userData);
+    const user = await UserModel.create(userData);
     
     console.log("New Google user created with role:", {
       id: user._id,
@@ -873,7 +895,7 @@ export const generateComplaintFromChat = async (req, res) => {
     }
 
     // Verify user exists
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -995,7 +1017,7 @@ export const processChatForComplaint = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1060,7 +1082,7 @@ export const chatWithAI = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1286,7 +1308,7 @@ export const generateComplaintFromAI = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1566,7 +1588,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: "Email and OTP are required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user } = await findUserByEmail(email);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -1621,7 +1643,7 @@ export const resendOTP = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user } = await findUserByEmail(email);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -1664,8 +1686,8 @@ export const forgotPassword = async (req, res) => {
       });
     }
     
-    // Find the user by email
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Find the user by email across all collections
+    const { user } = await findUserByEmail(email);
     if (!user) {
       // For security reasons, don't reveal that the user doesn't exist
       return res.json({ 

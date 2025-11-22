@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
+import { User, findUserById } from '../models/User.js';
 
 // Authenticate middleware
 const authenticate = async (req, res, next) => {
@@ -17,7 +17,8 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid token format.' });
     }
     
-    const user = await User.findById(userId).select('-password');
+    // Search for user across all role-specific collections
+    const { user } = await findUserById(userId);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid token.' });
@@ -56,9 +57,11 @@ const optionalAuth = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
-      const user = await User.findById(decoded.userId).select('-password');
+      
+      // Search for user across all role-specific collections
+      const { user } = await findUserById(decoded.userId || decoded.id);
 
-      if (user && user.isActive) {
+      if (user && user.isActive !== false) {
         req.user = user;
       }
     }
