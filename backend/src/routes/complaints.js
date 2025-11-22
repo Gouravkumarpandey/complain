@@ -294,21 +294,25 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     }
   }
   
-  // Import the ticket assignment service
-  const { autoAssignTicket } = await import('../services/ticketAssignmentService.js');
+  // Import the ticket assignment service and get io instance
+  const { autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
+  const { getIoInstance } = await import('../socket/socketHandlers.js');
   
   try {
-    // Attempt to auto-assign the ticket to an available agent
-    const { assignedAgent } = await autoAssignTicket(complaint._id);
+    // Get WebSocket instance for real-time notifications
+    const io = getIoInstance();
+    
+    // Attempt to auto-assign the ticket to a FREE agent (0 active tasks)
+    const { assignedAgent, message: assignMessage } = await autoAssignToFreeAgent(complaint._id, io);
     
     // If an agent was assigned, update the response
     if (assignedAgent) {
-      console.log(`Complaint ${complaint.complaintId} assigned to ${assignedAgent.name}`);
+      console.log(`✅ Complaint ${complaint.complaintId} assigned to FREE agent ${assignedAgent.name} (${assignedAgent.activeTickets} active tickets)`);
     } else {
-      console.log(`No available agent to handle complaint ${complaint.complaintId}`);
+      console.log(`ℹ️  ${assignMessage || 'No free agent available'} for complaint ${complaint.complaintId}`);
     }
   } catch (err) {
-    console.error('Error assigning ticket:', err);
+    console.error('Error assigning ticket to free agent:', err);
     // Continue even if auto-assignment fails
   }
   
