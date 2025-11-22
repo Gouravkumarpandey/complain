@@ -322,28 +322,44 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     .populate('user', 'name username email');
   
   console.log('🔍 DEBUG: About to send email confirmation...');
-  console.log('   User email:', updatedComplaint.user?.email);
-  console.log('   User name:', updatedComplaint.user?.name);
-  console.log('   Complaint ID:', updatedComplaint.complaintId);
+  console.log('   Complaint ID:', complaint._id);
+  console.log('   Updated complaint exists:', !!updatedComplaint);
+  console.log('   User object:', updatedComplaint?.user);
+  console.log('   User email:', updatedComplaint?.user?.email);
+  console.log('   User name:', updatedComplaint?.user?.name);
+  console.log('   Complaint Number:', updatedComplaint?.complaintId);
+  console.log('   Request user:', { id: req.user?._id, email: req.user?.email, name: req.user?.name });
   
   // Send complaint confirmation email to user
-  if (!updatedComplaint.user || !updatedComplaint.user.email) {
-    console.error('❌ Cannot send email: User or user email is missing');
+  // Use req.user if populated user is not available
+  const userEmail = updatedComplaint?.user?.email || req.user?.email;
+  const userName = updatedComplaint?.user?.name || req.user?.name;
+  
+  if (!userEmail) {
+    console.error('❌ Cannot send email: User email is missing');
+    console.error('   updatedComplaint.user:', updatedComplaint?.user);
+    console.error('   req.user:', req.user);
   } else {
     try {
+      console.log(`📧 Sending complaint confirmation email...`);
+      console.log(`   To: ${userEmail}`);
+      console.log(`   Name: ${userName}`);
+      console.log(`   Complaint: ${updatedComplaint.complaintId}`);
+      
       await sendComplaintConfirmationEmail(
-        updatedComplaint.user.email,
-        updatedComplaint.user.name,
+        userEmail,
+        userName,
         updatedComplaint.complaintId,
         updatedComplaint.title,
         updatedComplaint.description,
         updatedComplaint.category,
         updatedComplaint.priority
       );
-      console.log(`✅ Confirmation email sent to ${updatedComplaint.user.email} for complaint ${updatedComplaint.complaintId}`);
+      console.log(`✅ Confirmation email sent to ${userEmail} for complaint ${updatedComplaint.complaintId}`);
     } catch (emailError) {
       console.error('❌ Failed to send complaint confirmation email:', emailError.message);
-      console.error('   Full error:', emailError);
+      console.error('   Error code:', emailError.code);
+      console.error('   Error stack:', emailError.stack);
       // Continue even if email fails - complaint is still created
     }
   }
