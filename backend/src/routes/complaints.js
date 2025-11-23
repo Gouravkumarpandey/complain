@@ -193,6 +193,40 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   console.log('   Category:', category);
   console.log('   Description length:', description?.length || 0);
 
+  // Import DeepSeek service for AI validation
+  const deepseekService = (await import('../services/deepseekService.js')).default;
+  
+  // AI VALIDATION: Check if complaint is genuine
+  console.log('🤖 AI Validation: Analyzing complaint authenticity...');
+  try {
+    const validation = await deepseekService.validateComplaint(title, description);
+    console.log('   Validation result:', validation);
+    
+    if (!validation.isValid) {
+      console.error('❌ AI REJECTED: Complaint appears to be invalid/gibberish');
+      console.error('   Reason:', validation.reason);
+      console.error('   Confidence:', validation.confidence);
+      
+      return res.status(400).json({ 
+        error: 'Invalid complaint detected',
+        message: 'Your complaint appears to contain invalid or meaningless content. Please provide a genuine description of your issue.',
+        reason: validation.reason,
+        aiAnalysis: {
+          isValid: false,
+          confidence: validation.confidence,
+          model: validation.model
+        }
+      });
+    }
+    
+    console.log('✅ AI APPROVED: Complaint is genuine');
+    console.log('   Reason:', validation.reason);
+    console.log('   Confidence:', validation.confidence);
+  } catch (validationError) {
+    console.error('⚠️  AI validation error (proceeding anyway):', validationError.message);
+    // Continue with complaint creation even if validation fails
+  }
+
   // Use AI service to analyze the complaint (with fallback)
   let aiAnalysis = { priority: 'Medium', sentiment: 'Neutral', category: category || 'General Inquiry', keywords: [] };
   try {
@@ -297,6 +331,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   // Import the ticket assignment service and get io instance
   const { autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
   const { getIoInstance } = await import('../socket/socketHandlers.js');
+  const { notifyComplaintCreated, notifyComplaintAssigned } = await import('../services/notificationService.js');
   
   try {
     // Get WebSocket instance for real-time notifications
@@ -308,6 +343,17 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     // If an agent was assigned, update the response
     if (assignedAgent) {
       console.log(`✅ Complaint ${complaint.complaintId} assigned to FREE agent ${assignedAgent.name} (${assignedAgent.activeTickets} active tickets)`);
+      
+      // Create notification for assigned agent
+      try {
+        await notifyComplaintAssigned(
+          assignedAgent._id,
+          complaint._id,
+          complaint.title
+        );
+      } catch (notifError) {
+        console.error('Failed to create assignment notification:', notifError);
+      }
     } else {
       console.log(`ℹ️  ${assignMessage || 'No free agent available'} for complaint ${complaint.complaintId}`);
     }
@@ -320,6 +366,25 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   const updatedComplaint = await Complaint.findById(complaint._id)
     .populate('assignedTo', 'name username email')
     .populate('user', 'name username email');
+  
+  // Create notification for user about complaint creation
+  try {
+    console.log('🔔 Creating notification for user...');
+    console.log('   User ID:', req.user._id);
+    console.log('   Complaint ID:', complaint._id);
+    console.log('   Complaint Title:', complaint.title);
+    
+    const notificationResult = await notifyComplaintCreated(
+      req.user._id,
+      complaint._id,
+      complaint.title
+    );
+    
+    console.log('✅ Notification created successfully:', notificationResult._id);
+  } catch (notifError) {
+    console.error('❌ Failed to create complaint notification:', notifError);
+    console.error('   Error stack:', notifError.stack);
+  }
   
   console.log('🔍 DEBUG: About to send email confirmation...');
   console.log('   Complaint ID:', complaint._id);

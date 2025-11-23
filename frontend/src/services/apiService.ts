@@ -301,7 +301,9 @@ class ApiService {
   // --------------------- Notifications ---------------------
   async getNotifications() { return this.request('/notifications'); }
   async markNotificationAsRead(id: string) { return this.request(`/notifications/${id}/read`, { method: 'PATCH' }); }
-  async markAllNotificationsAsRead() { return this.request('/notifications/read-all', { method: 'PATCH' }); }
+  async markAllNotificationsAsRead() { return this.request('/notifications/read-all', { method: 'POST' }); }
+  async deleteNotification(id: string) { return this.request(`/notifications/${id}`, { method: 'DELETE' }); }
+  async clearReadNotifications() { return this.request('/notifications/clear/read', { method: 'DELETE' }); }
   async getNotificationPreferences() { return this.request('/notifications/preferences'); }
   async updateNotificationPreferences(preferences: Record<string, unknown>) { return this.request('/notifications/preferences', { method: 'PATCH', body: JSON.stringify(preferences) }); }
 

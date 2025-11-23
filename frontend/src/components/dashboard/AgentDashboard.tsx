@@ -9,7 +9,7 @@ import {
   Activity, UserCheck, UserX
 } from 'lucide-react';
 import { agentService } from '../../services/agentService';
-import { Notifications } from '../notifications/Notifications';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 import AIAssistant from './AIAssistant';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
@@ -1152,26 +1152,10 @@ export function AgentDashboard() {
         )}
 
         {/* Notifications Modal */}
-        {showNotifications && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full m-4 max-h-[600px]">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                  <button 
-                    onClick={() => setShowNotifications(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="h-[500px] overflow-auto">
-                <Notifications />
-              </div>
-            </div>
-          </div>
-        )}
+        <NotificationCenter
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+        />
 
         {/* Feedback Form Modal */}
         {showFeedbackForm && (
