@@ -1,103 +1,184 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { Notification } from '../models/Notification.js';
 
 const router = express.Router();
 
-// Get user notifications
+// Get all user notifications with pagination
 router.get('/', authenticate, asyncHandler(async (req, res) => {
-  // In a real application, you would fetch notifications from a database
-  // For now, we'll return mock notifications
-  const mockNotifications = [
-    {
-      id: '1',
-      type: 'complaint_assigned',
-      title: 'New complaint assigned',
-      message: 'You have been assigned a new complaint #COMP-001',
-      userId: req.user._id,
-      read: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      data: {
-        complaintId: 'COMP-001'
-      }
-    },
-    {
-      id: '2',
-      type: 'complaint_updated',
-      title: 'Complaint status updated',
-      message: 'Complaint #COMP-002 has been resolved',
-      userId: req.user._id,
-      read: false,
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-      data: {
-        complaintId: 'COMP-002',
-        status: 'Resolved'
-      }
-    },
-    {
-      id: '3',
-      type: 'sla_breach',
-      title: 'SLA breach warning',
-      message: 'Complaint #COMP-003 is approaching SLA deadline',
-      userId: req.user._id,
-      read: true,
-      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-      data: {
-        complaintId: 'COMP-003',
-        slaTarget: new Date(Date.now() + 2 * 60 * 60 * 1000) // 2 hours from now
-      }
-    }
+  const { page = 1, limit = 50, unreadOnly = false } = req.query;
+  
+  const filter = { user: req.user._id };
+  if (unreadOnly === 'true') {
+    filter.isRead = false;
+  }
+  
+  // Don't show expired notifications
+  filter.$or = [
+    { expiresAt: { $gt: new Date() } },
+    { expiresAt: null }
   ];
+  
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  
+  const notifications = await Notification.find(filter)
+    .populate('relatedComplaint', 'complaintId title status')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+  
+  const total = await Notification.countDocuments(filter);
+  const unreadCount = await Notification.getUnreadCount(req.user._id);
+  
+  res.json({
+    notifications,
+    pagination: {
+      current: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      total,
+      hasNext: parseInt(page) < Math.ceil(total / parseInt(limit)),
+      hasPrev: parseInt(page) > 1
+    },
+    unreadCount
+  });
+}));
 
-  res.json(mockNotifications);
+// Get unread count
+router.get('/unread-count', authenticate, asyncHandler(async (req, res) => {
+  const count = await Notification.getUnreadCount(req.user._id);
+  res.json({ count });
 }));
 
 // Mark notification as read
 router.patch('/:id/read', authenticate, asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const notification = await Notification.findOne({
+    _id: req.params.id,
+    user: req.user._id
+  });
   
-  // In a real application, you would update the notification in the database
-  res.json({ message: 'Notification marked as read', id });
+  if (!notification) {
+    return res.status(404).json({ error: 'Notification not found' });
+  }
+  
+  await notification.markAsRead();
+  
+  const unreadCount = await Notification.getUnreadCount(req.user._id);
+  
+  res.json({ 
+    message: 'Notification marked as read',
+    notification,
+    unreadCount
+  });
 }));
 
 // Mark all notifications as read
-router.patch('/read-all', authenticate, asyncHandler(async (req, res) => {
-  // In a real application, you would update all user notifications in the database
-  res.json({ message: 'All notifications marked as read' });
+router.post('/read-all', authenticate, asyncHandler(async (req, res) => {
+  const result = await Notification.updateMany(
+    { 
+      user: req.user._id,
+      isRead: false
+    },
+    {
+      $set: {
+        isRead: true,
+        readAt: new Date(),
+        'channels.inApp.read': true,
+        'channels.inApp.readAt': new Date()
+      }
+    }
+  );
+  
+  res.json({ 
+    message: 'All notifications marked as read',
+    modifiedCount: result.modifiedCount,
+    unreadCount: 0
+  });
+}));
+
+// Mark multiple notifications as read
+router.post('/read-multiple', authenticate, asyncHandler(async (req, res) => {
+  const { notificationIds } = req.body;
+  
+  if (!notificationIds || !Array.isArray(notificationIds)) {
+    return res.status(400).json({ error: 'notificationIds array is required' });
+  }
+  
+  const result = await Notification.markMultipleAsRead(req.user._id, notificationIds);
+  const unreadCount = await Notification.getUnreadCount(req.user._id);
+  
+  res.json({ 
+    message: `${result.modifiedCount} notifications marked as read`,
+    modifiedCount: result.modifiedCount,
+    unreadCount
+  });
 }));
 
 // Delete notification
 router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const notification = await Notification.findOneAndDelete({
+    _id: req.params.id,
+    user: req.user._id
+  });
   
-  // In a real application, you would delete the notification from the database
-  res.json({ message: 'Notification deleted', id });
+  if (!notification) {
+    return res.status(404).json({ error: 'Notification not found' });
+  }
+  
+  const unreadCount = await Notification.getUnreadCount(req.user._id);
+  
+  res.json({ 
+    message: 'Notification deleted',
+    unreadCount
+  });
+}));
+
+// Delete all read notifications
+router.delete('/clear/read', authenticate, asyncHandler(async (req, res) => {
+  const result = await Notification.deleteMany({
+    user: req.user._id,
+    isRead: true
+  });
+  
+  res.json({ 
+    message: 'All read notifications cleared',
+    deletedCount: result.deletedCount
+  });
+}));
+
+// Get notification statistics
+router.get('/stats', authenticate, asyncHandler(async (req, res) => {
+  const stats = await Notification.getNotificationStats(req.user._id);
+  res.json(stats[0] || { total: 0, unread: 0, readRate: 0 });
 }));
 
 // Get notification preferences
 router.get('/preferences', authenticate, asyncHandler(async (req, res) => {
-  // Return user notification preferences
-  const preferences = {
+  // Return user notification preferences from user model
+  const preferences = req.user.notificationPreferences || {
     email: {
       complaintAssigned: true,
       complaintUpdated: true,
+      complaintResolved: true,
       slaBreaches: true,
       escalations: true,
-      feedbackReceived: false
+      newComments: true
     },
     push: {
       complaintAssigned: true,
-      complaintUpdated: false,
+      complaintUpdated: true,
+      complaintResolved: true,
       slaBreaches: true,
       escalations: true,
-      feedbackReceived: false
+      newComments: false
     },
     sms: {
       complaintAssigned: false,
       complaintUpdated: false,
+      complaintResolved: false,
       slaBreaches: true,
       escalations: true,
-      feedbackReceived: false
+      newComments: false
     }
   };
 
@@ -108,12 +189,15 @@ router.get('/preferences', authenticate, asyncHandler(async (req, res) => {
 router.patch('/preferences', authenticate, asyncHandler(async (req, res) => {
   const { email, push, sms } = req.body;
   
-  // In a real application, you would save these preferences to the user's profile
   const updatedPreferences = {
     email: email || {},
     push: push || {},
     sms: sms || {}
   };
+  
+  // Update user's notification preferences
+  req.user.notificationPreferences = updatedPreferences;
+  await req.user.save();
 
   res.json({ 
     message: 'Notification preferences updated successfully',
