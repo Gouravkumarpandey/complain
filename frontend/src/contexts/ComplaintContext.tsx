@@ -279,8 +279,18 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
   try { notifyNewComplaint(mapped.id); } catch { /* optional: socket not connected */ }
         return mapped;
       }
-    } catch (err) {
-      console.warn('API createComplaint failed, using local fallback', err);
+    } catch (err: unknown) {
+      console.warn('API createComplaint failed', err);
+      
+      // Check if it's an AI validation error
+      const error = err as { response?: { status?: number; data?: { aiAnalysis?: unknown; message?: string } }; message?: string };
+      if (error.response?.status === 400 && error.response?.data?.aiAnalysis) {
+        const errorData = error.response.data;
+        throw new Error(errorData.message || 'Your complaint appears to contain invalid or meaningless content. Please provide a genuine description of your issue.');
+      }
+      
+      // For other errors, re-throw with message
+      throw new Error(error.response?.data?.message || error.message || 'Failed to create complaint');
     }
 
     // Fallback: local-only create to keep UX responsive

@@ -94,6 +94,192 @@ class DeepSeekService {
   }
 
   /**
+   * Validate if a complaint is genuine and meaningful
+   * @param {string} title - Complaint title
+   * @param {string} description - Complaint description
+   * @returns {Promise<Object>} Validation result
+   */
+  async validateComplaint(title, description) {
+    if (!this.apiKey) {
+      // Fallback validation - basic checks
+      const titleValid = title.trim().length >= 3 && !this._isGibberish(title);
+      const descValid = description.trim().length >= 10 && !this._isGibberish(description);
+      const isValid = titleValid && descValid;
+      
+      let reason = 'Complaint appears valid';
+      if (!titleValid) {
+        reason = 'Title appears to be invalid or gibberish';
+      } else if (!descValid) {
+        reason = 'Description appears to be invalid or gibberish';
+      }
+      
+      return {
+        success: true,
+        isValid,
+        reason,
+        confidence: 0.7,
+        model: 'fallback'
+      };
+    }
+
+    try {
+      const prompt = `You are a complaint validation system. Analyze if the following complaint is genuine and meaningful, or if it's random gibberish/spam.
+
+Title: ${title}
+Description: ${description}
+
+Evaluate:
+1. Is this a real complaint with a genuine issue?
+2. Does it contain meaningful content (not just random characters like "xyz", "asdf", "xvnh")?
+3. Is it written in a coherent language?
+4. Does it describe an actual problem or concern?
+
+Random examples that should be REJECTED:
+- Title: "xyz", Description: "xvnh sdfsdf"
+- Title: "asdfgh", Description: "qwerty random stuff"
+- Title: "test", Description: "testing 123"
+
+Valid examples that should be ACCEPTED:
+- Title: "Internet not working", Description: "My internet connection has been down since yesterday"
+- Title: "Billing issue", Description: "I was charged twice for the same service"
+- Title: "Product defect", Description: "The product I received is broken"
+
+Respond ONLY with a JSON object:
+{
+  "isValid": true/false,
+  "reason": "brief explanation why it's valid or invalid",
+  "confidence": 0.0-1.0,
+  "suggestedAction": "accept" or "reject"
+}`;
+
+      const response = await axios.post(
+        `${this.apiUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a complaint validation AI. Analyze complaints to detect spam, gibberish, or invalid submissions. Respond only with valid JSON.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.2, // Low temperature for consistent validation
+          max_tokens: 300
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            ...(this.isOpenRouter && {
+              'HTTP-Referer': 'http://localhost:5001',
+              'X-Title': 'QuickFix Complaint System'
+            })
+          }
+        }
+      );
+
+      const aiResponse = response.data.choices[0].message.content;
+      
+      // Parse JSON response
+      let validationData;
+      try {
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        validationData = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
+      } catch (parseError) {
+        console.error('Failed to parse validation response:', parseError);
+        // Fallback to basic validation
+        return {
+          success: true,
+          isValid: !this._isGibberish(title + ' ' + description),
+          reason: 'AI parsing failed, using basic validation',
+          confidence: 0.6,
+          model: 'fallback'
+        };
+      }
+
+      return {
+        success: true,
+        isValid: validationData.isValid === true,
+        reason: validationData.reason || 'No reason provided',
+        confidence: validationData.confidence || 0.8,
+        suggestedAction: validationData.suggestedAction || (validationData.isValid ? 'accept' : 'reject'),
+        model: this.model
+      };
+    } catch (error) {
+      console.error('DeepSeek validation error:', error.response?.data || error.message);
+      // Fallback validation
+      const isValid = !this._isGibberish(title + ' ' + description);
+      return {
+        success: true,
+        isValid,
+        reason: isValid ? 'Basic validation passed' : 'Appears to be gibberish or invalid',
+        confidence: 0.6,
+        model: 'fallback',
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Check if text is gibberish (basic heuristic)
+   */
+  _isGibberish(text) {
+    const normalized = text.toLowerCase().trim();
+    
+    // Check for very short content
+    if (normalized.length < 3) return true;
+    
+    // Check for excessive repeating characters
+    if (/(.)\1{4,}/.test(normalized)) return true;
+    
+    // Check for common test/random patterns (exact matches or with spaces/numbers)
+    const gibberishPatterns = [
+      /^xyz+$/i,                          // "xyz", "xyzxyz"
+      /^abc+$/i,                          // "abc", "abcabc"
+      /^test+$/i,                         // "test", "testtest"
+      /^asdf+$/i,                         // "asdf", "asdfasdf"
+      /^qwerty+$/i,                       // "qwerty"
+      /^random+$/i,                       // "random"
+      /^xvnh+$/i,                         // "xvnh"
+      /^sdfs+$/i,                         // "sdfs"
+      /^lkjh+$/i,                         // "lkjh"
+      /^[a-z]{2,4}$/i,                    // Very short random letters like "xyz", "abc"
+      /^[a-z]{2,3}\s[a-z]{2,3}(\s[a-z]{2,3})?$/i, // "abc def", "xyz abc def"
+      /test.*test.*test/i,                // Multiple "test" words
+      /testing.*\d+.*test/i,              // "testing 123 test"
+      /^(xyz|abc|test|asdf|qwerty)\s/i,   // Starting with common gibberish
+    ];
+    
+    if (gibberishPatterns.some(pattern => pattern.test(normalized))) {
+      return true;
+    }
+    
+    // Check for excessive consonant clusters (more than 4 consonants in a row)
+    if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(normalized)) {
+      return true;
+    }
+    
+    // Check vowel ratio (English text has ~40% vowels)
+    const vowels = normalized.match(/[aeiou]/gi);
+    const consonants = normalized.match(/[bcdfghjklmnpqrstvwxyz]/gi);
+    if (vowels && consonants) {
+      const vowelRatio = vowels.length / (vowels.length + consonants.length);
+      // If less than 15% or more than 70% vowels, likely gibberish
+      if (vowelRatio < 0.15 || vowelRatio > 0.7) return true;
+    }
+    
+    // If no vowels at all (except for very short text), it's gibberish
+    if (!vowels && normalized.length > 4) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
    * Generate complaint from conversation history
    * @param {string} conversationHistory - Full conversation text
    * @param {Object} userInfo - User information

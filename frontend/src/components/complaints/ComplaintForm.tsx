@@ -26,13 +26,15 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
 
     setLoading(true);
     try {
-  const complaint = await createComplaint(formData.title, formData.description, user.id);
-  addNotification('success', 'Complaint filed successfully', `Your complaint has been classified as ${complaint.category} with priority ${complaint.priority}.`);
+      const complaint = await createComplaint(formData.title, formData.description, user.id);
+      addNotification('success', 'Complaint filed successfully', `Your complaint has been classified as ${complaint.category} with priority ${complaint.priority}.`);
       setFormData({ title: '', description: '' });
       onSuccess?.();
-    } catch {
-      // We're not using the error parameter, so we omit it completely
-  addNotification('error', 'Error', 'Failed to file complaint. Please try again.');
+    } catch (error: unknown) {
+      // Show AI validation error message if available
+      const err = error as { message?: string };
+      const errorMessage = err.message || 'Failed to file complaint. Please try again.';
+      addNotification('error', 'Invalid Complaint', errorMessage);
     } finally {
       setLoading(false);
     }
