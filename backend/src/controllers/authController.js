@@ -1,9 +1,10 @@
-import { User } from "../models/User.js";
+import { User, getUserModelByRole, findUserByEmail, findUserById } from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import fetch from "node-fetch";
 import crypto from "crypto";
 import { sendOtpEmail, generateOTP, sendPasswordResetEmail } from "../services/emailService.js";
+import deepseekService from "../services/deepseekService.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -68,8 +69,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
+    // Check if user already exists in ANY collection
+    const { user: existingUser } = await findUserByEmail(email);
+    if (existingUser) {
       return res
         .status(400)
         .json({ message: "User already exists with this email" });
@@ -88,8 +90,18 @@ export const registerUser = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
     
-    const user = await User.create({
+    // Get the appropriate model based on role
+    const UserModel = getUserModelByRole(role);
+    console.log(`Using model for collection: ${UserModel.collection.name}`);
+    
+    // Generate unique username
+    const username = await UserModel.generateUsername(email, name);
+    console.log(`Generated username: ${username}`);
+    
+    // Create user in the role-specific collection
+    const user = await UserModel.create({
       name: name.trim(),
+      username: username,
       email: email.toLowerCase().trim(),
       password,
       role,
@@ -107,9 +119,11 @@ export const registerUser = async (req, res) => {
       // We continue even if email fails, but log the error
     }
 
-    console.log("User registered (unverified):", {
+    console.log("User registered (unverified) in collection:", {
+      collection: UserModel.collection.name,
       id: user._id,
       name: user.name,
+      username: user.username,
       email: user.email,
       role: user.role,
     });
@@ -120,6 +134,7 @@ export const registerUser = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
         role: user.role,
         isVerified: false
@@ -143,7 +158,8 @@ export const loginUser = async (req, res) => {
         .json({ message: "Please provide email and password" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Find user across all collections
+    const { user, model } = await findUserByEmail(email);
 
     if (user && (await user.matchPassword(password))) {
       // Check if user is verified (except for OAuth users who are pre-verified)
@@ -166,7 +182,8 @@ export const loginUser = async (req, res) => {
         });
       }
       
-      console.log("User logged in successfully:", {
+      console.log("User logged in successfully from collection:", {
+        collection: model?.collection?.name || 'unknown',
         id: user._id,
         name: user.name,
         email: user.email,
@@ -182,6 +199,7 @@ export const loginUser = async (req, res) => {
         user: {
           id: user._id,
           name: user.name || `${user.firstName} ${user.lastName}`,
+          username: user.username,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
@@ -234,16 +252,19 @@ export const googleLogin = async (req, res) => {
       return res.status(400).json({ message: "Required user information not available from Google" });
     }
 
-    let user = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user: existingUser } = await findUserByEmail(email);
+    let user = existingUser;
 
     if (!user) {
-      // Create user if not exists
-      user = await User.create({
+      // Create user if not exists - Google users go to 'users' collection by default
+      const UserModel = getUserModelByRole('user');
+      user = await UserModel.create({
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password: Math.random().toString(36).slice(-8), // dummy password
         role: "user",
         isGoogleUser: true, // Mark as Google user
+        isVerified: true, // Google users are pre-verified
       });
       
       console.log("New Google user created:", {
@@ -328,7 +349,7 @@ export const decodeGoogleToken = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user: existingUser } = await findUserByEmail(email);
 
     res.json({
       success: true,
@@ -408,7 +429,7 @@ export const googleSignupWithRole = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user: existingUser } = await findUserByEmail(email);
     
     if (existingUser) {
       return res.status(409).json({ 
@@ -416,13 +437,15 @@ export const googleSignupWithRole = async (req, res) => {
       });
     }
 
-    // Create new user with selected role
+    // Create new user with selected role in appropriate collection
+    const UserModel = getUserModelByRole(role);
     const userData = {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: Math.random().toString(36).slice(-8), // dummy password
       role: role,
       isGoogleUser: true,
+      isVerified: true, // Google users are pre-verified
     };
 
     // Add organization if provided
@@ -430,7 +453,7 @@ export const googleSignupWithRole = async (req, res) => {
       userData.organization = organization.trim();
     }
 
-    const user = await User.create(userData);
+    const user = await UserModel.create(userData);
     
     console.log("New Google user created with role:", {
       id: user._id,
@@ -873,7 +896,7 @@ export const generateComplaintFromChat = async (req, res) => {
     }
 
     // Verify user exists
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -995,7 +1018,7 @@ export const processChatForComplaint = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1052,7 +1075,7 @@ export const processChatForComplaint = async (req, res) => {
 // Send message to AI Assistant (DeepSeek R1)
 export const chatWithAI = async (req, res) => {
   try {
-    const { userId, message, conversationHistory = [], conversationState = {} } = req.body;
+    const { userId, message, conversationHistory = [] } = req.body;
 
     if (!userId || !message) {
       return res.status(400).json({ 
@@ -1060,220 +1083,50 @@ export const chatWithAI = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const messageLower = message.toLowerCase().trim();
-    
-    console.log('Chatbot State:', {
-      message: messageLower,
-      state: conversationState,
+    console.log('AI Chat Request:', {
+      user: user.name,
+      message: message.substring(0, 50),
       historyLength: conversationHistory.length
     });
 
-    // ============================================
-    // STRUCTURED FLOW: Problem → 3 Steps → Resolution Check → Complaint Filing
-    // ============================================
-
-    // STEP 1: Detect if user is reporting a technical problem (initial message)
-    const technicalKeywords = ['internet', 'wifi', 'connection', 'slow', 'down', 'not working', 'broken', 'error', 
-                               'laptop', 'computer', 'phone', 'device', 'dth', 'tv', 'signal', 'service', 'start', 'won\'t'];
-    const hasTechnicalIssue = technicalKeywords.some(keyword => messageLower.includes(keyword));
-    
-    if (hasTechnicalIssue && !conversationState.troubleshootingStarted) {
-      // User just described their problem - show first 3 troubleshooting steps
-      const allSteps = generateQuickTroubleshootingSteps(messageLower);
-      const firstThreeSteps = allSteps.slice(0, 3);
-      
-      return res.json({
-        success: true,
-        response: `I understand you're experiencing: "${message}"\n\n📋 Here are 3 solutions to try:\n\n${firstThreeSteps.map((step, i) => `${i + 1}. ${step}`).join('\n\n')}\n\nPlease try these steps and let me know - did this resolve your problem?`,
-        conversationState: {
-          troubleshootingStarted: true,
-          problemDescription: message,
-          allSteps: allSteps,
-          currentStepIndex: 3, // We showed first 3 steps
-          waitingForResolution: true
-        },
-        model: 'structured-flow'
-      });
-    }
-
-    // STEP 2: User responds to "did it resolve?" question
-    if (conversationState.waitingForResolution) {
-      
-      // Check if user says YES (problem is resolved)
-      const positiveResponses = ['yes', 'yeah', 'yep', 'sure', 'worked', 'fixed', 'solved', 'resolved', 'good', 'great', 'perfect', 'thank'];
-      const isResolved = positiveResponses.some(word => messageLower.includes(word)) && 
-                         !messageLower.includes('not') && 
-                         !messageLower.includes('no') &&
-                         !messageLower.includes('didn\'t');
-      
-      if (isResolved) {
-        return res.json({
-          success: true,
-          response: "🎉 Wonderful! I'm so glad the solution worked for you! If you need any other assistance in the future, feel free to reach out. Have a great day!",
-          conversationState: {
-            resolved: true,
-            problemDescription: conversationState.problemDescription
-          },
-          model: 'structured-flow'
-        });
-      }
-      
-      // Check if user says NO (problem NOT resolved)
-      const negativeResponses = ['no', 'nope', 'not', 'nothing', 'didn\'t', 'doesn\'t', 'still', 'same', 'persist', 'issue'];
-      const isNotResolved = negativeResponses.some(word => messageLower.includes(word));
-      
-      if (isNotResolved) {
-        return res.json({
-          success: true,
-          response: "I understand the issue is still not resolved. Let me file a complaint for you right away so our technical team can assist you further.\n\n📝 Creating your complaint ticket...",
-          shouldGenerateComplaint: true,
-          conversationState: {
-            resolved: false,
-            problemDescription: conversationState.problemDescription,
-            troubleshootingAttempted: true
-          },
-          model: 'structured-flow'
-        });
-      }
-      
-      // User's response is unclear - ask again
-      return res.json({
-        success: true,
-        response: "I'd like to help you better. Could you please let me know - did any of the solutions I provided work for you? Just reply with 'yes' if it's fixed, or 'no' if you still need help.",
-        conversationState: conversationState,
-        model: 'structured-flow'
-      });
-    }
-
-    // STEP 3: Handle direct complaint requests
-    const complaintKeywords = ['complaint', 'complain', 'register', 'file', 'raise', 'ticket', 'issue'];
-    const wantsComplaint = complaintKeywords.some(keyword => messageLower.includes(keyword));
-    
-    if (wantsComplaint && conversationState.problemDescription) {
-      return res.json({
-        success: true,
-        response: "Got it! I'm filing your complaint now based on the issue you described.\n\n📝 Creating your complaint ticket...",
-        shouldGenerateComplaint: true,
-        conversationState: {
-          resolved: false,
-          problemDescription: conversationState.problemDescription,
-          directComplaintRequest: true
-        },
-        model: 'structured-flow'
-      });
-    }
-
-    // STEP 4: Handle generic greeting or unclear messages
-    if (messageLower.match(/^(hi|hello|hey|hy|helo|hii)$/)) {
-      return res.json({
-        success: true,
-        response: "Hello! 👋 I'm here to help you solve any issues. Please describe your problem, and I'll guide you through some solutions before filing a complaint if needed. What seems to be the issue?",
-        model: 'structured-flow'
-      });
-    }
-
-    // STEP 5: Fallback - ask user to describe their problem
-    if (!conversationState.problemDescription) {
-      return res.json({
-        success: true,
-        response: "I'm here to assist you! Could you please describe the issue you're facing? For example:\n• 'My internet is not working'\n• 'My DTH signal is down'\n• 'My laptop won't start'\n\nOnce you describe your problem, I'll provide troubleshooting steps to help you!",
-        model: 'structured-flow'
-      });
-    }
-
-    // STEP 6: For any other complex queries, use AI but maintain context
-    const deepseekService = (await import('../services/deepseekService.js')).default;
-    
+    // Use DeepSeek R1 for natural conversation
     const systemContext = {
       userName: user.name,
       userRole: user.role,
-      userEmail: user.email,
-      conversationState: conversationState
+      userEmail: user.email
     };
 
     const result = await deepseekService.chat(message, conversationHistory, systemContext);
     
-    res.json({
-      success: result.success,
-      response: result.response,
-      conversationState: conversationState, // Preserve state
-      model: result.model,
-      fallback: result.fallback || false,
-      user: {
-        id: user._id,
-        name: user.name,
-        role: user.role
-      }
-    });
-
+    if (result.success) {
+      return res.json({
+        success: true,
+        response: result.response,
+        model: result.model,
+        complaintDetected: result.complaintDetected
+      });
+    } else {
+      // Fallback response if DeepSeek fails
+      return res.json({
+        success: true,
+        response: "Thank you for contacting QuickFix support. I'm here to help you. Could you please describe your issue in detail?",
+        model: 'fallback'
+      });
+    }
   } catch (error) {
-    console.error("Chatbot error:", error);
-    
-    res.json({
-      success: true,
-      response: "I'm here to help you! Could you please tell me more about your concern?",
-      error: "AI Assistant temporarily unavailable",
-      fallback: true
+    console.error('AI Chat Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process your message",
+      error: error.message
     });
   }
 };
-
-// Helper function to generate quick troubleshooting steps
-function generateQuickTroubleshootingSteps(issueLower) {
-  // Internet/WiFi issues
-  if (issueLower.includes('internet') || issueLower.includes('wifi') || issueLower.includes('connection')) {
-    return [
-      "**Restart your router**: Unplug your router, wait 30 seconds, then plug it back in. Wait 2 minutes for it to fully restart.",
-      "**Check cables**: Ensure all cables (power, ethernet) are securely connected to your router and modem.",
-      "**Move closer to router**: If using WiFi, move closer to the router and check if signal strength improves.",
-      "**Restart your device**: Turn off your device completely, wait 10 seconds, then turn it back on.",
-      "**Check for service outages**: Contact your ISP or check their website/app for reported outages in your area.",
-      "**Forget and reconnect WiFi**: On your device, forget the WiFi network, then reconnect with the password.",
-      "**Factory reset router**: As a last resort, press the reset button on your router for 10 seconds (note: you'll need to reconfigure)."
-    ];
-  }
-  
-  // DTH/TV service issues
-  if (issueLower.includes('dth') || issueLower.includes('tv') || issueLower.includes('television')) {
-    return [
-      "**Check power connections**: Ensure your set-top box and TV are properly plugged in and powered on. Look for indicator lights on the set-top box.",
-      "**Verify dish alignment**: Go outside and visually check if the satellite dish is properly aligned. Strong winds or storms can misalign it.",
-      "**Check cable connections**: Ensure the cable from the dish to the set-top box is securely connected at both ends. Look for any visible damage.",
-      "**Restart set-top box**: Unplug the set-top box, wait 30 seconds, plug it back in, and wait for it to fully reboot (3-5 minutes).",
-      "**Check account status**: Log into your DTH provider's website/app to ensure your subscription is active and payment is up to date.",
-      "**Test with different channel**: Switch to different channels to see if it's a specific channel issue or all channels.",
-      "**Contact provider support**: If the above steps don't work, contact your DTH provider's technical support for signal strength check."
-    ];
-  }
-  
-  // Laptop/Computer issues
-  if (issueLower.includes('laptop') || issueLower.includes('computer') || issueLower.includes('start')) {
-    return [
-      "**Check power connections**: Ensure the laptop is plugged into a working power outlet and the charger is securely connected. Try a different outlet.",
-      "**Perform hard reset**: Remove the charger and battery (if removable), then hold the power button for 30 seconds. Reconnect charger (without battery) and try to power on.",
-      "**Check for indicator lights**: Look for any LED lights on the laptop. If charging light is on but laptop won't start, there may be a display or power button issue.",
-      "**Test display**: Connect an external monitor via HDMI. If the external display works, your laptop screen or internal display cable may be faulty.",
-      "**Listen for sounds**: When you press the power button, listen for fan noise, beeps, or hard drive sounds. This helps identify if it's a display issue or complete power failure.",
-      "**Check RAM**: If comfortable, open the laptop and reseat the RAM modules. Faulty RAM can prevent booting.",
-      "**Seek professional help**: If none of these work, the issue may be hardware failure (motherboard, power supply) requiring professional repair."
-    ];
-  }
-  
-  // Generic troubleshooting for other issues
-  return [
-    "**Restart the device**: Turn off the device completely, wait 30 seconds, then turn it back on.",
-    "**Check connections**: Verify all cables and connections are secure.",
-    "**Update software**: Check if there are any pending software or firmware updates.",
-    "**Clear cache/data**: Clear temporary files or cache that might be causing issues.",
-    "**Check for conflicts**: Ensure no other software or devices are causing conflicts.",
-    "**Contact support**: If the issue persists, contact customer support with error codes or messages you're seeing."
-  ];
-}
 
 // Generate complaint from conversation (DeepSeek R1 powered)
 export const generateComplaintFromAI = async (req, res) => {
@@ -1286,7 +1139,7 @@ export const generateComplaintFromAI = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const { user } = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1566,7 +1419,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: "Email and OTP are required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user } = await findUserByEmail(email);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -1621,7 +1474,7 @@ export const resendOTP = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const { user } = await findUserByEmail(email);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -1664,8 +1517,8 @@ export const forgotPassword = async (req, res) => {
       });
     }
     
-    // Find the user by email
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Find the user by email across all collections
+    const { user } = await findUserByEmail(email);
     if (!user) {
       // For security reasons, don't reveal that the user doesn't exist
       return res.json({ 

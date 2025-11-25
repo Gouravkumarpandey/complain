@@ -140,30 +140,125 @@ export const sendComplaintConfirmationEmail = async (to, name, complaintId, titl
     const mailOptions = {
       from: `"QuickFix Support" <${process.env.EMAIL_USER}>`,
       to,
-      subject: `Complaint Ticket Created - ${complaintId}`,
+      subject: `[Ticket #${complaintId}] Thank you for contacting QuickFix Support`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <p>Hello ${name},</p>
-          
-          <p>Thank you for contacting QuickFix Support.</p>
-          
-          <p>We have received your request and created a new support ticket for you.</p>
-          
-          <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #4a6cf7;">
-            <p style="margin: 5px 0;"><strong>Ticket ID:</strong> ${complaintId}</p>
-            <p style="margin: 5px 0;"><strong>Title:</strong> ${title}</p>
-            <p style="margin: 5px 0;"><strong>Category:</strong> ${category}</p>
-            <p style="margin: 5px 0;"><strong>Priority:</strong> ${priority} ${priority === 'High' || priority === 'Urgent' || priority === 'Critical' ? '🔴' : priority === 'Medium' ? '🟡' : '🟢'}</p>
-            <p style="margin: 5px 0;"><strong>Description:</strong> ${description}</p>
-          </div>
-          
-          <p>Our support team will get back to you within 24 hours.</p>
-          
-          <p>You can check the status of your ticket or add more details here:<br>
-          👉 <a href="${dashboardUrl}" style="color: #4a6cf7; text-decoration: none; font-weight: bold;">View Ticket</a></p>
-          
-          <p style="margin-top: 30px;">Thanks,<br>The QuickFix Support Team</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f7fa;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 30px 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">QuickFix</h1>
+                      <p style="margin: 8px 0 0 0; color: #e2e8f0; font-size: 14px;">Support Ticket System</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      <p style="margin: 0 0 20px 0; color: #1e293b; font-size: 16px;">Hi ${name},</p>
+                      
+                      <p style="margin: 0 0 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+                        Thank you for contacting QuickFix Support. This email is to confirm that we have received your support request and created a ticket for you.
+                      </p>
+                      
+                      <!-- Ticket Info Box -->
+                      <table role="presentation" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; margin: 20px 0; background-color: #f8fafc;">
+                        <tr>
+                          <td style="padding: 20px;">
+                            <table role="presentation" style="width: 100%;">
+                              <tr>
+                                <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Ticket ID</td>
+                                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 600; text-align: right;">#${complaintId}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Subject</td>
+                                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; text-align: right;">${title}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Category</td>
+                                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; text-align: right;">${category}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Priority</td>
+                                <td style="padding: 8px 0; text-align: right;">
+                                  <span style="display: inline-block; padding: 4px 12px; background-color: ${priority === 'Critical' || priority === 'High' ? '#ef4444' : priority === 'Medium' ? '#f59e0b' : '#10b981'}; color: #ffffff; font-size: 12px; font-weight: 600; border-radius: 3px; text-transform: uppercase;">${priority}</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Status</td>
+                                <td style="padding: 8px 0; text-align: right;">
+                                  <span style="display: inline-block; padding: 4px 12px; background-color: #1e293b; color: #ffffff; font-size: 12px; font-weight: 600; border-radius: 3px;">OPEN</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Description -->
+                      <div style="margin: 20px 0; padding: 16px; background-color: #f8fafc; border-left: 3px solid #1e293b; border-radius: 4px;">
+                        <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Your Message</p>
+                        <p style="margin: 0; color: #1e293b; font-size: 14px; line-height: 1.5;">${description}</p>
+                      </div>
+                      
+                      <p style="margin: 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+                        Our support team will review your request and get back to you as soon as possible. You can expect a response within 24 hours during business days.
+                      </p>
+                      
+                      <!-- CTA Button -->
+                      <table role="presentation" style="margin: 30px 0;">
+                        <tr>
+                          <td style="text-align: center;">
+                            <a href="${dashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #1e293b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">View Ticket</a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <p style="margin: 20px 0 0 0; color: #64748b; font-size: 13px; line-height: 1.5;">
+                        You can view the status of your ticket or add additional information by clicking the button above or visiting your support portal.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding: 30px 40px; background-color: #f8fafc; border-top: 1px solid #cbd5e1;">
+                      <p style="margin: 0 0 10px 0; color: #64748b; font-size: 13px; line-height: 1.5;">
+                        Best regards,<br>
+                        <strong style="color: #1e293b;">QuickFix Support Team</strong>
+                      </p>
+                      <p style="margin: 15px 0 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5;">
+                        Need help? Contact us at <a href="mailto:${process.env.EMAIL_USER}" style="color: #1e293b; text-decoration: none;">${process.env.EMAIL_USER}</a>
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Bottom Note -->
+                  <tr>
+                    <td style="padding: 20px 40px; text-align: center;">
+                      <p style="margin: 0; color: #94a3b8; font-size: 11px; line-height: 1.5;">
+                        This is an automated message. Please do not reply to this email.<br>
+                        Ticket #${complaintId} | QuickFix Support System
+                      </p>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `
     };
 

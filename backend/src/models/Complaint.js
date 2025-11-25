@@ -50,7 +50,7 @@ const complaintSchema = new mongoose.Schema({
   complaintId: {
     type: String,
     unique: true,
-    required: true
+    required: false
   },
   attachments: [{
     filename: String,

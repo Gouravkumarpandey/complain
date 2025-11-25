@@ -2,8 +2,8 @@ import Joi from 'joi';
 
 const validateComplaint = (complaint) => {
   const schema = Joi.object({
-    title: Joi.string().min(5).max(200).required(),
-    description: Joi.string().min(10).max(5000).required(),
+    title: Joi.string().min(3).max(200).required(),
+    description: Joi.string().min(3).max(5000).required(),
     category: Joi.string().valid(
       'Technical Support',
       'Billing',
