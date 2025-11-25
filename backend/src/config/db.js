@@ -20,6 +20,14 @@ const connectDB = async () => {
     console.log("✅ MongoDB Connected...");
     console.log(`📊 Database: ${mongoose.connection.name}`);
     
+    // List all collections in the database
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log(`📋 Available collections in '${mongoose.connection.name}':`, collections.map(c => c.name));
+    
+    // Verify that role-specific collections exist or will be created
+    const requiredCollections = ['users', 'admin', 'agent', 'analytics', 'complaints', 'notifications', 'account', 'organizations'];
+    console.log(`🔍 Required collections for multi-dashboard system: ${requiredCollections.join(', ')}`);
+    
     // Add event listeners for connection issues
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);

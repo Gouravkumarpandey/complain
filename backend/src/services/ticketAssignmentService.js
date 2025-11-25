@@ -3,11 +3,12 @@ import { Complaint } from '../models/Complaint.js';
 import { createNotification } from './notificationService.js';
 
 /**
- * Find an available agent and assign a complaint to them
+ * Find a free agent (with no assigned tasks) and assign complaint
  * @param {string} complaintId - The ID of the complaint to assign
+ * @param {object} io - Socket.io instance for real-time notifications
  * @returns {Promise<object>} The assigned agent and updated complaint
  */
-export const autoAssignTicket = async (complaintId) => {
+export const autoAssignToFreeAgent = async (complaintId, io = null) => {
   try {
     const complaint = await Complaint.findById(complaintId);
     
@@ -16,23 +17,16 @@ export const autoAssignTicket = async (complaintId) => {
     }
     
     if (complaint.assignedTo) {
-      throw new Error(`Complaint ${complaintId} is already assigned to an agent`);
+      console.log(`Complaint ${complaintId} is already assigned`);
+      return { complaint, assignedAgent: null, message: 'Already assigned' };
     }
     
-    // First try to find agents who are marked as available
-    const availableAgents = await User.find({ 
-      role: 'agent',
-      availability: 'available'
-    }).lean();
-    
-    // If no explicitly available agents, fall back to any agent
-    const agents = availableAgents.length > 0 ? 
-      availableAgents : 
-      await User.find({ role: 'agent' }).lean();
+    // Find agents with ZERO active tickets (completely free)
+    const agents = await User.find({ role: 'agent' }).lean();
     
     if (!agents || agents.length === 0) {
       console.log('No agents available in the system');
-      return { complaint, assignedAgent: null };
+      return { complaint, assignedAgent: null, message: 'No agents found' };
     }
     
     // Get the counts of active complaints per agent
@@ -46,70 +40,75 @@ export const autoAssignTicket = async (complaintId) => {
         return {
           agentId: agent._id,
           name: agent.name,
-          activeTickets: activeTicketCount,
           email: agent.email,
-          availability: agent.availability
+          activeTickets: activeTicketCount
         };
       })
     );
     
-    // Find agent with the lowest workload among available agents
-    const sortedAgents = agentLoads
-      .sort((a, b) => {
-        // First sort by availability ('available' agents first)
-        if (a.availability === 'available' && b.availability !== 'available') return -1;
-        if (a.availability !== 'available' && b.availability === 'available') return 1;
-        // Then by active ticket count
-        return a.activeTickets - b.activeTickets;
-      });
-      
-    const leastBusyAgent = sortedAgents[0];
+    // Find agents with 0 active tickets (completely free)
+    const freeAgents = agentLoads.filter(agent => agent.activeTickets === 0);
     
-    // If the agent has fewer than MAX_TICKETS_PER_AGENT, assign the ticket
-    const MAX_TICKETS_PER_AGENT = 5;
-    
-    if (leastBusyAgent && leastBusyAgent.activeTickets < MAX_TICKETS_PER_AGENT) {
-      complaint.assignedTo = leastBusyAgent.agentId;
-      complaint.status = 'In Progress';
-      complaint.updates.push({
-        message: `Ticket automatically assigned to agent ${leastBusyAgent.name}`,
-        updatedBy: leastBusyAgent.agentId,
-        updateType: 'assignment',
-        previousValue: 'Unassigned',
-        newValue: leastBusyAgent.name,
-        createdAt: new Date(),
-      });
-      
-      await complaint.save();
-      
-      // Update agent availability to busy
-      await User.findByIdAndUpdate(leastBusyAgent.agentId, {
-        availability: 'busy'
-      });
-      
-      // Create notification for the agent
-      await createNotification(
-        leastBusyAgent.agentId,
-        'New Ticket Assignment',
-        `You have been assigned to ticket #${complaint.complaintId}`,
-        'assignment',
-        complaint._id,
-        complaint.user
-      );
-      
-      return { 
-        complaint, 
-        assignedAgent: { 
-          id: leastBusyAgent.agentId, 
-          name: leastBusyAgent.name 
-        } 
-      };
-    } else {
-      console.log('All agents have reached their maximum ticket capacity');
-      return { complaint, assignedAgent: null };
+    if (freeAgents.length === 0) {
+      console.log('No free agents available - all agents have assigned tasks');
+      return { complaint, assignedAgent: null, message: 'All agents are busy' };
     }
+    
+    // Pick the first free agent (or randomize for load distribution)
+    const selectedAgent = freeAgents[0];
+    
+    // Assign the complaint to the free agent
+    complaint.assignedTo = selectedAgent.agentId;
+    complaint.status = 'In Progress';
+    complaint.updates.push({
+      message: `Ticket automatically assigned to agent ${selectedAgent.name} (Free agent)`,
+      updatedBy: selectedAgent.agentId,
+      updateType: 'assignment',
+      previousValue: 'Unassigned',
+      newValue: selectedAgent.name,
+      createdAt: new Date(),
+    });
+    
+    await complaint.save();
+    
+    // Create notification for the agent
+    await createNotification(
+      selectedAgent.agentId,
+      'New Ticket Assignment',
+      `You have been assigned to ticket #${complaint.complaintId}`,
+      'assignment',
+      complaint._id,
+      complaint.user
+    );
+    
+    // Send real-time WebSocket notification to the agent
+    if (io) {
+      // Import the notification function
+      const { notifyAgentAssignment } = await import('../socket/handlers/complaintHandler.js');
+      
+      notifyAgentAssignment(io, selectedAgent.agentId, {
+        _id: complaint._id,
+        complaintId: complaint.complaintId,
+        title: complaint.title,
+        description: complaint.description,
+        priority: complaint.priority,
+        category: complaint.category
+      });
+    }
+    
+    console.log(`✅ Complaint ${complaint.complaintId} assigned to free agent ${selectedAgent.name}`);
+    
+    return { 
+      complaint, 
+      assignedAgent: { 
+        id: selectedAgent.agentId, 
+        name: selectedAgent.name,
+        activeTickets: selectedAgent.activeTickets
+      },
+      message: 'Assigned to free agent'
+    };
   } catch (error) {
-    console.error('Error in autoAssignTicket:', error.message);
+    console.error('Error in autoAssignToFreeAgent:', error.message);
     throw error;
   }
 };

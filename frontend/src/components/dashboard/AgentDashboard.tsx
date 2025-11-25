@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { agentService } from '../../services/agentService';
 import { Notifications } from '../notifications/Notifications';
+import AIAssistant from './AIAssistant';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
 import { useSocket } from '../../hooks/useSocket';
@@ -1147,31 +1148,7 @@ export function AgentDashboard() {
 
         {/* ChatBot Modal */}
         {showChatBot && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full m-4 max-h-[600px]">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bot className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">AI Assistant</h3>
-                  </div>
-                  <button 
-                    onClick={() => setShowChatBot(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="h-[500px] p-4">
-                <div className="text-center text-gray-500">
-                  <Bot className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                  <p>AI Assistant is ready to help!</p>
-                  <p className="text-sm mt-2">Ask me about your complaints or get support.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AIAssistant onClose={() => setShowChatBot(false)} />
         )}
 
         {/* Notifications Modal */}
