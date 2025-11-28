@@ -391,7 +391,7 @@ export function HomePage() {
       </section>
 
       {/* Pricing Plans Section */}
-      <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-orange-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -404,8 +404,8 @@ export function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-              <div className="bg-gradient-to-r from-gray-500 to-gray-600 p-6 text-white">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-slate-200 hover:border-slate-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-slate-600 to-slate-700 p-6 text-white">
                 <div className="flex items-center gap-3 mb-2">
                   <MessageSquare className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
                   <h3 className="text-2xl font-bold">Free</h3>
@@ -451,7 +451,7 @@ export function HomePage() {
 
                 <Link
                   to="/pricing"
-                  className="w-full block text-center bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                  className="w-full block text-center bg-slate-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-700 hover:shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
                   Get Started Free
                 </Link>
@@ -459,12 +459,12 @@ export function HomePage() {
             </div>
 
             {/* Pro Plan - Highlighted */}
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-blue-500 relative transform md:scale-105 transition-all duration-300 hover:shadow-3xl hover:-translate-y-2">
-              <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-4 py-1 rounded-bl-lg">
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-cyan-500 relative transform md:scale-105 transition-all duration-300 hover:shadow-3xl hover:-translate-y-2">
+              <div className="absolute top-0 right-0 bg-cyan-600 text-white text-xs font-bold px-4 py-1 rounded-bl-lg">
                 MOST POPULAR
               </div>
               
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+              <div className="bg-gradient-to-r from-cyan-500 to-teal-600 p-6 text-white">
                 <div className="flex items-center gap-3 mb-2">
                   <Users className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
                   <h3 className="text-2xl font-bold">Pro</h3>
@@ -479,47 +479,47 @@ export function HomePage() {
               <div className="p-6">
                 <ul className="space-y-4 mb-6">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700 font-medium">Everything in Free, plus:</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">AI-powered diagnosis</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Unlimited complaints</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Live chat support</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Priority support (24h)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Analytics dashboard</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Email & SMS notifications</span>
                   </li>
                 </ul>
 
                 <Link
                   to="/pricing"
-                  className="w-full block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="w-full block text-center bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
-                  Upgrade to Pro
+                  Get Pro
                 </Link>
               </div>
             </div>
 
             {/* Premium Plan */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-violet-200 hover:border-violet-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-violet-500 to-purple-600 p-6 text-white">
                 <div className="flex items-center gap-3 mb-2">
                   <Shield className="w-8 h-8 transition-transform duration-300 hover:scale-110" />
                   <h3 className="text-2xl font-bold">Premium</h3>
@@ -534,44 +534,44 @@ export function HomePage() {
               <div className="p-6">
                 <ul className="space-y-4 mb-6">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700 font-medium">Everything in Pro, plus:</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Video call support</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Team management (10 users)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Real-time monitoring</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Advanced analytics</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Custom branding</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">Dedicated account manager</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">API access & integrations</span>
                   </li>
                 </ul>
 
                 <Link
                   to="/pricing"
-                  className="w-full block text-center bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="w-full block text-center bg-violet-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
-                  Upgrade to Premium
+                  Get Premium
                 </Link>
               </div>
             </div>
@@ -587,71 +587,71 @@ export function HomePage() {
                   <thead>
                     <tr className="border-b-2 border-gray-200">
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">Feature</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Free</th>
-                      <th className="text-center py-4 px-6 font-semibold text-blue-600">Pro</th>
-                      <th className="text-center py-4 px-6 font-semibold text-purple-600">Premium</th>
+                      <th className="text-center py-4 px-6 font-semibold text-slate-600">Free</th>
+                      <th className="text-center py-4 px-6 font-semibold text-teal-600">Pro</th>
+                      <th className="text-center py-4 px-6 font-semibold text-violet-600">Premium</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Complaint Limit</td>
                       <td className="text-center py-4 px-6">5/month</td>
-                      <td className="text-center py-4 px-6 text-blue-600 font-semibold">Unlimited</td>
-                      <td className="text-center py-4 px-6 text-purple-600 font-semibold">Unlimited</td>
+                      <td className="text-center py-4 px-6 text-teal-600 font-semibold">Unlimited</td>
+                      <td className="text-center py-4 px-6 text-violet-600 font-semibold">Unlimited</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">AI Diagnosis</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-teal-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Live Chat Support</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-teal-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Video Call Support</td>
                       <td className="text-center py-4 px-6">—</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Response Time</td>
                       <td className="text-center py-4 px-6 text-sm">48-72 hours</td>
-                      <td className="text-center py-4 px-6 text-sm text-blue-600">24 hours</td>
-                      <td className="text-center py-4 px-6 text-sm text-purple-600">Instant</td>
+                      <td className="text-center py-4 px-6 text-sm text-teal-600">24 hours</td>
+                      <td className="text-center py-4 px-6 text-sm text-violet-600">Instant</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Analytics Dashboard</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-blue-500 mx-auto" /></td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-teal-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Team Management</td>
                       <td className="text-center py-4 px-6">—</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6 text-sm text-purple-600">Up to 10 users</td>
+                      <td className="text-center py-4 px-6 text-sm text-violet-600">Up to 10 users</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Custom Branding</td>
                       <td className="text-center py-4 px-6">—</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">API Access</td>
                       <td className="text-center py-4 px-6">—</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="py-4 px-6 text-gray-700">Real-time Alerts</td>
                       <td className="text-center py-4 px-6">—</td>
                       <td className="text-center py-4 px-6">—</td>
-                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-purple-500 mx-auto" /></td>
+                      <td className="text-center py-4 px-6"><CheckCircle className="w-5 h-5 text-violet-500 mx-auto" /></td>
                     </tr>
                   </tbody>
                 </table>
