@@ -1,6 +1,183 @@
-import { User } from '../models/User.js';
+import { User, AgentUser } from '../models/User.js';
 import { Complaint } from '../models/Complaint.js';
 import { createNotification } from './notificationService.js';
+import deepseekService from './deepseekService.js';
+
+/**
+ * AI-powered intelligent ticket assignment
+ * Uses DeepSeek AI to analyze complaint and assign to best available agent
+ * @param {string} complaintId - The ID of the complaint to assign
+ * @param {object} io - Socket.io instance for real-time notifications
+ * @returns {Promise<object>} The assigned agent and updated complaint
+ */
+export const aiAssignToAgent = async (complaintId, io = null) => {
+  try {
+    const complaint = await Complaint.findById(complaintId);
+    
+    if (!complaint) {
+      throw new Error(`Complaint ${complaintId} not found`);
+    }
+    
+    if (complaint.assignedTo) {
+      console.log(`Complaint ${complaintId} is already assigned`);
+      return { complaint, assignedAgent: null, message: 'Already assigned' };
+    }
+    
+    // Get all agents with their current workload
+    // Query the 'agent' collection using AgentUser model
+    const agents = await AgentUser.find({}).lean();
+    
+    console.log(`📊 Found ${agents.length} agents in database`);
+    
+    if (!agents || agents.length === 0) {
+      console.error('❌ NO AGENTS FOUND IN DATABASE!');
+      console.error('   To fix this issue:');
+      console.error('   1. Register an agent user via /api/auth/register with role: "agent"');
+      console.error('   2. Or update existing user: db.users.updateOne({email: "user@example.com"}, {$set: {role: "agent"}})');
+      return { complaint, assignedAgent: null, message: 'No agents found in database. Please create agent users.' };
+    }
+    
+    // Filter out offline agents if availability field exists
+    const activeAgents = agents.filter(agent => 
+      !agent.availability || agent.availability !== 'offline'
+    );
+    
+    if (activeAgents.length === 0) {
+      console.log('❌ All agents are offline');
+      return { complaint, assignedAgent: null, message: 'All agents offline' };
+    }
+    
+    console.log(`✅ ${activeAgents.length} active agents available for assignment`);
+    
+    // Get active ticket counts for each agent
+    const agentProfiles = await Promise.all(
+      activeAgents.map(async (agent) => {
+        const activeTicketCount = await Complaint.countDocuments({
+          assignedTo: agent._id,
+          status: { $nin: ['Resolved', 'Closed'] }
+        });
+        
+        return {
+          _id: agent._id,
+          agentId: agent._id,
+          name: agent.name,
+          email: agent.email,
+          activeTickets: activeTicketCount,
+          availability: agent.availability || 'available',
+          department: agent.organization || 'Support',
+          expertise: agent.organization || 'General'
+        };
+      })
+    );
+    
+    console.log(`📋 Agent profiles prepared:`);
+    agentProfiles.forEach(agent => {
+      console.log(`   - ${agent.name}: ${agent.activeTickets} active tickets, ${agent.availability}`);
+    });
+    
+    // Use AI to select the best agent
+    console.log(`🤖 Using DeepSeek AI to assign complaint ${complaint.complaintId}...`);
+    const aiAssignment = await deepseekService.assignTicketToAgent(
+      {
+        title: complaint.title,
+        description: complaint.description,
+        category: complaint.category,
+        priority: complaint.priority
+      },
+      agentProfiles
+    );
+    
+    if (!aiAssignment.success) {
+      console.log('AI assignment failed, no agents available');
+      return { complaint, assignedAgent: null, message: aiAssignment.message };
+    }
+    
+    const selectedAgent = aiAssignment.agent;
+    
+    // Assign the complaint to the selected agent
+    complaint.assignedTo = selectedAgent._id;
+    complaint.status = 'In Progress';
+    
+    // Add agent contact information to the complaint description
+    const agentContactInfo = `\n\n---\n**Assigned Agent:** ${selectedAgent.name}\n**Agent Email:** ${selectedAgent.email}\n**Assignment Date:** ${new Date().toLocaleString()}\n---`;
+    
+    // Append agent info to description if not already present
+    if (!complaint.description.includes('**Assigned Agent:**')) {
+      complaint.description += agentContactInfo;
+    }
+    
+    complaint.updates.push({
+      message: `🤖 AI-assigned to ${selectedAgent.name} (${selectedAgent.email}): ${aiAssignment.reasoning}`,
+      updatedBy: selectedAgent._id,
+      updateType: 'assignment',
+      previousValue: 'Unassigned',
+      newValue: `${selectedAgent.name} (${selectedAgent.email})`,
+      metadata: {
+        assignmentMethod: aiAssignment.assignmentMethod,
+        confidence: aiAssignment.confidence,
+        estimatedResponseTime: aiAssignment.estimatedResponseTime,
+        aiModel: aiAssignment.model,
+        agentEmail: selectedAgent.email
+      },
+      createdAt: new Date(),
+    });
+    
+    await complaint.save();
+    
+    // Create notification for the agent
+    await createNotification({
+      userId: selectedAgent._id,
+      title: 'New Ticket Assignment (AI)',
+      message: `🤖 AI assigned ticket #${complaint.complaintId} to you. ${aiAssignment.reasoning}`,
+      type: 'complaint_assigned',
+      priority: 'high',
+      complaintId: complaint._id,
+      data: { complaintId: complaint.complaintId, userId: complaint.user }
+    });
+    
+    // Send real-time WebSocket notification to the agent
+    if (io) {
+      const { notifyAgentAssignment } = await import('../socket/handlers/complaintHandler.js');
+      
+      notifyAgentAssignment(io, selectedAgent._id, {
+        _id: complaint._id,
+        complaintId: complaint.complaintId,
+        title: complaint.title,
+        description: complaint.description,
+        priority: complaint.priority,
+        category: complaint.category,
+        aiAssignment: {
+          confidence: aiAssignment.confidence,
+          reasoning: aiAssignment.reasoning,
+          estimatedResponseTime: aiAssignment.estimatedResponseTime
+        }
+      });
+    }
+    
+    console.log(`✅ Complaint ${complaint.complaintId} AI-assigned to ${selectedAgent.name} (Confidence: ${aiAssignment.confidence})`);
+    
+    return { 
+      complaint, 
+      assignedAgent: { 
+        id: selectedAgent._id, 
+        name: selectedAgent.name,
+        activeTickets: selectedAgent.activeTickets,
+        aiAssignment: {
+          confidence: aiAssignment.confidence,
+          reasoning: aiAssignment.reasoning,
+          method: aiAssignment.assignmentMethod,
+          estimatedResponseTime: aiAssignment.estimatedResponseTime
+        }
+      },
+      message: 'AI-powered assignment successful'
+    };
+  } catch (error) {
+    console.error('Error in aiAssignToAgent:', error.message);
+    // Fallback to basic assignment if AI fails
+    console.log('AI assignment failed, falling back to basic assignment');
+    return autoAssignToFreeAgent(complaintId, io);
+  }
+};
 
 /**
  * Find a free agent (with no assigned tasks) and assign complaint
@@ -22,7 +199,7 @@ export const autoAssignToFreeAgent = async (complaintId, io = null) => {
     }
     
     // Find agents with ZERO active tickets (completely free)
-    const agents = await User.find({ role: 'agent' }).lean();
+    const agents = await AgentUser.find({}).lean();
     
     if (!agents || agents.length === 0) {
       console.log('No agents available in the system');
@@ -57,29 +234,46 @@ export const autoAssignToFreeAgent = async (complaintId, io = null) => {
     // Pick the first free agent (or randomize for load distribution)
     const selectedAgent = freeAgents[0];
     
+    // Get agent email from database
+    const agentUser = await AgentUser.findById(selectedAgent.agentId).select('email');
+    const agentEmail = agentUser?.email || 'Not available';
+    
     // Assign the complaint to the free agent
     complaint.assignedTo = selectedAgent.agentId;
     complaint.status = 'In Progress';
+    
+    // Add agent contact information to the complaint description
+    const agentContactInfo = `\n\n---\n**Assigned Agent:** ${selectedAgent.name}\n**Agent Email:** ${agentEmail}\n**Assignment Date:** ${new Date().toLocaleString()}\n---`;
+    
+    // Append agent info to description if not already present
+    if (!complaint.description.includes('**Assigned Agent:**')) {
+      complaint.description += agentContactInfo;
+    }
+    
     complaint.updates.push({
-      message: `Ticket automatically assigned to agent ${selectedAgent.name} (Free agent)`,
+      message: `Ticket automatically assigned to agent ${selectedAgent.name} (${agentEmail}) - Free agent`,
       updatedBy: selectedAgent.agentId,
       updateType: 'assignment',
       previousValue: 'Unassigned',
-      newValue: selectedAgent.name,
+      newValue: `${selectedAgent.name} (${agentEmail})`,
+      metadata: {
+        agentEmail: agentEmail
+      },
       createdAt: new Date(),
     });
     
     await complaint.save();
     
     // Create notification for the agent
-    await createNotification(
-      selectedAgent.agentId,
-      'New Ticket Assignment',
-      `You have been assigned to ticket #${complaint.complaintId}`,
-      'assignment',
-      complaint._id,
-      complaint.user
-    );
+    await createNotification({
+      userId: selectedAgent.agentId,
+      title: 'New Ticket Assignment',
+      message: `You have been assigned to ticket #${complaint.complaintId}`,
+      type: 'complaint_assigned',
+      priority: 'high',
+      complaintId: complaint._id,
+      data: { complaintId: complaint.complaintId, userId: complaint.user }
+    });
     
     // Send real-time WebSocket notification to the agent
     if (io) {
@@ -124,7 +318,7 @@ export const manualAssignTicket = async (complaintId, agentId, adminId) => {
   try {
     const [complaint, agent] = await Promise.all([
       Complaint.findById(complaintId),
-      User.findById(agentId)
+      AgentUser.findById(agentId)
     ]);
     
     if (!complaint) {
@@ -145,7 +339,7 @@ export const manualAssignTicket = async (complaintId, agentId, adminId) => {
     }
     
     const previousAgent = complaint.assignedTo 
-      ? (await User.findById(complaint.assignedTo).select('name'))?.name 
+      ? (await AgentUser.findById(complaint.assignedTo).select('name'))?.name 
       : 'Unassigned';
     
     complaint.assignedTo = agentId;
@@ -162,14 +356,15 @@ export const manualAssignTicket = async (complaintId, agentId, adminId) => {
     await complaint.save();
     
     // Create notification for the agent
-    await createNotification(
-      agentId,
-      'New Ticket Assignment',
-      `You have been assigned to ticket #${complaint.complaintId} by admin`,
-      'assignment',
-      complaint._id,
-      adminId
-    );
+    await createNotification({
+      userId: agentId,
+      title: 'New Ticket Assignment',
+      message: `You have been assigned to ticket #${complaint.complaintId} by admin`,
+      type: 'complaint_assigned',
+      priority: 'high',
+      complaintId: complaint._id,
+      data: { complaintId: complaint.complaintId, assignedBy: adminId }
+    });
     
     return { complaint, assignedAgent: { id: agentId, name: agent.name } };
   } catch (error) {
@@ -184,8 +379,8 @@ export const manualAssignTicket = async (complaintId, agentId, adminId) => {
  */
 export const getAgentsWithWorkload = async () => {
   try {
-    // Get all agents
-    const agents = await User.find({ role: 'agent' }).select('name email').lean();
+    // Get all agents from the 'agent' collection
+    const agents = await AgentUser.find({}).select('name email').lean();
     
     // For each agent, get their workload
     const agentWorkloads = await Promise.all(

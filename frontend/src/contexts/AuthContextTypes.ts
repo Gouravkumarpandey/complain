@@ -3,6 +3,7 @@ import { createContext } from "react";
 // User interface
 export interface User {
   id: string;
+  _id?: string; // MongoDB ObjectId (alternative to id)
   firstName: string;
   lastName: string;
   name: string;
