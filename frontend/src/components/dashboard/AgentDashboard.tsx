@@ -124,20 +124,33 @@ export function AgentDashboard() {
     };
   }, [user, refreshComplaints]);
 
-  // Update filtered complaints to show tickets assigned to this agent or unassigned
+  // Update filtered complaints to show ONLY tickets assigned to this specific agent
   useEffect(() => {
     if (complaints && user) {
-      // Filter complaints to show only tickets assigned to this agent (by id, _id, or name) or unassigned
+      // Filter complaints to show only tickets assigned to this specific agent
+      // Match by agent ID, _id, name, or email - DO NOT show unassigned complaints
       const assignedComplaints = complaints.filter(c => {
         const assigned = c.assignedTo;
-        // Check if assigned to current agent by ID, _id, name, or agent name from backend
+        
+        // Skip if not assigned to anyone
+        if (!assigned || assigned === '' || assigned === 'Unassigned') {
+          return false;
+        }
+        
+        // Check if assigned to current agent by ID, _id, name, or email
+        // Compare case-insensitively for email matching
+        const agentEmail = user.email?.toLowerCase();
+        const complaintAgentEmail = c.assignedAgentEmail?.toLowerCase();
+        
         const isMine = assigned === user.id || 
                        assigned === user._id || 
                        assigned === user.name ||
                        c.assignedAgentName === user.name ||
-                       c.assignedAgentEmail === user.email;
-        const isUnassigned = !assigned || assigned === '' || assigned === 'Unassigned';
-        return isMine || isUnassigned;
+                       (agentEmail && complaintAgentEmail && complaintAgentEmail === agentEmail);
+        
+        console.log(`Complaint ${c.complaintId || c.id}: assigned=${assigned}, agentEmail=${complaintAgentEmail}, userEmail=${agentEmail}, isMine=${isMine}`);
+        
+        return isMine;
       });
       
       console.log('🎯 Agent Dashboard - Filtering complaints for agent:', {
@@ -145,8 +158,13 @@ export function AgentDashboard() {
         agentName: user.name,
         agentEmail: user.email,
         totalComplaints: complaints.length,
-        assignedToMe: assignedComplaints.filter(c => c.assignedTo && c.assignedTo !== 'Unassigned').length,
-        unassigned: assignedComplaints.filter(c => !c.assignedTo || c.assignedTo === '' || c.assignedTo === 'Unassigned').length
+        assignedToMe: assignedComplaints.length,
+        complaintDetails: complaints.map(c => ({
+          id: c.complaintId || c.id,
+          assignedTo: c.assignedTo,
+          assignedAgentEmail: c.assignedAgentEmail,
+          assignedAgentName: c.assignedAgentName
+        }))
       });
       
       setFilteredComplaints(assignedComplaints);
@@ -441,27 +459,11 @@ export function AgentDashboard() {
                 </button>
               </div>
 
-              <div className="text-sm text-gray-700">
-                <p><strong>Socket ID: </strong> {socket?.id || 'Not Connected'}</p>
-                <p><strong>Auth Token: </strong> {localStorage.getItem('token') ? 'Present' : 'Missing'}</p>
-                <p><strong>User ID: </strong> {user?.id || 'Unknown'}</p>
-                <button
-                  onClick={() => {
-                    try {
-                      socket?.disconnect();
-                      setTimeout(() => socket?.connect(), 500);
-                    } catch (err) {
-                      console.warn('Reconnect failed', err);
-                    }
-                  }}
-                  className="ml-3 bg-gray-100 px-3 py-1 rounded-lg"
-                >
-                  Reconnect
-                </button>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleRefreshComplaints}
                   disabled={isRefreshing}
-                  className="ml-3 bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 flex items-center gap-1 disabled:opacity-50"
+                  className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 flex items-center gap-1.5 disabled:opacity-50 text-sm font-medium"
                 >
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                   {isRefreshing ? 'Refreshing...' : 'Refresh Tickets'}
@@ -604,13 +606,15 @@ export function AgentDashboard() {
                   ) : filteredComplaints.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Inbox className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium">No assigned tickets</p>
-                      <p className="text-sm">Tickets assigned to you will appear here</p>
+                      <p className="text-lg font-medium">No tickets assigned to you</p>
+                      <p className="text-sm">When AI assigns tickets to your account ({user?.email}), they will appear here</p>
                       <button 
-                        onClick={() => setActiveView('performance')}
-                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        onClick={handleRefreshComplaints}
+                        disabled={isRefreshing}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
                       >
-                        View Performance
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Checking...' : 'Check for New Tickets'}
                       </button>
                     </div>
                   ) : (
@@ -818,17 +822,24 @@ export function AgentDashboard() {
                   <div className="text-center py-12 text-gray-500">
                     <Inbox className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                     <p className="text-xl font-medium mb-2">No tickets found</p>
-                    <p className="text-sm mb-6">
+                    <p className="text-sm mb-2">
                       {filteredComplaints.length === 0
-                        ? "You don't have any tickets assigned to you yet"
+                        ? `No tickets have been assigned to your account (${user?.email}) yet`
                         : "No tickets match your search"}
                     </p>
+                    {filteredComplaints.length === 0 && (
+                      <p className="text-xs text-gray-400 mb-6">
+                        When AI assigns complaints to you, they will appear here automatically
+                      </p>
+                    )}
                     {filteredComplaints.length === 0 ? (
                       <button 
-                        onClick={() => setActiveView('dashboard')}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+                        onClick={handleRefreshComplaints}
+                        disabled={isRefreshing}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
                       >
-                        Go To Dashboard
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Checking...' : 'Check for New Tickets'}
                       </button>
                     ) : (
                       <button 
