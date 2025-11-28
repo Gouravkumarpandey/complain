@@ -97,9 +97,9 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
 
   // Regular users can only see their own complaints
   if (req.user.role === 'user') {
-    filter.userId = req.user._id;
+    filter.user = req.user._id; // Use 'user' field, not 'userId'
   } else if (userId && (req.user.role === 'admin' || req.user.role === 'agent')) {
-    filter.userId = userId;
+    filter.user = userId; // Use 'user' field, not 'userId'
   }
 
   // Agents can see complaints assigned to them or their department
@@ -329,7 +329,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   }
   
   // Import the ticket assignment service and get io instance
-  const { autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
+  const { aiAssignToAgent, autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
   const { getIoInstance } = await import('../socket/socketHandlers.js');
   const { notifyComplaintCreated, notifyComplaintAssigned } = await import('../services/notificationService.js');
   
@@ -337,17 +337,22 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     // Get WebSocket instance for real-time notifications
     const io = getIoInstance();
     
-    // Attempt to auto-assign the ticket to a FREE agent (0 active tasks)
-    const { assignedAgent, message: assignMessage } = await autoAssignToFreeAgent(complaint._id, io);
+    // AI-POWERED ASSIGNMENT: Use DeepSeek to intelligently assign ticket
+    console.log('🤖 Attempting AI-powered agent assignment...');
+    const { assignedAgent, message: assignMessage } = await aiAssignToAgent(complaint._id, io);
     
     // If an agent was assigned, update the response
     if (assignedAgent) {
-      console.log(`✅ Complaint ${complaint.complaintId} assigned to FREE agent ${assignedAgent.name} (${assignedAgent.activeTickets} active tickets)`);
+      console.log(`✅ Complaint ${complaint.complaintId} AI-assigned to agent ${assignedAgent.name}`);
+      console.log(`   Active tickets: ${assignedAgent.activeTickets}`);
+      console.log(`   AI Confidence: ${assignedAgent.aiAssignment?.confidence}`);
+      console.log(`   Reasoning: ${assignedAgent.aiAssignment?.reasoning}`);
+      console.log(`   Method: ${assignedAgent.aiAssignment?.method}`);
       
       // Create notification for assigned agent
       try {
         await notifyComplaintAssigned(
-          assignedAgent._id,
+          assignedAgent.id,
           complaint._id,
           complaint.title
         );
@@ -355,11 +360,11 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
         console.error('Failed to create assignment notification:', notifError);
       }
     } else {
-      console.log(`ℹ️  ${assignMessage || 'No free agent available'} for complaint ${complaint.complaintId}`);
+      console.log(`ℹ️  ${assignMessage || 'No available agent'} for complaint ${complaint.complaintId}`);
     }
   } catch (err) {
-    console.error('Error assigning ticket to free agent:', err);
-    // Continue even if auto-assignment fails
+    console.error('Error in AI ticket assignment:', err);
+    // Continue even if assignment fails - complaint is still created
   }
   
   // Get updated complaint after assignment
@@ -749,63 +754,56 @@ router.patch('/bulk/status', authenticate, authorize('admin', 'agent'), asyncHan
   });
 }));
 
-// AI-assisted auto-assignment
+// AI-powered auto-assignment endpoint
 router.post('/auto-assign', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
-  const { complaintId, teamId } = req.body;
+  const { complaintId } = req.body;
 
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) {
     return res.status(404).json({ error: 'Complaint not found' });
   }
 
-  // Simple auto-assignment logic based on workload
-  const agents = await User.find({ 
-    role: 'agent', 
-    ...(teamId && { department: teamId }),
-    isActive: true 
-  });
-
-  if (agents.length === 0) {
-    return res.status(400).json({ error: 'No available agents found' });
-  }
-
-  // Get current workload for each agent
-  const workloads = await Promise.all(agents.map(async (agent) => {
-    const activeComplaints = await Complaint.countDocuments({
-      assignedTo: agent._id,
-      status: { $in: ['Open', 'In Progress'] }
-    });
-    return { agent, workload: activeComplaints };
-  }));
-
-  // Find agent with lowest workload
-  const leastBusyAgent = workloads.reduce((min, current) => 
-    current.workload < min.workload ? current : min
-  );
-
-  // Assign complaint to least busy agent
-  complaint.assignedTo = leastBusyAgent.agent._id;
-  complaint.assignedTeam = leastBusyAgent.agent.department;
-  complaint.updatedAt = new Date();
-  complaint.updates.push({
-    message: `Auto-assigned to ${leastBusyAgent.agent.firstName} ${leastBusyAgent.agent.lastName}`,
-    author: 'AI System',
-    authorId: req.user._id,
-    timestamp: new Date(),
-    type: 'assignment',
-    isInternal: false
-  });
-
-  await complaint.save();
-
-  res.json({ 
-    message: 'Complaint auto-assigned successfully',
-    assignedTo: {
-      id: leastBusyAgent.agent._id,
-      name: `${leastBusyAgent.agent.firstName} ${leastBusyAgent.agent.lastName}`,
-      workload: leastBusyAgent.workload
+  // Import AI assignment service
+  const { aiAssignToAgent } = await import('../services/ticketAssignmentService.js');
+  const { getIoInstance } = await import('../socket/socketHandlers.js');
+  
+  try {
+    const io = getIoInstance();
+    
+    // Use AI-powered assignment
+    console.log(`🤖 Admin triggered AI assignment for complaint ${complaint.complaintId}`);
+    const { assignedAgent, message: assignMessage } = await aiAssignToAgent(complaint._id, io);
+    
+    if (!assignedAgent) {
+      return res.status(400).json({ 
+        error: assignMessage || 'No available agents found',
+        success: false
+      });
     }
-  });
+    
+    // Get updated complaint
+    const updatedComplaint = await Complaint.findById(complaint._id)
+      .populate('assignedTo', 'name email')
+      .populate('user', 'name email');
+    
+    res.json({ 
+      success: true,
+      message: 'Complaint AI-assigned successfully',
+      assignedTo: {
+        id: assignedAgent.id,
+        name: assignedAgent.name,
+        activeTickets: assignedAgent.activeTickets
+      },
+      aiAssignment: assignedAgent.aiAssignment,
+      complaint: updatedComplaint
+    });
+  } catch (error) {
+    console.error('Error in AI auto-assignment:', error);
+    res.status(500).json({ 
+      error: 'Failed to auto-assign complaint',
+      message: error.message 
+    });
+  }
 }));
 
 // Add internal notes (for agents and admins)
@@ -903,7 +901,7 @@ router.get('/stats/dashboard', authenticate, asyncHandler(async (req, res) => {
 
   // Role-based filtering
   if (req.user.role === 'user') {
-    matchFilter.userId = req.user._id;
+    matchFilter.user = req.user._id; // Use 'user' field, not 'userId'
   } else if (req.user.role === 'agent') {
     matchFilter.assignedTo = req.user._id;
   }

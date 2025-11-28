@@ -493,6 +493,179 @@ Remember: Be quick, natural, and human-like in your responses.`;
       note: 'Generated from conversation history (DeepSeek unavailable)'
     };
   }
+
+  /**
+   * AI-powered intelligent agent assignment
+   * Analyzes complaint details and available agents to recommend the best match
+   * @param {Object} complaint - Complaint details (title, description, category, priority)
+   * @param {Array} availableAgents - List of available agents with their profiles
+   * @returns {Promise<Object>} Recommended agent assignment
+   */
+  async assignTicketToAgent(complaint, availableAgents) {
+    // If no API key or no available agents, use fallback
+    if (!this.apiKey || !availableAgents || availableAgents.length === 0) {
+      return this._getFallbackAssignment(availableAgents);
+    }
+
+    try {
+      // Prepare agent profiles for AI analysis
+      const agentProfiles = availableAgents.map((agent, index) => {
+        return `Agent ${index + 1}:
+- ID: ${agent._id || agent.agentId}
+- Name: ${agent.name}
+- Email: ${agent.email}
+- Active Tickets: ${agent.activeTickets || 0}
+- Availability: ${agent.availability || 'available'}
+- Department: ${agent.department || 'Support'}
+- Expertise: ${agent.expertise || 'General'}`;
+      }).join('\n\n');
+
+      const prompt = `You are an intelligent ticket assignment system for a complaint management platform. Your task is to analyze the complaint and recommend the best available agent to handle it.
+
+COMPLAINT DETAILS:
+Title: ${complaint.title}
+Description: ${complaint.description}
+Category: ${complaint.category || 'General'}
+Priority: ${complaint.priority || 'Medium'}
+
+AVAILABLE AGENTS:
+${agentProfiles}
+
+ASSIGNMENT CRITERIA:
+1. Agent availability (prefer 'available' over 'busy')
+2. Current workload (prefer agents with fewer active tickets)
+3. Expertise match (if complaint category matches agent's department/expertise)
+4. Priority handling (for High/Urgent tickets, prefer less busy agents)
+
+IMPORTANT:
+- Choose ONLY from the provided agents
+- Consider workload balance - don't overload agents
+- For urgent issues, prioritize agents with lowest active tickets
+- For technical issues, prefer agents with technical expertise
+
+Respond ONLY with a JSON object:
+{
+  "recommendedAgentId": "agent_id_here",
+  "recommendedAgentName": "agent_name_here",
+  "confidence": 0.0-1.0,
+  "reasoning": "Brief explanation for this assignment",
+  "priority": "low/medium/high/urgent",
+  "estimatedResponseTime": "time estimate like '2h' or '30min'"
+}`;
+
+      const response = await axios.post(
+        `${this.apiUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an intelligent ticket assignment AI. Analyze complaints and agent profiles to make optimal assignment decisions. Always respond with valid JSON.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.3, // Lower temperature for consistent, logical decisions
+          max_tokens: 500
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            ...(this.isOpenRouter && {
+              'HTTP-Referer': 'http://localhost:5001',
+              'X-Title': 'QuickFix Complaint System'
+            })
+          }
+        }
+      );
+
+      const aiResponse = response.data.choices[0].message.content;
+      
+      // Parse JSON response
+      let assignmentData;
+      try {
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        assignmentData = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
+      } catch (parseError) {
+        console.error('Failed to parse AI assignment response:', parseError);
+        return this._getFallbackAssignment(availableAgents);
+      }
+
+      // Validate that recommended agent exists in available agents
+      const selectedAgent = availableAgents.find(
+        agent => (agent._id?.toString() === assignmentData.recommendedAgentId) || 
+                 (agent.agentId?.toString() === assignmentData.recommendedAgentId) ||
+                 (agent.name === assignmentData.recommendedAgentName)
+      );
+
+      if (!selectedAgent) {
+        console.warn('AI recommended agent not found in available list, using fallback');
+        return this._getFallbackAssignment(availableAgents);
+      }
+
+      return {
+        success: true,
+        agent: selectedAgent,
+        agentId: selectedAgent._id || selectedAgent.agentId,
+        agentName: selectedAgent.name,
+        confidence: assignmentData.confidence || 0.8,
+        reasoning: assignmentData.reasoning || 'AI-powered assignment',
+        priority: assignmentData.priority || complaint.priority,
+        estimatedResponseTime: assignmentData.estimatedResponseTime || '2h',
+        model: this.model,
+        assignmentMethod: 'ai'
+      };
+    } catch (error) {
+      console.error('DeepSeek agent assignment error:', error.response?.data || error.message);
+      return this._getFallbackAssignment(availableAgents);
+    }
+  }
+
+  /**
+   * Fallback agent assignment when AI is unavailable
+   * Uses simple round-robin with workload balancing
+   */
+  _getFallbackAssignment(availableAgents) {
+    if (!availableAgents || availableAgents.length === 0) {
+      return {
+        success: false,
+        message: 'No agents available',
+        assignmentMethod: 'fallback'
+      };
+    }
+
+    // Sort agents by active tickets (ascending) to balance load
+    const sortedAgents = [...availableAgents].sort((a, b) => {
+      const aTickets = a.activeTickets || 0;
+      const bTickets = b.activeTickets || 0;
+      return aTickets - bTickets;
+    });
+
+    // Prefer 'available' agents over 'busy' agents
+    const availableFirst = sortedAgents.sort((a, b) => {
+      if (a.availability === 'available' && b.availability !== 'available') return -1;
+      if (a.availability !== 'available' && b.availability === 'available') return 1;
+      return 0;
+    });
+
+    const selectedAgent = availableFirst[0];
+
+    return {
+      success: true,
+      agent: selectedAgent,
+      agentId: selectedAgent._id || selectedAgent.agentId,
+      agentName: selectedAgent.name,
+      confidence: 0.6,
+      reasoning: 'Automatic assignment based on workload balance',
+      priority: 'medium',
+      estimatedResponseTime: '2-4h',
+      model: 'fallback',
+      assignmentMethod: 'fallback'
+    };
+  }
 }
 
 // Export singleton instance

@@ -129,6 +129,7 @@ io.use(async (socket, next) => {
     if (!token) {
       connectedSockets.delete(socketId);
       console.error('Socket auth failed: Missing token', socketId);
+      socket.emit('connection_error', { message: 'Missing authentication token' });
       return next(new Error("Authentication failed: Missing token"));
     }
 
@@ -140,12 +141,14 @@ io.use(async (socket, next) => {
       // Verify the token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
       console.log('Token decoded successfully for socket:', socketId);
+      console.log('Token payload:', { id: decoded.id, userId: decoded.userId, role: decoded.role });
       
       // Extract userId from different possible fields
       const userId = decoded.id || decoded.userId || decoded.sub;
       if (!userId) {
         connectedSockets.delete(socketId);
-        console.error('Socket auth failed: Invalid token payload (no userId)', socketId);
+        console.error('Socket auth failed: Invalid token payload (no userId)', socketId, decoded);
+        socket.emit('connection_error', { message: 'Invalid token payload - missing user ID' });
         return next(new Error("Authentication failed: Invalid token payload - missing user ID"));
       }
       
