@@ -500,11 +500,11 @@ export function UserDashboard() {
             <button
               onClick={handleRefreshComplaints}
               disabled={isRefreshing}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+              className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 flex items-center gap-1.5 disabled:opacity-50 text-sm font-medium transition-colors"
               title="Refresh Complaints"
             >
-              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing && <span className="text-xs">Refreshing...</span>}
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Complaints'}
             </button>
             
             <button 
