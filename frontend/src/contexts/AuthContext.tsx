@@ -227,15 +227,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string,
     email: string,
     password: string,
-    role: "user" | "agent" | "admin" | "analytics" = "user"
+    role: "user" | "agent" | "admin" | "analytics" = "user",
+    phoneNumber?: string
   ): Promise<boolean> => {
     try {
-      console.log("Registering user with:", { name, email, role });
+      console.log("Registering user with:", { name, email, role, phoneNumber: phoneNumber ? '***' : 'not provided' });
+      
+      const payload: Record<string, string> = { name, email, password, role };
+      if (phoneNumber) {
+        payload.phoneNumber = phoneNumber;
+      }
       
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -284,8 +290,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ token }),
       });
 
-      if (!response.ok) return false;
       const data = await response.json();
+      
+      if (!response.ok) {
+        console.error("Google login failed:", data.message || data);
+        return false;
+      }
+      
       const userData: User = {
         id: data.user.id,
         firstName: data.user.name.split(" ")[0],
@@ -310,12 +321,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const googleSignupWithRole = async (
     token: string,
     role: "user" | "agent" | "admin" | "analytics",
-    organization?: string
+    organization?: string,
+    phoneNumber?: string
   ): Promise<boolean> => {
     try {
-      const body: { token: string; role: string; organization?: string } = { token, role };
+      const body: { token: string; role: string; organization?: string; phoneNumber?: string } = { token, role };
       if (organization) {
         body.organization = organization;
+      }
+      if (phoneNumber) {
+        body.phoneNumber = phoneNumber;
       }
 
       const response = await fetch(`${API_BASE_URL}/auth/google-signup`, {
@@ -324,8 +339,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(body),
       });
 
-      if (!response.ok) return false;
       const data = await response.json();
+      
+      if (!response.ok) {
+        console.error("Google signup failed:", data.message || data);
+        throw new Error(data.message || "Google signup failed");
+      }
+      
       const userData: User = {
         id: data.user.id,
         firstName: data.user.name.split(" ")[0],
