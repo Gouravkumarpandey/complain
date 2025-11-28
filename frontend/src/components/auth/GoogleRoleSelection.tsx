@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { User, Shield, UserCheck, BarChart3, ArrowRight, Building2, ArrowLeft } from 'lucide-react';
+import { User, Shield, UserCheck, BarChart3, ArrowRight, Building2, ArrowLeft, Phone } from 'lucide-react';
 
 interface GoogleRoleSelectionProps {
-  onRoleSelected: (role: 'user' | 'agent' | 'admin' | 'analytics', organization?: string) => void;
+  onRoleSelected: (role: 'user' | 'agent' | 'admin' | 'analytics', organization?: string, phoneNumber?: string) => void;
   onCancel: () => void;
   userInfo: {
     name: string;
@@ -13,6 +13,7 @@ interface GoogleRoleSelectionProps {
 export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: GoogleRoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<'user' | 'agent' | 'admin' | 'analytics'>('user');
   const [organization, setOrganization] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +54,7 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
 
   const selectedRoleData = roles.find(r => r.id === selectedRole);
   const requiresOrganization = selectedRoleData?.requiresOrg || false;
+  const requiresPhoneNumber = selectedRole === 'user'; // Only users need phone number for WhatsApp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,10 +65,20 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
       setError('Organization name is required for this role');
       return;
     }
+    
+    // Validate phone number (required only for 'user' role)
+    if (requiresPhoneNumber && !phoneNumber.trim()) {
+      setError('Phone number is required for WhatsApp notifications');
+      return;
+    }
 
     setLoading(true);
     try {
-      await onRoleSelected(selectedRole, requiresOrganization ? organization.trim() : undefined);
+      await onRoleSelected(
+        selectedRole, 
+        requiresOrganization ? organization.trim() : undefined, 
+        requiresPhoneNumber ? phoneNumber.trim() : undefined
+      );
     } finally {
       setLoading(false);
     }
@@ -222,6 +234,28 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
                     required={requiresOrganization}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Phone Number Field (required only for 'user' role) */}
+            {requiresPhoneNumber && (
+              <div className="animate-fadeIn">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number (WhatsApp) *
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="e.g., +1 555 638 2998"
+                    required={requiresPhoneNumber}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">We'll send WhatsApp notifications about your complaints</p>
               </div>
             )}
 

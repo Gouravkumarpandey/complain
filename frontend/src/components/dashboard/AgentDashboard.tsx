@@ -267,10 +267,6 @@ export function AgentDashboard() {
     }
   };
 
-  const handleEscalate = async (complaintId: string) => {
-    await handleStatusUpdate(complaintId, 'Escalated');
-  };
-
   // Function to update agent availability
   const updateAvailability = async (status: 'available' | 'busy' | 'offline') => {
     if (!user?.id) return;
@@ -1227,18 +1223,23 @@ export function AgentDashboard() {
                   <div>
                     <h5 className="font-medium text-gray-900 mb-4">Agent Actions</h5>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex flex-wrap gap-3">
-                        {selectedComplaint.status !== 'In Progress' && (
-                          <button 
-                            onClick={() => handleStatusUpdate(selectedComplaint.id, 'In Progress')}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
-                          >
-                            <Clock className="w-4 h-4" />
-                            Mark In Progress
-                          </button>
-                        )}
-                        
-                        {selectedComplaint.status !== 'Resolved' && (
+                      {selectedComplaint.status === 'Resolved' || selectedComplaint.status === 'Closed' ? (
+                        <div className="text-green-600 font-medium flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5" />
+                          This complaint has been resolved. You are now available for new assignments.
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-3">
+                          {selectedComplaint.status !== 'In Progress' && (
+                            <button 
+                              onClick={() => handleStatusUpdate(selectedComplaint.id, 'In Progress')}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
+                            >
+                              <Clock className="w-4 h-4" />
+                              Mark In Progress
+                            </button>
+                          )}
+                          
                           <button 
                             onClick={() => handleStatusUpdate(selectedComplaint.id, 'Resolved')}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-1"
@@ -1246,18 +1247,8 @@ export function AgentDashboard() {
                             <CheckCircle className="w-4 h-4" />
                             Mark Resolved
                           </button>
-                        )}
-                        
-                        {selectedComplaint.status !== 'Escalated' && (
-                          <button 
-                            onClick={() => handleEscalate(selectedComplaint.id)}
-                            className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 text-sm flex items-center gap-1"
-                          >
-                            <AlertCircle className="w-4 h-4" />
-                            Escalate
-                          </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   

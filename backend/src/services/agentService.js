@@ -58,7 +58,15 @@ export const refreshAgentAvailability = async (agentId) => {
     // If no active complaints, mark as available; otherwise busy
     const newStatus = hasActive ? 'busy' : 'available';
     
-    return await updateAgentAvailability(agentId, newStatus);
+    const updatedAgent = await updateAgentAvailability(agentId, newStatus);
+    
+    if (newStatus === 'available') {
+      console.log(`✅ Agent ${updatedAgent.name} (${updatedAgent.email}) is now AVAILABLE for new assignments`);
+    } else {
+      console.log(`🔴 Agent ${updatedAgent.name} (${updatedAgent.email}) is still BUSY with active complaints`);
+    }
+    
+    return updatedAgent;
   } catch (error) {
     console.error('Error refreshing agent availability:', error);
     throw error;
