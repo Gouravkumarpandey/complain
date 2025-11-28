@@ -2,6 +2,7 @@ import { User, AgentUser } from '../models/User.js';
 import { Complaint } from '../models/Complaint.js';
 import { createNotification } from './notificationService.js';
 import deepseekService from './deepseekService.js';
+import { updateAgentAvailability } from './agentService.js';
 
 /**
  * AI-powered intelligent ticket assignment
@@ -123,6 +124,14 @@ export const aiAssignToAgent = async (complaintId, io = null) => {
     });
     
     await complaint.save();
+    
+    // Mark agent as busy after assignment
+    try {
+      await updateAgentAvailability(selectedAgent._id, 'busy');
+      console.log(`📌 Agent ${selectedAgent.name} marked as busy after assignment`);
+    } catch (err) {
+      console.error('Error updating agent availability to busy:', err);
+    }
     
     // Create notification for the agent
     await createNotification({
@@ -263,6 +272,14 @@ export const autoAssignToFreeAgent = async (complaintId, io = null) => {
     });
     
     await complaint.save();
+    
+    // Mark agent as busy after assignment
+    try {
+      await updateAgentAvailability(selectedAgent.agentId, 'busy');
+      console.log(`📌 Agent ${selectedAgent.name} marked as busy after assignment`);
+    } catch (err) {
+      console.error('Error updating agent availability to busy:', err);
+    }
     
     // Create notification for the agent
     await createNotification({

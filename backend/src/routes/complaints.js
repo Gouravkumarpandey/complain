@@ -432,6 +432,35 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     }
   }
   
+  // Send WhatsApp notification if user has phone number
+  try {
+    const { sendComplaintRegistrationWhatsApp } = await import('../services/whatsappService.js');
+    const userPhoneNumber = req.user?.phoneNumber;
+    
+    if (userPhoneNumber) {
+      console.log(`📱 Sending WhatsApp notification to ${userPhoneNumber}...`);
+      const whatsappResult = await sendComplaintRegistrationWhatsApp(
+        userPhoneNumber,
+        userName,
+        updatedComplaint.complaintId,
+        updatedComplaint.title,
+        updatedComplaint.category,
+        updatedComplaint.priority
+      );
+      
+      if (whatsappResult.success) {
+        console.log(`✅ WhatsApp notification sent successfully for complaint ${updatedComplaint.complaintId}`);
+      } else {
+        console.log(`⚠️  WhatsApp notification failed: ${whatsappResult.error}`);
+      }
+    } else {
+      console.log('ℹ️  No phone number on user record, skipping WhatsApp notification');
+    }
+  } catch (whatsappError) {
+    console.error('❌ Failed to send WhatsApp notification:', whatsappError.message);
+    // Continue even if WhatsApp fails - complaint is still created
+  }
+  
   res.status(201).json(updatedComplaint);
 }));
 
@@ -469,24 +498,58 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   };
   complaint.updates.push(updateRecord);
 
-  // Calculate resolution time if resolved
-  if (status === 'Resolved') {
-    // Store resolution details
-    complaint.resolution = {
-      description: message || 'Complaint resolved',
-      resolvedBy: req.user._id,
-      resolvedAt: new Date()
-    };
+  // Calculate resolution time if resolved or closed
+  if (status === 'Resolved' || status === 'Closed') {
+    // Store resolution details if resolved
+    if (status === 'Resolved') {
+      complaint.resolution = {
+        description: message || 'Complaint resolved',
+        resolvedBy: req.user._id,
+        resolvedAt: new Date()
+      };
+      
+      // Send WhatsApp notification for resolution
+      try {
+        const { sendComplaintResolvedWhatsApp } = await import('../services/whatsappService.js');
+        const { findUserById } = await import('../models/User.js');
+        
+        // Get the complaint owner's phone number
+        const { user: complaintOwner } = await findUserById(complaint.user);
+        
+        if (complaintOwner && complaintOwner.phoneNumber) {
+          console.log(`📱 Sending WhatsApp resolution notification to ${complaintOwner.phoneNumber}...`);
+          const whatsappResult = await sendComplaintResolvedWhatsApp(
+            complaintOwner.phoneNumber,
+            complaintOwner.name,
+            complaint.complaintId,
+            complaint.title,
+            message || 'Your complaint has been resolved.'
+          );
+          
+          if (whatsappResult.success) {
+            console.log(`✅ WhatsApp resolution notification sent successfully for complaint ${complaint.complaintId}`);
+          } else {
+            console.log(`⚠️  WhatsApp resolution notification failed: ${whatsappResult.error}`);
+          }
+        } else {
+          console.log('ℹ️  No phone number on complaint owner record, skipping WhatsApp notification');
+        }
+      } catch (whatsappError) {
+        console.error('❌ Failed to send WhatsApp resolution notification:', whatsappError.message);
+        // Continue even if WhatsApp fails
+      }
+    }
     
-    // If this agent resolved it, check if they should be marked available again
-    if (complaint.assignedTo && complaint.assignedTo.toString() === req.user._id.toString()) {
+    // Check if the assigned agent should be marked available again
+    if (complaint.assignedTo) {
       // Import the agent service
       const { refreshAgentAvailability } = await import('../services/agentService.js');
       
       try {
         // This will check if agent has any remaining active complaints
         // and update their availability accordingly
-        await refreshAgentAvailability(req.user._id);
+        await refreshAgentAvailability(complaint.assignedTo);
+        console.log(`🔄 Refreshed agent availability after complaint marked as ${status}`);
       } catch (err) {
         console.error('Error updating agent availability:', err);
       }
@@ -536,6 +599,15 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
   });
 
   await complaint.save();
+
+  // Mark the agent as busy after assignment
+  try {
+    const { updateAgentAvailability } = await import('../services/agentService.js');
+    await updateAgentAvailability(agentId, 'busy');
+    console.log(`📌 Agent marked as busy after manual assignment`);
+  } catch (err) {
+    console.error('Error updating agent availability to busy:', err);
+  }
 
   // Emit socket event
   const io = req.app.get('io');
