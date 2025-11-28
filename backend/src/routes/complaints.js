@@ -102,12 +102,10 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
     filter.user = userId; // Use 'user' field, not 'userId'
   }
 
-  // Agents can see complaints assigned to them or their department
+  // Agents can ONLY see complaints assigned directly to them (by their _id)
   if (req.user.role === 'agent') {
-    filter.$or = [
-      { assignedTo: req.user._id },
-      { assignedTeam: req.user.department }
-    ];
+    filter.assignedTo = req.user._id;
+    console.log(`🔍 Agent ${req.user.email} (${req.user._id}) fetching their assigned complaints`);
   }
 
   if (status) filter.status = status;
