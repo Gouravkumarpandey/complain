@@ -39,12 +39,12 @@ export const PaymentSuccess: React.FC = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center">
           {status === 'verifying' && (
             <>
-              <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
+              <Loader2 className="w-16 h-16 text-orange-500 animate-spin mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Verifying Payment
               </h2>
@@ -64,7 +64,7 @@ export const PaymentSuccess: React.FC = () => {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"
                 >
                   Go to Dashboard
                 </button>
@@ -90,7 +90,7 @@ export const PaymentSuccess: React.FC = () => {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => navigate('/pricing')}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"
                 >
                   Try Again
                 </button>

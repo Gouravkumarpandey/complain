@@ -115,13 +115,13 @@ export const PricingPlans: React.FC = () => {
   const getPlanColor = (planName: string) => {
     switch (planName) {
       case 'Free':
-        return 'from-gray-500 to-gray-600';
+        return 'from-slate-600 to-slate-700';
       case 'Pro':
-        return 'from-blue-500 to-blue-600';
+        return 'from-cyan-500 to-teal-600';
       case 'Premium':
-        return 'from-purple-500 to-purple-600';
+        return 'from-violet-500 to-purple-600';
       default:
-        return 'from-gray-500 to-gray-600';
+        return 'from-slate-600 to-slate-700';
     }
   };
 
@@ -129,7 +129,7 @@ export const PricingPlans: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-gray-600">Loading pricing plans...</p>
         </div>
       </div>
@@ -144,7 +144,7 @@ export const PricingPlans: React.FC = () => {
           <p className="text-gray-600">Failed to load pricing plans</p>
           <button
             onClick={loadPlans}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
           >
             Retry
           </button>
@@ -155,7 +155,7 @@ export const PricingPlans: React.FC = () => {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4">
+      <div className="bg-gradient-to-br from-gray-50 to-orange-50 py-12 px-4">
         <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -166,8 +166,8 @@ export const PricingPlans: React.FC = () => {
             Select the perfect plan for your needs. Upgrade or downgrade anytime.
           </p>
           {!isAuthenticated && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full shadow-sm border border-blue-200">
-              <span className="text-sm text-blue-800">
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-full shadow-sm border border-orange-200">
+              <span className="text-sm text-orange-800">
                 Please login or create an account to purchase a plan
               </span>
             </div>
@@ -175,7 +175,7 @@ export const PricingPlans: React.FC = () => {
           {user && (
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm">
               <span className="text-sm text-gray-600">Current Plan:</span>
-              <span className="font-semibold text-blue-600">{user.planType || 'Free'}</span>
+              <span className="font-semibold text-orange-500">{user.planType || 'Free'}</span>
             </div>
           )}
         </div>
@@ -206,13 +206,13 @@ export const PricingPlans: React.FC = () => {
               <div
                 key={planName}
                 className={`relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${
-                  planName === 'Pro' ? 'ring-2 ring-blue-500 md:scale-105' : ''
+                  planName === 'Pro' ? 'ring-2 ring-teal-500 md:scale-105' : ''
                 }`}
               >
                 {/* Recommended Badge */}
                 {planName === 'Pro' && (
-                  <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                    RECOMMENDED
+                  <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    MOST POPULAR
                   </div>
                 )}
 
@@ -267,10 +267,10 @@ export const PricingPlans: React.FC = () => {
                         : isProcessing
                         ? 'bg-gray-400 text-white cursor-wait hover:scale-100'
                         : planName === 'Pro'
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                        ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg hover:shadow-xl'
                         : planName === 'Premium'
-                        ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg hover:shadow-xl'
-                        : 'bg-gray-600 text-white hover:bg-gray-700 hover:shadow-lg'
+                        ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-lg hover:shadow-xl'
+                        : 'bg-slate-600 text-white hover:bg-slate-700 hover:shadow-lg'
                     }`}
                   >
                     {isProcessing ? (
@@ -283,9 +283,9 @@ export const PricingPlans: React.FC = () => {
                     ) : !isAuthenticated && planName !== 'Free' ? (
                       'Login to Purchase'
                     ) : planName === 'Free' ? (
-                      'Downgrade to Free'
+                      'Get Started Free'
                     ) : (
-                      `Upgrade to ${planName}`
+                      `Get ${planName}`
                     )}
                   </button>
                 </div>
@@ -297,7 +297,7 @@ export const PricingPlans: React.FC = () => {
         {/* Additional Info */}
         <div className="mt-12 text-center text-gray-600">
           <p className="mb-2">All plans include email support and basic features</p>
-          <p className="text-sm">Need help choosing? <a href="/contact" className="text-blue-600 hover:underline">Contact us</a></p>
+          <p className="text-sm">Need help choosing? <a href="/contact" className="text-orange-500 hover:underline">Contact us</a></p>
         </div>
 
         {/* Promotional Banner */}
@@ -367,7 +367,7 @@ export const PricingPlans: React.FC = () => {
                     {faq.question}
                   </span>
                   {openFaq === index ? (
-                    <ChevronUp className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    <ChevronUp className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   )}
@@ -381,12 +381,12 @@ export const PricingPlans: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-12 text-center p-6 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="mt-12 text-center p-6 bg-orange-50 rounded-xl border border-orange-200">
             <p className="text-gray-900 font-medium mb-2">Still have questions?</p>
             <p className="text-gray-600 mb-4">Can't find the answer you're looking for? Please chat with our friendly team.</p>
             <a
               href="/contact"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="inline-block bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
             >
               Contact Support
             </a>

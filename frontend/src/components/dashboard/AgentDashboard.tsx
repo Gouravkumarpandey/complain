@@ -6,10 +6,10 @@ import {
   Search, Calendar, X, Shield, Home, 
   Inbox, HelpCircle, Menu, Download,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
-  Activity, UserCheck, UserX
+  Activity, UserCheck, UserX, RefreshCw
 } from 'lucide-react';
 import { agentService } from '../../services/agentService';
-import { Notifications } from '../notifications/Notifications';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 import AIAssistant from './AIAssistant';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
@@ -24,21 +24,32 @@ import {
 
 export function AgentDashboard() {
   const { user, logout } = useAuth();
-  const { complaints } = useComplaints();
+  const { complaints, loading: complaintsContextLoading, refreshComplaints } = useComplaints();
   const { isConnected, socket, joinComplaintRoom, updateComplaint, sendMessage } = useSocket();
   const [activeView, setActiveView] = useState('my-tickets');
-  // This context is synchronous; no loading state provided by useComplaints
-  const complaintsLoading = false;
+  // Use loading state from context
+  const complaintsLoading = complaintsContextLoading;
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [showChatBot, setShowChatBot] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  // Loading state comes from useComplaints hook
+  // Refreshing state for manual refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedComplaintForMessage, setSelectedComplaintForMessage] = useState<Complaint | null>(null);
+  
+  // Handle manual refresh of complaints
+  const handleRefreshComplaints = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshComplaints();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   // We'll implement filtering directly in the component for now
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,16 +97,76 @@ export function AgentDashboard() {
     // Let the SocketContext handle reconnection
   }, [isConnected, socket]);
 
-  // Update filtered complaints to show tickets assigned to this agent or unassigned
+  // Listen for real-time complaint assignment events
+  useEffect(() => {
+    const handleComplaintAssigned = (event: CustomEvent) => {
+      const data = event.detail;
+      console.log('🎯 New complaint assigned to me:', data);
+      
+      // Show a prominent notification to the agent
+      if (data.complaint && user && (data.agentId === user.id || data.agentId === user._id)) {
+        // Create a visual alert with detailed info
+        const aiInfo = data.aiAssignment 
+          ? `\n\n🤖 AI Assignment Details:\n• Confidence: ${Math.round((data.aiAssignment.confidence || 0) * 100)}%\n• Reasoning: ${data.aiAssignment.reasoning || 'N/A'}\n• Est. Response Time: ${data.aiAssignment.estimatedResponseTime || 'N/A'}`
+          : '';
+        
+        alert(`✅ New Complaint Assigned!\n\nComplaint ID: ${data.complaint.complaintId || data.complaint._id}\nTitle: ${data.complaint.title}\nCategory: ${data.complaint.category}\nPriority: ${data.complaint.priority}${aiInfo}`);
+        
+        // Refresh the complaints list to show the new assignment (without full page reload)
+        refreshComplaints();
+      }
+    };
+
+    window.addEventListener('complaintAssigned', handleComplaintAssigned as EventListener);
+    
+    return () => {
+      window.removeEventListener('complaintAssigned', handleComplaintAssigned as EventListener);
+    };
+  }, [user, refreshComplaints]);
+
+  // Update filtered complaints to show ONLY tickets assigned to this specific agent
   useEffect(() => {
     if (complaints && user) {
-      // Filter complaints to show only tickets assigned to this agent (by id or name) or unassigned
+      // Filter complaints to show only tickets assigned to this specific agent
+      // Match by agent ID, _id, name, or email - DO NOT show unassigned complaints
       const assignedComplaints = complaints.filter(c => {
         const assigned = c.assignedTo;
-        const isMine = assigned === user.id || assigned === user.name;
-        const isUnassigned = !assigned || assigned === '' || assigned === 'Unassigned';
-        return isMine || isUnassigned;
+        
+        // Skip if not assigned to anyone
+        if (!assigned || assigned === '' || assigned === 'Unassigned') {
+          return false;
+        }
+        
+        // Check if assigned to current agent by ID, _id, name, or email
+        // Compare case-insensitively for email matching
+        const agentEmail = user.email?.toLowerCase();
+        const complaintAgentEmail = c.assignedAgentEmail?.toLowerCase();
+        
+        const isMine = assigned === user.id || 
+                       assigned === user._id || 
+                       assigned === user.name ||
+                       c.assignedAgentName === user.name ||
+                       (agentEmail && complaintAgentEmail && complaintAgentEmail === agentEmail);
+        
+        console.log(`Complaint ${c.complaintId || c.id}: assigned=${assigned}, agentEmail=${complaintAgentEmail}, userEmail=${agentEmail}, isMine=${isMine}`);
+        
+        return isMine;
       });
+      
+      console.log('🎯 Agent Dashboard - Filtering complaints for agent:', {
+        agentId: user.id,
+        agentName: user.name,
+        agentEmail: user.email,
+        totalComplaints: complaints.length,
+        assignedToMe: assignedComplaints.length,
+        complaintDetails: complaints.map(c => ({
+          id: c.complaintId || c.id,
+          assignedTo: c.assignedTo,
+          assignedAgentEmail: c.assignedAgentEmail,
+          assignedAgentName: c.assignedAgentName
+        }))
+      });
+      
       setFilteredComplaints(assignedComplaints);
       
       // Join socket rooms for all assigned complaints to receive real-time updates
@@ -194,10 +265,6 @@ export function AgentDashboard() {
     } catch (error) {
       console.error('Error updating status:', error);
     }
-  };
-
-  const handleEscalate = async (complaintId: string) => {
-    await handleStatusUpdate(complaintId, 'Escalated');
   };
 
   // Function to update agent availability
@@ -348,6 +415,15 @@ export function AgentDashboard() {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Refresh Button */}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Refresh Dashboard"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+            
             {/* Agent Availability Controls */}
             <div className="flex items-center gap-3 text-sm">
               <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
@@ -379,22 +455,14 @@ export function AgentDashboard() {
                 </button>
               </div>
 
-              <div className="text-sm text-gray-700">
-                <p><strong>Socket ID: </strong> {socket?.id || 'Not Connected'}</p>
-                <p><strong>Auth Token: </strong> {localStorage.getItem('token') ? 'Present' : 'Missing'}</p>
-                <p><strong>User ID: </strong> {user?.id || 'Unknown'}</p>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    try {
-                      socket?.disconnect();
-                      setTimeout(() => socket?.connect(), 500);
-                    } catch (err) {
-                      console.warn('Reconnect failed', err);
-                    }
-                  }}
-                  className="ml-3 bg-gray-100 px-3 py-1 rounded-lg"
+                  onClick={handleRefreshComplaints}
+                  disabled={isRefreshing}
+                  className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 flex items-center gap-1.5 disabled:opacity-50 text-sm font-medium"
                 >
-                  Reconnect
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh Tickets'}
                 </button>
               </div>
             </div>
@@ -534,13 +602,15 @@ export function AgentDashboard() {
                   ) : filteredComplaints.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Inbox className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium">No assigned tickets</p>
-                      <p className="text-sm">Tickets assigned to you will appear here</p>
+                      <p className="text-lg font-medium">No tickets assigned to you</p>
+                      <p className="text-sm">When AI assigns tickets to your account ({user?.email}), they will appear here</p>
                       <button 
-                        onClick={() => setActiveView('performance')}
-                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        onClick={handleRefreshComplaints}
+                        disabled={isRefreshing}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
                       >
-                        View Performance
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Checking...' : 'Check for New Tickets'}
                       </button>
                     </div>
                   ) : (
@@ -549,8 +619,26 @@ export function AgentDashboard() {
                         <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
+                              {/* Complaint ID */}
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                                  {complaint.complaintId || complaint.id}
+                                </span>
+                                {complaint.aiAssignment && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded flex items-center gap-1">
+                                    <Bot className="w-3 h-3" />
+                                    AI Assigned
+                                  </span>
+                                )}
+                              </div>
                               <h4 className="font-medium text-gray-900 text-sm mb-1">{complaint.title}</h4>
                               <p className="text-sm text-gray-600 mb-2 line-clamp-2">{complaint.description}</p>
+                              {/* AI Assignment reasoning (if available) */}
+                              {complaint.aiAssignment?.reasoning && (
+                                <p className="text-xs text-blue-600 mb-2 italic">
+                                  💡 {complaint.aiAssignment.reasoning}
+                                </p>
+                              )}
                               <div className="flex items-center gap-3 text-xs text-gray-500">
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
@@ -730,17 +818,24 @@ export function AgentDashboard() {
                   <div className="text-center py-12 text-gray-500">
                     <Inbox className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                     <p className="text-xl font-medium mb-2">No tickets found</p>
-                    <p className="text-sm mb-6">
+                    <p className="text-sm mb-2">
                       {filteredComplaints.length === 0
-                        ? "You don't have any tickets assigned to you yet"
+                        ? `No tickets have been assigned to your account (${user?.email}) yet`
                         : "No tickets match your search"}
                     </p>
+                    {filteredComplaints.length === 0 && (
+                      <p className="text-xs text-gray-400 mb-6">
+                        When AI assigns complaints to you, they will appear here automatically
+                      </p>
+                    )}
                     {filteredComplaints.length === 0 ? (
                       <button 
-                        onClick={() => setActiveView('dashboard')}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+                        onClick={handleRefreshComplaints}
+                        disabled={isRefreshing}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
                       >
-                        Go To Dashboard
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Checking...' : 'Check for New Tickets'}
                       </button>
                     ) : (
                       <button 
@@ -761,12 +856,54 @@ export function AgentDashboard() {
                             onClick={() => setSelectedComplaint(complaint)}
                           >
                             <div className="flex items-center gap-3 mb-2">
+                              {/* Complaint ID Badge */}
+                              <span className="px-2 py-1 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                                {complaint.complaintId || complaint.id}
+                              </span>
                               <h4 className="font-semibold text-gray-900">{complaint.title}</h4>
                               <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(complaint.status)}`}>
                                 {complaint.status}
                               </span>
                             </div>
                             <p className="text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
+                            
+                            {/* AI Assignment Info Banner */}
+                            {complaint.aiAssignment && (
+                              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-start gap-2">
+                                  <Bot className="w-4 h-4 text-blue-600 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-blue-800">
+                                      🤖 AI Assigned
+                                      {complaint.aiAssignment.confidence && (
+                                        <span className="ml-2 text-xs font-normal text-blue-600">
+                                          (Confidence: {Math.round(complaint.aiAssignment.confidence * 100)}%)
+                                        </span>
+                                      )}
+                                    </p>
+                                    {complaint.aiAssignment.reasoning && (
+                                      <p className="text-xs text-blue-700 mt-1">{complaint.aiAssignment.reasoning}</p>
+                                    )}
+                                    {complaint.aiAssignment.estimatedResponseTime && (
+                                      <p className="text-xs text-blue-600 mt-1">
+                                        ⏱️ Est. Response: {complaint.aiAssignment.estimatedResponseTime}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Assignment Info if assigned but no AI info */}
+                            {!complaint.aiAssignment && complaint.assignedAgentName && (
+                              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                <p className="text-xs text-green-700">
+                                  <span className="font-medium">Assigned to:</span> {complaint.assignedAgentName}
+                                  {complaint.assignedAgentEmail && ` (${complaint.assignedAgentEmail})`}
+                                </p>
+                              </div>
+                            )}
+                            
                             <div className="flex items-center gap-6 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
@@ -1086,18 +1223,23 @@ export function AgentDashboard() {
                   <div>
                     <h5 className="font-medium text-gray-900 mb-4">Agent Actions</h5>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex flex-wrap gap-3">
-                        {selectedComplaint.status !== 'In Progress' && (
-                          <button 
-                            onClick={() => handleStatusUpdate(selectedComplaint.id, 'In Progress')}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
-                          >
-                            <Clock className="w-4 h-4" />
-                            Mark In Progress
-                          </button>
-                        )}
-                        
-                        {selectedComplaint.status !== 'Resolved' && (
+                      {selectedComplaint.status === 'Resolved' || selectedComplaint.status === 'Closed' ? (
+                        <div className="text-green-600 font-medium flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5" />
+                          This complaint has been resolved. You are now available for new assignments.
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-3">
+                          {selectedComplaint.status !== 'In Progress' && (
+                            <button 
+                              onClick={() => handleStatusUpdate(selectedComplaint.id, 'In Progress')}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
+                            >
+                              <Clock className="w-4 h-4" />
+                              Mark In Progress
+                            </button>
+                          )}
+                          
                           <button 
                             onClick={() => handleStatusUpdate(selectedComplaint.id, 'Resolved')}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-1"
@@ -1105,18 +1247,8 @@ export function AgentDashboard() {
                             <CheckCircle className="w-4 h-4" />
                             Mark Resolved
                           </button>
-                        )}
-                        
-                        {selectedComplaint.status !== 'Escalated' && (
-                          <button 
-                            onClick={() => handleEscalate(selectedComplaint.id)}
-                            className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 text-sm flex items-center gap-1"
-                          >
-                            <AlertCircle className="w-4 h-4" />
-                            Escalate
-                          </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -1152,26 +1284,10 @@ export function AgentDashboard() {
         )}
 
         {/* Notifications Modal */}
-        {showNotifications && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full m-4 max-h-[600px]">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                  <button 
-                    onClick={() => setShowNotifications(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="h-[500px] overflow-auto">
-                <Notifications />
-              </div>
-            </div>
-          </div>
-        )}
+        <NotificationCenter
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+        />
 
         {/* Feedback Form Modal */}
         {showFeedbackForm && (

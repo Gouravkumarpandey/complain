@@ -20,16 +20,16 @@ export const FeatureLocked: React.FC<FeatureLockedProps> = ({
 }) => {
   const getIcon = () => {
     if (requiredPlans.includes('Premium')) {
-      return <Crown className="w-12 h-12 text-purple-500" />;
+      return <Crown className="w-12 h-12 text-orange-500" />;
     }
-    return <Zap className="w-12 h-12 text-blue-500" />;
+    return <Zap className="w-12 h-12 text-teal-500" />;
   };
 
   const getColor = () => {
     if (requiredPlans.includes('Premium')) {
-      return 'purple';
+      return 'orange';
     }
-    return 'blue';
+    return 'teal';
   };
 
   const color = getColor();

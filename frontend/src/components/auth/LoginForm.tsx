@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff, Phone } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import validateGoogleConfig from '../../services/googleAuthDebug';
 // @ts-expect-error - Missing type declarations for this JS module
@@ -31,6 +31,7 @@ export function LoginForm() {
     name: '',
     email: '',
     password: '',
+    phoneNumber: '',
     role: 'user' as 'user' | 'agent' | 'admin' | 'analytics',
   });
   const [error, setError] = useState('');
@@ -49,7 +50,7 @@ export function LoginForm() {
       
       const success = isLogin
         ? await login(formData.email, formData.password)
-        : await register(formData.name, formData.email, formData.password, formData.role);
+        : await register(formData.name, formData.email, formData.password, formData.role, formData.phoneNumber);
 
       if (!success) {
         setError(isLogin ? 'Invalid email or password' : `Registration failed. Please check if your email is already registered or if the password meets complexity requirements.`);
@@ -106,7 +107,7 @@ export function LoginForm() {
   };
 
   // Handle role selection completion
-  const handleRoleSelected = async (role: 'user' | 'agent' | 'admin' | 'analytics', organization?: string) => {
+  const handleRoleSelected = async (role: 'user' | 'agent' | 'admin' | 'analytics', organization?: string, phoneNumber?: string) => {
     if (!pendingGoogleAuth) return;
 
     try {
@@ -116,7 +117,8 @@ export function LoginForm() {
       const success = await googleSignupWithRole(
         pendingGoogleAuth.token,
         role,
-        organization
+        organization,
+        phoneNumber
       );
 
       if (success) {
@@ -124,12 +126,13 @@ export function LoginForm() {
         setPendingGoogleAuth(null);
         redirectToDashboard();
       } else {
-        setError('Failed to complete Google signup. Email may already be registered.');
+        setError('Failed to complete Google signup. Please try again.');
         setPendingGoogleAuth(null);
       }
     } catch (err) {
       console.error('Google signup error:', err);
-      setError('An error occurred during signup. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during signup. Please try again.';
+      setError(errorMessage);
       setPendingGoogleAuth(null);
     } finally {
       setLoading(false);
@@ -325,14 +328,14 @@ export function LoginForm() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-16 py-12 relative">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-6 relative overflow-y-auto">
 
           <div className="max-w-md w-full mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="text-center mb-5">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
                 {isLogin ? 'Sign in to your account' : 'Create your account'}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm">
                 {isLogin 
                   ? 'Access your complaint management dashboard'
                   : 'Start managing complaints with AI assistance'
@@ -341,14 +344,14 @@ export function LoginForm() {
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
                 <span className="text-red-700 text-sm">{error}</span>
               </div>
             )}
 
             {/* Social Login */}
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2 mb-4">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => {
@@ -371,7 +374,7 @@ export function LoginForm() {
               <button
                 type="button"
                 onClick={handleFacebookLogin}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm"
               >
                 <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -381,7 +384,7 @@ export function LoginForm() {
             </div>
 
             {/* Divider */}
-            <div className="relative my-6">
+            <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
@@ -391,7 +394,7 @@ export function LoginForm() {
             </div>
 
             {/* Login/Signup Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -405,10 +408,31 @@ export function LoginForm() {
                       required={!isLogin}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       placeholder="Enter your full name"
                     />
                   </div>
+                </div>
+              )}
+
+              {!isLogin && formData.role === 'user' && (
+                <div>
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number (WhatsApp) *
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      id="phoneNumber"
+                      type="tel"
+                      required={!isLogin && formData.role === 'user'}
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="e.g., +1 555 638 2998"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">We'll send WhatsApp notifications about your complaints</p>
                 </div>
               )}
 
@@ -424,7 +448,7 @@ export function LoginForm() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -442,7 +466,7 @@ export function LoginForm() {
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your password"
                   />
                   <button
@@ -466,7 +490,7 @@ export function LoginForm() {
                       id="role"
                       value={formData.role}
                       onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'agent' | 'admin' | 'analytics' })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
                     >
                       <option value="user">Customer / User</option>
                       <option value="agent">Support Agent</option>
@@ -480,7 +504,7 @@ export function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -496,7 +520,7 @@ export function LoginForm() {
               </button>
 
               {isLogin && (
-                <div className="mt-4 text-center">
+                <div className="mt-3 text-center">
                   <Link 
                     to="/forgot-password" 
                     className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200 text-sm"
@@ -507,11 +531,11 @@ export function LoginForm() {
               )}
             </form>
 
-            <div className="mt-6 flex justify-between items-center">
+            <div className="mt-4 flex justify-center">
               {/* Always show the toggle button */}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200"
+                className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200 text-sm"
               >
                 {isLogin
                   ? "Don't have an account? Sign up"
