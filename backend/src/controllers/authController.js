@@ -39,9 +39,9 @@ const validateSignup = (name, email, password) => {
 
 // Signup with OTP verification
 export const registerUser = async (req, res) => {
-  const { name, email, password, role = "user" } = req.body;
+  const { name, email, password, role = "user", phoneNumber } = req.body;
   
-  console.log("Registration request received:", { name, email, role });
+  console.log("Registration request received:", { name, email, role, phoneNumber: phoneNumber ? '***' : 'not provided' });
 
   try {
     // Validate input
@@ -99,7 +99,7 @@ export const registerUser = async (req, res) => {
     console.log(`Generated username: ${username}`);
     
     // Create user in the role-specific collection
-    const user = await UserModel.create({
+    const userData = {
       name: name.trim(),
       username: username,
       email: email.toLowerCase().trim(),
@@ -108,7 +108,14 @@ export const registerUser = async (req, res) => {
       otp,
       otpExpiry,
       isVerified: false
-    });
+    };
+    
+    // Add phone number if provided
+    if (phoneNumber && phoneNumber.trim()) {
+      userData.phoneNumber = phoneNumber.trim();
+    }
+    
+    const user = await UserModel.create(userData);
 
     // Send OTP via email
     try {
@@ -258,8 +265,13 @@ export const googleLogin = async (req, res) => {
     if (!user) {
       // Create user if not exists - Google users go to 'users' collection by default
       const UserModel = getUserModelByRole('user');
+      
+      // Generate unique username
+      const username = await UserModel.generateUsername(email, name);
+      
       user = await UserModel.create({
         name: name.trim(),
+        username: username,
         email: email.toLowerCase().trim(),
         password: Math.random().toString(36).slice(-8), // dummy password
         role: "user",
@@ -382,7 +394,7 @@ export const decodeGoogleToken = async (req, res) => {
 // Google signup with role selection
 export const googleSignupWithRole = async (req, res) => {
   try {
-    const { token, role = "user", organization } = req.body;
+    const { token, role = "user", organization, phoneNumber } = req.body;
 
     if (!token) {
       return res.status(400).json({ message: "Google token is required" });
@@ -399,6 +411,13 @@ export const googleSignupWithRole = async (req, res) => {
     if (role !== "user" && !organization) {
       return res.status(400).json({
         message: "Organization name is required for agent, admin, and analytics roles",
+      });
+    }
+    
+    // Phone number is required only for 'user' role (for WhatsApp notifications)
+    if (role === "user" && (!phoneNumber || !phoneNumber.trim())) {
+      return res.status(400).json({
+        message: "Phone number is required for WhatsApp notifications",
       });
     }
 
@@ -439,14 +458,24 @@ export const googleSignupWithRole = async (req, res) => {
 
     // Create new user with selected role in appropriate collection
     const UserModel = getUserModelByRole(role);
+    
+    // Generate unique username
+    const username = await UserModel.generateUsername(email, name);
+    
     const userData = {
       name: name.trim(),
+      username: username,
       email: email.toLowerCase().trim(),
       password: Math.random().toString(36).slice(-8), // dummy password
       role: role,
       isGoogleUser: true,
       isVerified: true, // Google users are pre-verified
     };
+
+    // Add phone number if provided (required for user role)
+    if (phoneNumber && phoneNumber.trim()) {
+      userData.phoneNumber = phoneNumber.trim();
+    }
 
     // Add organization if provided
     if (organization) {

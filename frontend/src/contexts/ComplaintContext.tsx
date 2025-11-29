@@ -5,6 +5,7 @@ import { useSocket } from '../hooks/useSocket';
 
 export interface Complaint {
   id: string;
+  complaintId?: string; // Human-readable complaint ID (e.g., COMP-001)
   userId: string;
   title: string;
   description: string;
@@ -13,6 +14,8 @@ export interface Complaint {
   status: 'Open' | 'In Progress' | 'Under Review' | 'Resolved' | 'Closed' | 'Escalated';
   sentiment: 'Positive' | 'Neutral' | 'Negative';
   assignedTo?: string;
+  assignedAgentName?: string; // Name of the assigned agent
+  assignedAgentEmail?: string; // Email of the assigned agent
   assignedTeam?: string;
   slaTarget: Date;
   responseTime?: number; // in hours
@@ -23,6 +26,14 @@ export interface Complaint {
     rating: number;
     comment: string;
     submittedAt: Date;
+  };
+  // AI Assignment information
+  aiAssignment?: {
+    confidence?: number;
+    reasoning?: string;
+    method?: string;
+    estimatedResponseTime?: string;
+    assignedAt?: Date;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +51,7 @@ export interface ComplaintUpdate {
 
 interface ComplaintContextType {
   complaints: Complaint[];
+  loading: boolean;
   createComplaint: (title: string, description: string, userId: string) => Promise<Complaint>;
   updateComplaintStatus: (id: string, status: Complaint['status'], message?: string) => void;
   assignComplaint: (id: string, agentId: string) => void;
@@ -51,12 +63,14 @@ interface ComplaintContextType {
   getEscalatedComplaints: () => Complaint[];
   getSlaBreaches: () => Complaint[];
   autoAssignComplaint: (complaint: Complaint) => string;
+  refreshComplaints: () => Promise<void>;
 }
 
 const ComplaintContext = createContext<ComplaintContextType | undefined>(undefined);
 
 export function ComplaintProvider({ children }: { children: ReactNode }) {
   const { notifyNewComplaint } = useSocket();
+  const [loading, setLoading] = useState(false);
   const [complaints, setComplaints] = useState<Complaint[]>([
     // Sample complaints for testing
     {
@@ -184,6 +198,78 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
     return teamMapping[category];
   };
 
+  // Fetch complaints from the backend API
+  const refreshComplaints = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await apiService.getComplaints({ limit: 100 });
+      if (response.data && Array.isArray((response.data as { complaints?: unknown[] }).complaints)) {
+        const backendComplaints = (response.data as { complaints: Array<Record<string, unknown>> }).complaints;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappedComplaints: Complaint[] = backendComplaints.map((c: any) => {
+          // Extract AI assignment info from updates if present
+          const assignmentUpdate = c.updates?.find((u: { updateType?: string }) => u.updateType === 'assignment');
+          const aiAssignmentInfo = assignmentUpdate?.metadata;
+          
+          return {
+            id: c._id || c.id,
+            complaintId: c.complaintId,
+            userId: c.user?._id || c.user,
+            title: c.title,
+            description: c.description,
+            category: c.category || 'General',
+            priority: c.priority || 'Low',
+            status: c.status || 'Open',
+            sentiment: c.aiAnalysis?.sentiment || 'Neutral',
+            assignedTo: c.assignedTo?._id || c.assignedTo,
+            assignedAgentName: c.assignedTo?.name,
+            assignedAgentEmail: c.assignedTo?.email,
+            assignedTeam: c.assignedTeam,
+            slaTarget: c.sla?.resolutionTime?.target 
+              ? new Date(Date.now() + c.sla.resolutionTime.target * 60 * 60 * 1000)
+              : new Date(Date.now() + 48 * 60 * 60 * 1000),
+            isEscalated: Boolean(c.escalation?.escalatedBy),
+            escalationReason: c.escalation?.reason,
+            aiAssignment: aiAssignmentInfo ? {
+              confidence: aiAssignmentInfo.confidence,
+              reasoning: assignmentUpdate?.message,
+              method: aiAssignmentInfo.assignmentMethod,
+              estimatedResponseTime: aiAssignmentInfo.estimatedResponseTime,
+              assignedAt: assignmentUpdate?.createdAt ? new Date(assignmentUpdate.createdAt) : undefined
+            } : undefined,
+            createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+            updatedAt: c.updatedAt ? new Date(c.updatedAt) : new Date(),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            updates: Array.isArray(c.updates) ? c.updates.map((u: any) => ({
+              id: u._id || u.id || Math.random().toString(36).slice(2),
+              complaintId: c._id || c.id,
+              message: u.message || '',
+              author: u.updatedBy?.name || u.updatedBy || 'System',
+              timestamp: u.createdAt ? new Date(u.createdAt) : new Date(),
+              type: (u.updateType || 'comment') as ComplaintUpdate['type']
+            })) : []
+          };
+        });
+        
+        setComplaints(prev => {
+          // Merge with existing complaints, preferring backend data
+          const existingIds = new Set(mappedComplaints.map(c => c.id));
+          const localOnly = prev.filter(c => !existingIds.has(c.id) && !c.id.startsWith('COMP-'));
+          return [...mappedComplaints, ...localOnly];
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch complaints from backend:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch complaints on mount
+  useEffect(() => {
+    refreshComplaints();
+  }, []);
+
   // Helper function to auto-assign complaints to agents with defensive checks
   const autoAssignComplaint = (complaint: Complaint): string => {
     try {
@@ -279,8 +365,18 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
   try { notifyNewComplaint(mapped.id); } catch { /* optional: socket not connected */ }
         return mapped;
       }
-    } catch (err) {
-      console.warn('API createComplaint failed, using local fallback', err);
+    } catch (err: unknown) {
+      console.warn('API createComplaint failed', err);
+      
+      // Check if it's an AI validation error
+      const error = err as { response?: { status?: number; data?: { aiAnalysis?: unknown; message?: string } }; message?: string };
+      if (error.response?.status === 400 && error.response?.data?.aiAnalysis) {
+        const errorData = error.response.data;
+        throw new Error(errorData.message || 'Your complaint appears to contain invalid or meaningless content. Please provide a genuine description of your issue.');
+      }
+      
+      // For other errors, re-throw with message
+      throw new Error(error.response?.data?.message || error.message || 'Failed to create complaint');
     }
 
     // Fallback: local-only create to keep UX responsive
@@ -504,6 +600,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
   return (
     <ComplaintContext.Provider value={{
       complaints,
+      loading,
       createComplaint,
       updateComplaintStatus,
       assignComplaint,
@@ -515,6 +612,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
       getEscalatedComplaints,
       getSlaBreaches,
       autoAssignComplaint,
+      refreshComplaints,
     }}>
       {children}
     </ComplaintContext.Provider>
