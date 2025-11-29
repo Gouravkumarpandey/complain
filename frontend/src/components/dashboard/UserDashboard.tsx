@@ -5,12 +5,12 @@ import {
   Search, Calendar, X, Shield, Home, 
   Inbox, HelpCircle, Menu,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
-  TrendingUp, BarChart3, Activity, Crown, Zap
+  TrendingUp, BarChart3, Activity, Crown, Zap, RefreshCw
 } from 'lucide-react';
 import { ComplaintForm } from '../complaints/ComplaintForm';
 import AIAssistant from './AIAssistant';
 // Trans removed after migration
-import { Notifications } from '../notifications/Notifications';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
 import subscriptionService from '../../services/subscriptionService';
@@ -21,7 +21,7 @@ import {
 
 export function UserDashboard() {
   const { user, logout } = useAuth();
-  const { complaints } = useComplaints();
+  const { complaints, loading: complaintsContextLoading, refreshComplaints } = useComplaints();
   const [activeView, setActiveView] = useState('dashboard');
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -30,6 +30,7 @@ export function UserDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState({
@@ -40,6 +41,40 @@ export function UserDashboard() {
     role: user?.role || 'user',
     joinDate: '2024-01-15'
   });
+
+  // Handle manual refresh of complaints
+  const handleRefreshComplaints = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshComplaints();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Listen for real-time complaint status updates
+  useEffect(() => {
+    const handleComplaintUpdated = (event: CustomEvent) => {
+      const data = event.detail;
+      console.log('📬 Complaint status updated:', data);
+      
+      // Check if the updated complaint belongs to this user
+      if (data.complaint && user && (data.complaint.userId === user.id || data.complaint.user === user.id)) {
+        // Show notification for resolved complaints
+        if (data.complaint.status === 'Resolved') {
+          alert(`✅ Good News! Your complaint has been resolved!\n\nComplaint ID: ${data.complaint.complaintId || data.complaint._id}\nTitle: ${data.complaint.title}\n\nClick the Refresh button to see the updated status.`);
+        }
+        // Refresh complaints to get the latest data
+        refreshComplaints();
+      }
+    };
+
+    window.addEventListener('complaintUpdated', handleComplaintUpdated as EventListener);
+    
+    return () => {
+      window.removeEventListener('complaintUpdated', handleComplaintUpdated as EventListener);
+    };
+  }, [user, refreshComplaints]);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -79,14 +114,19 @@ export function UserDashboard() {
 
   // Update filtered complaints when complaints change
   useEffect(() => {
-    setLoading(true);
+    // Use context loading state instead of local loading
     if (complaints && user) {
       // Filter complaints to show only current user's complaints
-      const userComplaints = complaints.filter(c => c.userId === user.id);
+      // Also match by _id if available
+      const userComplaints = complaints.filter(c => 
+        c.userId === user.id || c.userId === user._id
+      );
       setFilteredComplaints(userComplaints);
+      setLoading(complaintsContextLoading);
+    } else {
+      setLoading(complaintsContextLoading);
     }
-    setLoading(false);
-  }, [complaints, user]);
+  }, [complaints, user, complaintsContextLoading]);
 
   const handleLogout = () => {
     logout();
@@ -457,6 +497,16 @@ export function UserDashboard() {
           </div>
           
           <div className="flex items-center gap-4">
+            <button
+              onClick={handleRefreshComplaints}
+              disabled={isRefreshing}
+              className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 flex items-center gap-1.5 disabled:opacity-50 text-sm font-medium transition-colors"
+              title="Refresh Complaints"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Complaints'}
+            </button>
+            
             <button 
               onClick={() => setActiveView('new-complaint')}
               className="text-slate-800 hover:text-slate-900 font-medium text-sm flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg"
@@ -785,6 +835,18 @@ export function UserDashboard() {
                         <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
+                              {/* Complaint ID Badge */}
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                                  {complaint.complaintId || complaint.id}
+                                </span>
+                                {complaint.status === 'Resolved' && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Resolved
+                                  </span>
+                                )}
+                              </div>
                               <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{complaint.title}</h4>
                               <p className="text-sm text-gray-600 mb-2 line-clamp-1">{complaint.description}</p>
                               <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -953,12 +1015,33 @@ export function UserDashboard() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
+                              {/* Complaint ID Badge */}
+                              <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                                {complaint.complaintId || complaint.id}
+                              </span>
                               <h4 className="font-semibold text-gray-900 truncate">{complaint.title}</h4>
                               <span className={`px-2.5 py-0.5 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
                                 {complaint.status}
                               </span>
+                              {complaint.status === 'Resolved' && (
+                                <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  ✓
+                                </span>
+                              )}
                             </div>
                             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
+                            
+                            {/* Resolution message for resolved complaints */}
+                            {complaint.status === 'Resolved' && (
+                              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                <p className="text-xs text-green-700 flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span className="font-medium">Your complaint has been successfully resolved</span>
+                                </p>
+                              </div>
+                            )}
+                            
                             <div className="flex items-center gap-4 text-xs text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5" />
@@ -1567,7 +1650,13 @@ export function UserDashboard() {
             <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
               <div className="p-5 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900">Ticket Details</h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-semibold text-gray-900">Ticket Details</h3>
+                    {/* Complaint ID Badge */}
+                    <span className="px-3 py-1 text-sm font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                      {selectedComplaint.complaintId || selectedComplaint.id}
+                    </span>
+                  </div>
                   <button 
                     onClick={() => setSelectedComplaint(null)}
                     className="text-gray-500 hover:text-gray-700"
@@ -1578,6 +1667,23 @@ export function UserDashboard() {
               </div>
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)] custom-scrollbar">
                 <div className="space-y-5">
+                  {/* Resolved Banner */}
+                  {selectedComplaint.status === 'Resolved' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-green-800">Complaint Resolved</h4>
+                          <p className="text-sm text-green-700">
+                            Your complaint <span className="font-mono font-semibold">{selectedComplaint.complaintId || selectedComplaint.id}</span> has been successfully resolved.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Header */}
                   <div>
                     <div className="flex items-start justify-between mb-3">
@@ -1692,26 +1798,10 @@ export function UserDashboard() {
         )}
 
         {/* Notifications Modal */}
-        {showNotifications && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full m-4 max-h-[600px]">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                  <button 
-                    onClick={() => setShowNotifications(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="h-[500px] overflow-auto">
-                <Notifications />
-              </div>
-            </div>
-          </div>
-        )}
+        <NotificationCenter
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+        />
 
         {/* Clean Feedback Form Modal */}
         {showFeedbackForm && (

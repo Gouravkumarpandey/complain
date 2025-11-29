@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema(
     },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    phoneNumber: { 
+      type: String, 
+      trim: true,
+      sparse: true // Optional field, allows null/undefined values
+    },
     role: { 
       type: String, 
       enum: ['user', 'admin', 'agent', 'analytics'], 

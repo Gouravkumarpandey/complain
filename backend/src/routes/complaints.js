@@ -97,17 +97,15 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
 
   // Regular users can only see their own complaints
   if (req.user.role === 'user') {
-    filter.userId = req.user._id;
+    filter.user = req.user._id; // Use 'user' field, not 'userId'
   } else if (userId && (req.user.role === 'admin' || req.user.role === 'agent')) {
-    filter.userId = userId;
+    filter.user = userId; // Use 'user' field, not 'userId'
   }
 
-  // Agents can see complaints assigned to them or their department
+  // Agents can ONLY see complaints assigned directly to them (by their _id)
   if (req.user.role === 'agent') {
-    filter.$or = [
-      { assignedTo: req.user._id },
-      { assignedTeam: req.user.department }
-    ];
+    filter.assignedTo = req.user._id;
+    console.log(`🔍 Agent ${req.user.email} (${req.user._id}) fetching their assigned complaints`);
   }
 
   if (status) filter.status = status;
@@ -192,6 +190,40 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   console.log('   Title:', title);
   console.log('   Category:', category);
   console.log('   Description length:', description?.length || 0);
+
+  // Import DeepSeek service for AI validation
+  const deepseekService = (await import('../services/deepseekService.js')).default;
+  
+  // AI VALIDATION: Check if complaint is genuine
+  console.log('🤖 AI Validation: Analyzing complaint authenticity...');
+  try {
+    const validation = await deepseekService.validateComplaint(title, description);
+    console.log('   Validation result:', validation);
+    
+    if (!validation.isValid) {
+      console.error('❌ AI REJECTED: Complaint appears to be invalid/gibberish');
+      console.error('   Reason:', validation.reason);
+      console.error('   Confidence:', validation.confidence);
+      
+      return res.status(400).json({ 
+        error: 'Invalid complaint detected',
+        message: 'Your complaint appears to contain invalid or meaningless content. Please provide a genuine description of your issue.',
+        reason: validation.reason,
+        aiAnalysis: {
+          isValid: false,
+          confidence: validation.confidence,
+          model: validation.model
+        }
+      });
+    }
+    
+    console.log('✅ AI APPROVED: Complaint is genuine');
+    console.log('   Reason:', validation.reason);
+    console.log('   Confidence:', validation.confidence);
+  } catch (validationError) {
+    console.error('⚠️  AI validation error (proceeding anyway):', validationError.message);
+    // Continue with complaint creation even if validation fails
+  }
 
   // Use AI service to analyze the complaint (with fallback)
   let aiAnalysis = { priority: 'Medium', sentiment: 'Neutral', category: category || 'General Inquiry', keywords: [] };
@@ -295,31 +327,67 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   }
   
   // Import the ticket assignment service and get io instance
-  const { autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
+  const { aiAssignToAgent, autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
   const { getIoInstance } = await import('../socket/socketHandlers.js');
+  const { notifyComplaintCreated, notifyComplaintAssigned } = await import('../services/notificationService.js');
   
   try {
     // Get WebSocket instance for real-time notifications
     const io = getIoInstance();
     
-    // Attempt to auto-assign the ticket to a FREE agent (0 active tasks)
-    const { assignedAgent, message: assignMessage } = await autoAssignToFreeAgent(complaint._id, io);
+    // AI-POWERED ASSIGNMENT: Use DeepSeek to intelligently assign ticket
+    console.log('🤖 Attempting AI-powered agent assignment...');
+    const { assignedAgent, message: assignMessage } = await aiAssignToAgent(complaint._id, io);
     
     // If an agent was assigned, update the response
     if (assignedAgent) {
-      console.log(`✅ Complaint ${complaint.complaintId} assigned to FREE agent ${assignedAgent.name} (${assignedAgent.activeTickets} active tickets)`);
+      console.log(`✅ Complaint ${complaint.complaintId} AI-assigned to agent ${assignedAgent.name}`);
+      console.log(`   Active tickets: ${assignedAgent.activeTickets}`);
+      console.log(`   AI Confidence: ${assignedAgent.aiAssignment?.confidence}`);
+      console.log(`   Reasoning: ${assignedAgent.aiAssignment?.reasoning}`);
+      console.log(`   Method: ${assignedAgent.aiAssignment?.method}`);
+      
+      // Create notification for assigned agent
+      try {
+        await notifyComplaintAssigned(
+          assignedAgent.id,
+          complaint._id,
+          complaint.title
+        );
+      } catch (notifError) {
+        console.error('Failed to create assignment notification:', notifError);
+      }
     } else {
-      console.log(`ℹ️  ${assignMessage || 'No free agent available'} for complaint ${complaint.complaintId}`);
+      console.log(`ℹ️  ${assignMessage || 'No available agent'} for complaint ${complaint.complaintId}`);
     }
   } catch (err) {
-    console.error('Error assigning ticket to free agent:', err);
-    // Continue even if auto-assignment fails
+    console.error('Error in AI ticket assignment:', err);
+    // Continue even if assignment fails - complaint is still created
   }
   
   // Get updated complaint after assignment
   const updatedComplaint = await Complaint.findById(complaint._id)
     .populate('assignedTo', 'name username email')
     .populate('user', 'name username email');
+  
+  // Create notification for user about complaint creation
+  try {
+    console.log('🔔 Creating notification for user...');
+    console.log('   User ID:', req.user._id);
+    console.log('   Complaint ID:', complaint._id);
+    console.log('   Complaint Title:', complaint.title);
+    
+    const notificationResult = await notifyComplaintCreated(
+      req.user._id,
+      complaint._id,
+      complaint.title
+    );
+    
+    console.log('✅ Notification created successfully:', notificationResult._id);
+  } catch (notifError) {
+    console.error('❌ Failed to create complaint notification:', notifError);
+    console.error('   Error stack:', notifError.stack);
+  }
   
   console.log('🔍 DEBUG: About to send email confirmation...');
   console.log('   Complaint ID:', complaint._id);
@@ -364,6 +432,35 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     }
   }
   
+  // Send WhatsApp notification if user has phone number
+  try {
+    const { sendComplaintRegistrationWhatsApp } = await import('../services/whatsappService.js');
+    const userPhoneNumber = req.user?.phoneNumber;
+    
+    if (userPhoneNumber) {
+      console.log(`📱 Sending WhatsApp notification to ${userPhoneNumber}...`);
+      const whatsappResult = await sendComplaintRegistrationWhatsApp(
+        userPhoneNumber,
+        userName,
+        updatedComplaint.complaintId,
+        updatedComplaint.title,
+        updatedComplaint.category,
+        updatedComplaint.priority
+      );
+      
+      if (whatsappResult.success) {
+        console.log(`✅ WhatsApp notification sent successfully for complaint ${updatedComplaint.complaintId}`);
+      } else {
+        console.log(`⚠️  WhatsApp notification failed: ${whatsappResult.error}`);
+      }
+    } else {
+      console.log('ℹ️  No phone number on user record, skipping WhatsApp notification');
+    }
+  } catch (whatsappError) {
+    console.error('❌ Failed to send WhatsApp notification:', whatsappError.message);
+    // Continue even if WhatsApp fails - complaint is still created
+  }
+  
   res.status(201).json(updatedComplaint);
 }));
 
@@ -401,24 +498,58 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   };
   complaint.updates.push(updateRecord);
 
-  // Calculate resolution time if resolved
-  if (status === 'Resolved') {
-    // Store resolution details
-    complaint.resolution = {
-      description: message || 'Complaint resolved',
-      resolvedBy: req.user._id,
-      resolvedAt: new Date()
-    };
+  // Calculate resolution time if resolved or closed
+  if (status === 'Resolved' || status === 'Closed') {
+    // Store resolution details if resolved
+    if (status === 'Resolved') {
+      complaint.resolution = {
+        description: message || 'Complaint resolved',
+        resolvedBy: req.user._id,
+        resolvedAt: new Date()
+      };
+      
+      // Send WhatsApp notification for resolution
+      try {
+        const { sendComplaintResolvedWhatsApp } = await import('../services/whatsappService.js');
+        const { findUserById } = await import('../models/User.js');
+        
+        // Get the complaint owner's phone number
+        const { user: complaintOwner } = await findUserById(complaint.user);
+        
+        if (complaintOwner && complaintOwner.phoneNumber) {
+          console.log(`📱 Sending WhatsApp resolution notification to ${complaintOwner.phoneNumber}...`);
+          const whatsappResult = await sendComplaintResolvedWhatsApp(
+            complaintOwner.phoneNumber,
+            complaintOwner.name,
+            complaint.complaintId,
+            complaint.title,
+            message || 'Your complaint has been resolved.'
+          );
+          
+          if (whatsappResult.success) {
+            console.log(`✅ WhatsApp resolution notification sent successfully for complaint ${complaint.complaintId}`);
+          } else {
+            console.log(`⚠️  WhatsApp resolution notification failed: ${whatsappResult.error}`);
+          }
+        } else {
+          console.log('ℹ️  No phone number on complaint owner record, skipping WhatsApp notification');
+        }
+      } catch (whatsappError) {
+        console.error('❌ Failed to send WhatsApp resolution notification:', whatsappError.message);
+        // Continue even if WhatsApp fails
+      }
+    }
     
-    // If this agent resolved it, check if they should be marked available again
-    if (complaint.assignedTo && complaint.assignedTo.toString() === req.user._id.toString()) {
+    // Check if the assigned agent should be marked available again
+    if (complaint.assignedTo) {
       // Import the agent service
       const { refreshAgentAvailability } = await import('../services/agentService.js');
       
       try {
         // This will check if agent has any remaining active complaints
         // and update their availability accordingly
-        await refreshAgentAvailability(req.user._id);
+        await refreshAgentAvailability(complaint.assignedTo);
+        console.log(`🔄 Refreshed agent availability after complaint marked as ${status}`);
       } catch (err) {
         console.error('Error updating agent availability:', err);
       }
@@ -468,6 +599,15 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
   });
 
   await complaint.save();
+
+  // Mark the agent as busy after assignment
+  try {
+    const { updateAgentAvailability } = await import('../services/agentService.js');
+    await updateAgentAvailability(agentId, 'busy');
+    console.log(`📌 Agent marked as busy after manual assignment`);
+  } catch (err) {
+    console.error('Error updating agent availability to busy:', err);
+  }
 
   // Emit socket event
   const io = req.app.get('io');
@@ -684,63 +824,56 @@ router.patch('/bulk/status', authenticate, authorize('admin', 'agent'), asyncHan
   });
 }));
 
-// AI-assisted auto-assignment
+// AI-powered auto-assignment endpoint
 router.post('/auto-assign', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
-  const { complaintId, teamId } = req.body;
+  const { complaintId } = req.body;
 
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) {
     return res.status(404).json({ error: 'Complaint not found' });
   }
 
-  // Simple auto-assignment logic based on workload
-  const agents = await User.find({ 
-    role: 'agent', 
-    ...(teamId && { department: teamId }),
-    isActive: true 
-  });
-
-  if (agents.length === 0) {
-    return res.status(400).json({ error: 'No available agents found' });
-  }
-
-  // Get current workload for each agent
-  const workloads = await Promise.all(agents.map(async (agent) => {
-    const activeComplaints = await Complaint.countDocuments({
-      assignedTo: agent._id,
-      status: { $in: ['Open', 'In Progress'] }
-    });
-    return { agent, workload: activeComplaints };
-  }));
-
-  // Find agent with lowest workload
-  const leastBusyAgent = workloads.reduce((min, current) => 
-    current.workload < min.workload ? current : min
-  );
-
-  // Assign complaint to least busy agent
-  complaint.assignedTo = leastBusyAgent.agent._id;
-  complaint.assignedTeam = leastBusyAgent.agent.department;
-  complaint.updatedAt = new Date();
-  complaint.updates.push({
-    message: `Auto-assigned to ${leastBusyAgent.agent.firstName} ${leastBusyAgent.agent.lastName}`,
-    author: 'AI System',
-    authorId: req.user._id,
-    timestamp: new Date(),
-    type: 'assignment',
-    isInternal: false
-  });
-
-  await complaint.save();
-
-  res.json({ 
-    message: 'Complaint auto-assigned successfully',
-    assignedTo: {
-      id: leastBusyAgent.agent._id,
-      name: `${leastBusyAgent.agent.firstName} ${leastBusyAgent.agent.lastName}`,
-      workload: leastBusyAgent.workload
+  // Import AI assignment service
+  const { aiAssignToAgent } = await import('../services/ticketAssignmentService.js');
+  const { getIoInstance } = await import('../socket/socketHandlers.js');
+  
+  try {
+    const io = getIoInstance();
+    
+    // Use AI-powered assignment
+    console.log(`🤖 Admin triggered AI assignment for complaint ${complaint.complaintId}`);
+    const { assignedAgent, message: assignMessage } = await aiAssignToAgent(complaint._id, io);
+    
+    if (!assignedAgent) {
+      return res.status(400).json({ 
+        error: assignMessage || 'No available agents found',
+        success: false
+      });
     }
-  });
+    
+    // Get updated complaint
+    const updatedComplaint = await Complaint.findById(complaint._id)
+      .populate('assignedTo', 'name email')
+      .populate('user', 'name email');
+    
+    res.json({ 
+      success: true,
+      message: 'Complaint AI-assigned successfully',
+      assignedTo: {
+        id: assignedAgent.id,
+        name: assignedAgent.name,
+        activeTickets: assignedAgent.activeTickets
+      },
+      aiAssignment: assignedAgent.aiAssignment,
+      complaint: updatedComplaint
+    });
+  } catch (error) {
+    console.error('Error in AI auto-assignment:', error);
+    res.status(500).json({ 
+      error: 'Failed to auto-assign complaint',
+      message: error.message 
+    });
+  }
 }));
 
 // Add internal notes (for agents and admins)
@@ -838,7 +971,7 @@ router.get('/stats/dashboard', authenticate, asyncHandler(async (req, res) => {
 
   // Role-based filtering
   if (req.user.role === 'user') {
-    matchFilter.userId = req.user._id;
+    matchFilter.user = req.user._id; // Use 'user' field, not 'userId'
   } else if (req.user.role === 'agent') {
     matchFilter.assignedTo = req.user._id;
   }

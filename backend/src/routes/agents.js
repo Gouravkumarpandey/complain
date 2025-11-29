@@ -1,21 +1,20 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { User } from '../models/User.js';
+import { User, AgentUser } from '../models/User.js';
 import { updateAgentAvailability, refreshAgentAvailability } from '../services/agentService.js';
 
 const router = express.Router();
 
 // Get all agents
 router.get('/', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
-  const agents = await User.find({ role: 'agent' }).select('-password');
+  const agents = await AgentUser.find({}).select('-password');
   res.json(agents);
 }));
 
 // Get available agents
 router.get('/available', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
-  const availableAgents = await User.find({
-    role: 'agent',
+  const availableAgents = await AgentUser.find({
     availability: 'available'
   }).select('-password');
   

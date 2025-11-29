@@ -3,6 +3,7 @@ import { createContext } from "react";
 // User interface
 export interface User {
   id: string;
+  _id?: string; // MongoDB ObjectId (alternative to id)
   firstName: string;
   lastName: string;
   name: string;
@@ -29,13 +30,15 @@ export interface AuthContextType {
     name: string,
     email: string,
     password: string,
-    role?: "user" | "agent" | "admin" | "analytics"
+    role?: "user" | "agent" | "admin" | "analytics",
+    phoneNumber?: string
   ) => Promise<boolean>;
   googleLogin: (token: string) => Promise<boolean>;
   googleSignupWithRole: (
     token: string,
     role: "user" | "agent" | "admin" | "analytics",
-    organization?: string
+    organization?: string,
+    phoneNumber?: string
   ) => Promise<boolean>;
   decodeGoogleToken: (token: string) => Promise<{ name: string; email: string } | null>;
   loginWithFacebook: (code: string, isSignup?: boolean) => Promise<boolean>;

@@ -1,4 +1,4 @@
-import { User } from '../models/User.js';
+import { User, AgentUser } from '../models/User.js';
 import { Complaint } from '../models/Complaint.js';
 
 /**
@@ -10,10 +10,10 @@ import { Complaint } from '../models/Complaint.js';
 export const updateAgentAvailability = async (agentId, status) => {
   try {
     // Verify that user is an agent
-    const agent = await User.findById(agentId);
+    const agent = await AgentUser.findById(agentId);
     
-    if (!agent || agent.role !== 'agent') {
-      throw new Error('Invalid agent ID or user is not an agent');
+    if (!agent) {
+      throw new Error('Invalid agent ID or agent not found');
     }
     
     // Update the agent's availability
@@ -58,7 +58,15 @@ export const refreshAgentAvailability = async (agentId) => {
     // If no active complaints, mark as available; otherwise busy
     const newStatus = hasActive ? 'busy' : 'available';
     
-    return await updateAgentAvailability(agentId, newStatus);
+    const updatedAgent = await updateAgentAvailability(agentId, newStatus);
+    
+    if (newStatus === 'available') {
+      console.log(`✅ Agent ${updatedAgent.name} (${updatedAgent.email}) is now AVAILABLE for new assignments`);
+    } else {
+      console.log(`🔴 Agent ${updatedAgent.name} (${updatedAgent.email}) is still BUSY with active complaints`);
+    }
+    
+    return updatedAgent;
   } catch (error) {
     console.error('Error refreshing agent availability:', error);
     throw error;
