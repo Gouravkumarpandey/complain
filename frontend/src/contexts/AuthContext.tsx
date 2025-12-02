@@ -294,7 +294,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!response.ok) {
         console.error("Google login failed:", data.message || data);
-        return false;
+        // Throw error with the message from backend so it can be displayed to user
+        if (data.requiresSignup) {
+          throw new Error("Account not found. Please sign up first to create an account.");
+        }
+        throw new Error(data.message || "Google login failed");
       }
       
       const userData: User = {
@@ -313,7 +317,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (error) {
       console.error("Google login error:", error);
-      return false;
+      // Re-throw the error so it can be caught and displayed
+      throw error;
     }
   };
 
