@@ -76,12 +76,19 @@ export function LoginForm() {
         // If it's login mode, try to log in directly
         if (isLogin) {
           console.log('Attempting Google login...');
-          const success = await googleLogin(credentialResponse.credential);
-          if (!success) {
-            setError('Google authentication failed. Account may not exist.');
-          } else {
-            console.log('Google authentication successful, redirecting to dashboard...');
-            redirectToDashboard();
+          try {
+            const success = await googleLogin(credentialResponse.credential);
+            if (success) {
+              console.log('Google authentication successful, redirecting to dashboard...');
+              redirectToDashboard();
+            }
+          } catch (loginError) {
+            // Display the error message from the backend
+            if (loginError instanceof Error) {
+              setError(loginError.message);
+            } else {
+              setError('Google authentication failed. Account may not exist.');
+            }
           }
         } else {
           // If it's signup mode, show role selection
@@ -102,7 +109,11 @@ export function LoginForm() {
       }
     } catch (err) {
       console.error('Google authentication error:', err);
-      setError('Google authentication failed. Please try again.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Google authentication failed. Please try again.');
+      }
     }
   };
 

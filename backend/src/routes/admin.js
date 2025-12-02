@@ -1,6 +1,6 @@
 import express from 'express';
 import { Complaint } from '../models/Complaint.js';
-import { User } from '../models/User.js';
+import { User, AgentUser } from '../models/User.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
@@ -9,21 +9,235 @@ const router = express.Router();
 // Get system statistics
 router.get('/stats', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalAgents = await User.countDocuments({ role: 'agent', isActive: true });
-    const totalComplaints = await Complaint.countDocuments();
-    const openComplaints = await Complaint.countDocuments({ status: { $in: ['Open', 'In Progress'] } });
-    const escalatedComplaints = await Complaint.countDocuments({ isEscalated: true });
-
-    res.json({
-      totalUsers,
-      totalAgents,
+    // Get user counts from all collections
+    const [usersCount, adminsCount, agentsCount, analyticsCount] = await Promise.all([
+      User.countDocuments({ role: 'user' }),
+      User.countDocuments({ role: 'admin' }),
+      User.countDocuments({ role: 'agent' }),
+      User.countDocuments({ role: 'analytics' })
+    ]);
+    
+    // Total users across all roles
+    const totalUsers = usersCount + adminsCount + agentsCount + analyticsCount;
+    
+    // Active agents (agents who are online or available)
+    const activeAgents = await User.countDocuments({ 
+      role: 'agent', 
+      $or: [
+        { agentStatus: 'available' },
+        { agentStatus: 'busy' },
+        { isOnline: true }
+      ]
+    });
+    
+    // Complaint statistics
+    const [
       totalComplaints,
       openComplaints,
-      escalatedComplaints
+      inProgressComplaints,
+      resolvedComplaints,
+      closedComplaints,
+      escalatedComplaints,
+      highPriorityComplaints,
+      urgentComplaints
+    ] = await Promise.all([
+      Complaint.countDocuments(),
+      Complaint.countDocuments({ status: 'Open' }),
+      Complaint.countDocuments({ status: 'In Progress' }),
+      Complaint.countDocuments({ status: 'Resolved' }),
+      Complaint.countDocuments({ status: 'Closed' }),
+      Complaint.countDocuments({ status: 'Escalated' }),
+      Complaint.countDocuments({ priority: 'High' }),
+      Complaint.countDocuments({ priority: 'Urgent' })
+    ]);
+
+    // Calculate pending (Open + In Progress)
+    const pendingComplaints = openComplaints + inProgressComplaints;
+    
+    // Calculate critical (High + Urgent priority)
+    const criticalComplaints = highPriorityComplaints + urgentComplaints;
+
+    // Get today's stats
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const newToday = await Complaint.countDocuments({ 
+      createdAt: { $gte: today } 
+    });
+    const resolvedToday = await Complaint.countDocuments({ 
+      status: { $in: ['Resolved', 'Closed'] },
+      updatedAt: { $gte: today }
+    });
+
+    res.json({
+      // User stats
+      totalUsers,
+      usersCount,
+      adminsCount,
+      agentsCount: agentsCount,
+      analyticsCount,
+      activeAgents: activeAgents || agentsCount, // fallback to total agents if no active status
+      
+      // Complaint stats
+      totalComplaints,
+      openComplaints,
+      inProgressComplaints,
+      resolvedComplaints,
+      closedComplaints,
+      pendingComplaints,
+      escalatedComplaints,
+      criticalComplaints,
+      highPriorityComplaints,
+      urgentComplaints,
+      
+      // Today's stats
+      newToday,
+      resolvedToday,
+      
+      // Summary for quick access
+      summary: {
+        users: totalUsers,
+        agents: activeAgents || agentsCount,
+        total: totalComplaints,
+        resolved: resolvedComplaints + closedComplaints,
+        pending: pendingComplaints,
+        critical: criticalComplaints
+      }
     });
   } catch (error) {
+    console.error('Error fetching system statistics:', error);
     res.status(500).json({ error: 'Failed to fetch system statistics' });
+  }
+}));
+
+// Get agent performance and workload data
+router.get('/agents/performance', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+  try {
+    // Get all agents from both User collection (with role: 'agent') and AgentUser collection
+    const [usersAsAgents, agentUsers] = await Promise.all([
+      User.find({ role: 'agent' }).select('-password').lean(),
+      AgentUser.find({}).select('-password').lean()
+    ]);
+    
+    // Combine and deduplicate agents by email
+    const agentMap = new Map();
+    [...usersAsAgents, ...agentUsers].forEach(agent => {
+      if (!agentMap.has(agent.email)) {
+        agentMap.set(agent.email, agent);
+      }
+    });
+    const allAgents = Array.from(agentMap.values());
+    
+    // Get complaint statistics for each agent
+    const agentPerformance = await Promise.all(allAgents.map(async (agent) => {
+      const agentId = agent._id;
+      
+      // Get all complaints assigned to this agent
+      const [
+        totalTickets,
+        resolvedTickets,
+        openTickets,
+        inProgressTickets,
+        closedTickets
+      ] = await Promise.all([
+        Complaint.countDocuments({ assignedTo: agentId }),
+        Complaint.countDocuments({ assignedTo: agentId, status: 'Resolved' }),
+        Complaint.countDocuments({ assignedTo: agentId, status: 'Open' }),
+        Complaint.countDocuments({ assignedTo: agentId, status: 'In Progress' }),
+        Complaint.countDocuments({ assignedTo: agentId, status: 'Closed' })
+      ]);
+      
+      // Calculate average resolution time for resolved complaints
+      const resolvedComplaints = await Complaint.find({
+        assignedTo: agentId,
+        status: { $in: ['Resolved', 'Closed'] }
+      }).select('createdAt updatedAt').lean();
+      
+      let avgResolutionTime = 0;
+      if (resolvedComplaints.length > 0) {
+        const totalTime = resolvedComplaints.reduce((sum, complaint) => {
+          const created = new Date(complaint.createdAt);
+          const resolved = new Date(complaint.updatedAt);
+          return sum + (resolved - created);
+        }, 0);
+        avgResolutionTime = totalTime / resolvedComplaints.length;
+      }
+      
+      // Format average resolution time
+      const avgTimeHours = Math.round(avgResolutionTime / (1000 * 60 * 60));
+      let avgTimeFormatted;
+      if (avgTimeHours < 24) {
+        avgTimeFormatted = `${avgTimeHours}h`;
+      } else {
+        const days = Math.floor(avgTimeHours / 24);
+        const hours = avgTimeHours % 24;
+        avgTimeFormatted = hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+      }
+      
+      // Calculate resolution rate (rating simulation based on resolution percentage)
+      const resolutionRate = totalTickets > 0 
+        ? ((resolvedTickets + closedTickets) / totalTickets * 100).toFixed(1)
+        : 0;
+      
+      // Simulate rating based on resolution rate and response time
+      let rating = 4.0;
+      if (resolutionRate >= 90) rating = 4.9;
+      else if (resolutionRate >= 80) rating = 4.7;
+      else if (resolutionRate >= 70) rating = 4.5;
+      else if (resolutionRate >= 60) rating = 4.2;
+      else if (resolutionRate >= 50) rating = 4.0;
+      else if (resolutionRate >= 40) rating = 3.8;
+      else rating = 3.5;
+      
+      // Determine status based on availability or online status
+      let status = 'offline';
+      if (agent.availability === 'available' || agent.isOnline) {
+        status = 'online';
+      } else if (agent.availability === 'busy') {
+        status = 'busy';
+      }
+      
+      return {
+        _id: agent._id,
+        name: agent.name || 'Unknown Agent',
+        email: agent.email,
+        phone: agent.phoneNumber || '',
+        department: agent.department || 'General',
+        organization: agent.organization || '',
+        status: status,
+        availability: agent.availability || 'offline',
+        joinDate: agent.createdAt,
+        stats: {
+          totalTickets,
+          resolvedTickets,
+          openTickets,
+          inProgressTickets,
+          closedTickets,
+          pendingTickets: openTickets + inProgressTickets,
+          resolutionRate: parseFloat(resolutionRate),
+          rating: rating,
+          avgResolutionTime: avgTimeFormatted
+        }
+      };
+    }));
+    
+    // Sort by total tickets (most active first)
+    agentPerformance.sort((a, b) => b.stats.totalTickets - a.stats.totalTickets);
+    
+    res.json({
+      agents: agentPerformance,
+      total: agentPerformance.length,
+      summary: {
+        totalAgents: agentPerformance.length,
+        onlineAgents: agentPerformance.filter(a => a.status === 'online').length,
+        busyAgents: agentPerformance.filter(a => a.status === 'busy').length,
+        offlineAgents: agentPerformance.filter(a => a.status === 'offline').length,
+        totalTicketsAssigned: agentPerformance.reduce((sum, a) => sum + a.stats.totalTickets, 0),
+        totalTicketsResolved: agentPerformance.reduce((sum, a) => sum + a.stats.resolvedTickets, 0)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching agent performance:', error);
+    res.status(500).json({ error: 'Failed to fetch agent performance data' });
   }
 }));
 

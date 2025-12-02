@@ -260,37 +260,22 @@ export const googleLogin = async (req, res) => {
     }
 
     const { user: existingUser } = await findUserByEmail(email);
-    let user = existingUser;
 
-    if (!user) {
-      // Create user if not exists - Google users go to 'users' collection by default
-      const UserModel = getUserModelByRole('user');
-      
-      // Generate unique username
-      const username = await UserModel.generateUsername(email, name);
-      
-      user = await UserModel.create({
-        name: name.trim(),
-        username: username,
-        email: email.toLowerCase().trim(),
-        password: Math.random().toString(36).slice(-8), // dummy password
-        role: "user",
-        isGoogleUser: true, // Mark as Google user
-        isVerified: true, // Google users are pre-verified
-      });
-      
-      console.log("New Google user created:", {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      });
-    } else {
-      console.log("Existing Google user logged in:", {
-        id: user._id,
-        name: user.name,
-        email: user.email,
+    if (!existingUser) {
+      // User doesn't exist - they need to sign up first
+      console.log("Google login failed - user not found:", email);
+      return res.status(404).json({ 
+        message: "Account not found. Please sign up first to create an account.",
+        requiresSignup: true
       });
     }
+
+    const user = existingUser;
+    console.log("Existing Google user logged in:", {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    });
 
     res.json({
       success: true,
