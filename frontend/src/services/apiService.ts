@@ -284,9 +284,14 @@ class ApiService {
 
   // --------------------- Analytics ---------------------
   async getDashboardAnalytics(timeRange: string = '30') { return this.request(`/analytics/dashboard?timeRange=${timeRange}`); }
+  async getDashboardComplete(timeRange: string = '30') { return this.request(`/analytics/dashboard-complete?timeRange=${timeRange}`); }
   async getTeamPerformance(timeRange: string = '30') { return this.request(`/analytics/team-performance?timeRange=${timeRange}`); }
   async getCategoryTrends(timeRange: string = '90') { return this.request(`/analytics/trends/category?timeRange=${timeRange}`); }
   async getSLACompliance(timeRange: string = '30') { return this.request(`/analytics/sla-compliance?timeRange=${timeRange}`); }
+  async getAnalyticsOverview() { return this.request('/analytics/overview'); }
+  async getAnalyticsStatus() { return this.request('/analytics/status'); }
+  async getAnalyticsCategory() { return this.request('/analytics/category'); }
+  async getAgentPerformance() { return this.request('/analytics/agent-performance'); }
 
   // --------------------- Admin ---------------------
   async getSystemStats() { return this.request('/admin/stats'); }

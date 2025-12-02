@@ -10,6 +10,8 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import connectDB from "./config/db.js";
+// Redis disabled for now - uncomment to enable caching
+// import { connectRedis, isRedisConnected } from "./config/redis.js";
 import { handleConnection } from "./socket/socketHandlers.js";
 import { User } from "./models/User.js";
 
@@ -370,6 +372,8 @@ import agentsRoutes from "./routes/agents.js";
 import aiRoutes from "./routes/ai.js";
 import subscriptionsRoutes from "./routes/subscriptions.js";
 import paymentsRoutes from "./routes/payments.js";
+// Redis cache routes disabled - uncomment when Redis is enabled
+// import cacheRoutes from "./routes/cache.js";
 
 // Health check endpoint that works even when DB is down
 app.get('/api/health', (req, res) => {
@@ -392,6 +396,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/payments", paymentsRoutes);
+// app.use("/api/admin", cacheRoutes); // Redis cache routes disabled
 
 // Enhanced Health check
 app.get("/api/health", async (req, res) => {
