@@ -10,7 +10,8 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import connectDB from "./config/db.js";
-import { connectRedis, isRedisConnected } from "./config/redis.js";
+// Redis disabled for now - uncomment to enable caching
+// import { connectRedis, isRedisConnected } from "./config/redis.js";
 import { handleConnection } from "./socket/socketHandlers.js";
 import { User } from "./models/User.js";
 
@@ -45,7 +46,6 @@ console.log('Server session ID:', global.SERVER_SESSION_ID);
 
 // Set a flag to track DB connection status
 global.DB_CONNECTED = false;
-global.REDIS_CONNECTED = false;
 
 // Connect to MongoDB
 connectDB()
@@ -55,19 +55,6 @@ connectDB()
   .catch(err => {
     console.log('⚠️ Starting server without database connection. Some features may be limited.');
     // In development mode, continue running the server even without DB
-  });
-
-// Connect to Redis (optional - app works without it)
-connectRedis()
-  .then(() => {
-    global.REDIS_CONNECTED = isRedisConnected();
-    if (global.REDIS_CONNECTED) {
-      console.log('🚀 Redis caching enabled');
-    }
-  })
-  .catch(err => {
-    console.log('⚠️ Redis connection failed. Running without caching.');
-    global.REDIS_CONNECTED = false;
   });
 
 const app = express();
@@ -385,7 +372,8 @@ import agentsRoutes from "./routes/agents.js";
 import aiRoutes from "./routes/ai.js";
 import subscriptionsRoutes from "./routes/subscriptions.js";
 import paymentsRoutes from "./routes/payments.js";
-import cacheRoutes from "./routes/cache.js";
+// Redis cache routes disabled - uncomment when Redis is enabled
+// import cacheRoutes from "./routes/cache.js";
 
 // Health check endpoint that works even when DB is down
 app.get('/api/health', (req, res) => {
@@ -394,7 +382,6 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date(),
     serverSessionId: global.SERVER_SESSION_ID,
     dbConnected: global.DB_CONNECTED,
-    redisConnected: global.REDIS_CONNECTED,
     environment: process.env.NODE_ENV
   });
 });
@@ -409,7 +396,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/payments", paymentsRoutes);
-app.use("/api/admin", cacheRoutes);
+// app.use("/api/admin", cacheRoutes); // Redis cache routes disabled
 
 // Enhanced Health check
 app.get("/api/health", async (req, res) => {
