@@ -2,14 +2,15 @@ import express from "express";
 import { Complaint } from "../models/Complaint.js";
 import { User } from "../models/User.js";
 import { authenticate, authorize } from "../middleware/auth.js";
-import {
-  cacheAnalyticsOverview,
-  cacheAnalyticsStatus,
-  cacheAnalyticsCategory,
-  cacheAgentPerformance,
-  cacheDashboardStats,
-  cacheTrendData,
-} from "../middleware/cacheMiddleware.js";
+// Redis caching disabled - uncomment when Redis is enabled
+// import {
+//   cacheAnalyticsOverview,
+//   cacheAnalyticsStatus,
+//   cacheAnalyticsCategory,
+//   cacheAgentPerformance,
+//   cacheDashboardStats,
+//   cacheTrendData,
+// } from "../middleware/cacheMiddleware.js";
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ const asyncHandler = (fn) => (req, res, next) => {
  * @desc    Get complaint analytics overview
  * @access  Private (Admin/Agent)
  */
-router.get("/overview", authenticate, cacheAnalyticsOverview, async (req, res) => {
+router.get("/overview", authenticate, async (req, res) => {
   try {
     const { role, _id: userId } = req.user;
     const match = role === "agent" ? { assignedTo: userId } : {};
@@ -47,7 +48,7 @@ router.get("/overview", authenticate, cacheAnalyticsOverview, async (req, res) =
  * @desc    Get complaint distribution by status
  * @access  Private (Admin/Agent)
  */
-router.get("/status", authenticate, cacheAnalyticsStatus, async (req, res) => {
+router.get("/status", authenticate, async (req, res) => {
   try {
     const { role, _id: userId } = req.user;
     const match = role === "agent" ? { assignedTo: userId } : {};
@@ -69,7 +70,7 @@ router.get("/status", authenticate, cacheAnalyticsStatus, async (req, res) => {
  * @desc    Get complaint distribution by category
  * @access  Private (Admin/Agent)
  */
-router.get("/category", authenticate, cacheAnalyticsCategory, async (req, res) => {
+router.get("/category", authenticate, async (req, res) => {
   try {
     const { role, _id: userId } = req.user;
     const match = role === "agent" ? { assignedTo: userId } : {};
@@ -91,7 +92,7 @@ router.get("/category", authenticate, cacheAnalyticsCategory, async (req, res) =
  * @desc    Get complaint resolution performance by agent
  * @access  Private (Admin only)
  */
-router.get("/agent-performance", authenticate, authorize('admin', 'analytics'), cacheAgentPerformance, async (req, res) => {
+router.get("/agent-performance", authenticate, authorize('admin', 'analytics'), async (req, res) => {
   try {
     const result = await Complaint.aggregate([
       {
@@ -144,7 +145,7 @@ router.get("/agent-performance", authenticate, authorize('admin', 'analytics'), 
 });
 
 // Get comprehensive dashboard analytics  
-router.get("/dashboard", authenticate, authorize('admin', 'agent', 'analytics'), cacheDashboardStats, asyncHandler(async (req, res) => {
+router.get("/dashboard", authenticate, authorize('admin', 'agent', 'analytics'), asyncHandler(async (req, res) => {
   const { timeRange = '30' } = req.query;
   const days = parseInt(timeRange);
   const startDate = new Date();
