@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   Shield, Activity, FileText, UserCheck, RefreshCw,
   Users, Home, Settings, Bell, HelpCircle, LogOut,
-  ChevronDown, Menu, TrendingUp, BarChart3, AlertCircle,
+  ChevronDown, Menu, TrendingUp, BarChart3,
   Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X, Search
 } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
@@ -899,14 +899,16 @@ export const AdminDashboard = () => {
     { name: 'Escalated', value: complaints.filter(c => c.status === 'Escalated').length, color: '#EF4444' }
   ].filter(item => item.value > 0);
 
-  // Chart data for category distribution
+  // Chart data for category distribution - using exact category names from database
   const categoryChartData = [
-    { category: 'Technical Support', count: complaints.filter(c => c.category?.includes('Technical')).length },
-    { category: 'Billing', count: complaints.filter(c => c.category?.includes('Billing')).length },
-    { category: 'Product Quality', count: complaints.filter(c => c.category?.includes('Product')).length },
-    { category: 'Customer Service', count: complaints.filter(c => c.category?.includes('Service')).length },
-    { category: 'Delivery', count: complaints.filter(c => c.category?.includes('Delivery')).length },
-    { category: 'General', count: complaints.filter(c => c.category?.includes('General') || c.category?.includes('Inquiry')).length }
+    { category: 'Technical Support', count: complaints.filter(c => c.category === 'Technical Support').length, color: '#3B82F6' },
+    { category: 'Billing', count: complaints.filter(c => c.category === 'Billing').length, color: '#10B981' },
+    { category: 'Product Quality', count: complaints.filter(c => c.category === 'Product Quality').length, color: '#F59E0B' },
+    { category: 'Customer Service', count: complaints.filter(c => c.category === 'Customer Service').length, color: '#8B5CF6' },
+    { category: 'Delivery', count: complaints.filter(c => c.category === 'Delivery').length, color: '#EC4899' },
+    { category: 'General Inquiry', count: complaints.filter(c => c.category === 'General Inquiry').length, color: '#6B7280' },
+    { category: 'Refund Request', count: complaints.filter(c => c.category === 'Refund Request').length, color: '#EF4444' },
+    { category: 'Account Issues', count: complaints.filter(c => c.category === 'Account Issues').length, color: '#14B8A6' }
   ].filter(item => item.count > 0);
 
   // Chart data for user/agent distribution
@@ -1160,66 +1162,42 @@ export const AdminDashboard = () => {
               <p className="text-gray-600">Complete overview of your system</p>
             </div>
 
-            {/* Clean Stats Cards - Freshdesk Style */}
+            {/* Clean Stats Cards - Text Only Style */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stats.totalUsers}</div>
-                <p className="text-sm text-gray-600">Total Users</p>
+                <p className="text-sm text-gray-600 mb-2">Total Users</p>
+                <div className="text-3xl font-bold text-gray-900">{stats.totalUsers}</div>
+                <p className="text-xs text-gray-500 mt-1">Registered</p>
               </div>
               
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <UserCheck className="w-5 h-5 text-green-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stats.totalAgents}</div>
-                <p className="text-sm text-gray-600">Active Agents</p>
+                <p className="text-sm text-gray-600 mb-2">Active Agents</p>
+                <div className="text-3xl font-bold text-green-600">{stats.totalAgents}</div>
+                <p className="text-xs text-gray-500 mt-1">Available</p>
               </div>
               
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-gray-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stats.totalComplaints}</div>
-                <p className="text-sm text-gray-600">Total Complaints</p>
+                <p className="text-sm text-gray-600 mb-2">Total Complaints</p>
+                <div className="text-3xl font-bold text-gray-900">{stats.totalComplaints}</div>
+                <p className="text-xs text-gray-500 mt-1">All time</p>
               </div>
               
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stats.resolved}</div>
-                <p className="text-sm text-gray-600">Resolved</p>
+                <p className="text-sm text-gray-600 mb-2">Resolved</p>
+                <div className="text-3xl font-bold text-green-600">{stats.resolved}</div>
+                <p className="text-xs text-gray-500 mt-1">Completed</p>
               </div>
               
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-yellow-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stats.pending}</div>
-                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-sm text-gray-600 mb-2">Pending</p>
+                <div className="text-3xl font-bold text-yellow-600">{stats.pending}</div>
+                <p className="text-xs text-gray-500 mt-1">Awaiting action</p>
               </div>
               
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stats.critical}</div>
-                <p className="text-sm text-gray-600">Critical</p>
+                <p className="text-sm text-gray-600 mb-2">Critical</p>
+                <div className="text-3xl font-bold text-red-600">{stats.critical}</div>
+                <p className="text-xs text-gray-500 mt-1">High priority</p>
               </div>
             </div>
 
