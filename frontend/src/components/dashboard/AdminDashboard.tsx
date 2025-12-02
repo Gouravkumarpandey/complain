@@ -3,13 +3,14 @@ import {
   Shield, Activity, FileText, UserCheck, RefreshCw,
   Users, Home, Settings, Bell, HelpCircle, LogOut,
   ChevronDown, Menu, TrendingUp, BarChart3, AlertCircle,
-  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X, ChevronLeft
+  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X
 } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { apiService } from '../../services/apiService';
 import { agentService } from '../../services/agentService';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 import { 
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -162,6 +163,18 @@ interface Complaint {
   updatedAt: string;
 }
 
+interface UserData {
+  _id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  role: string;
+  isVerified: boolean;
+  planType?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export const AdminDashboard = () => {
   // Remove unused state since it's not being used in the component
   // const [activeSection, setActiveSection] = useState<string>('user-agent-control');
@@ -196,6 +209,14 @@ export const AdminDashboard = () => {
   // Real-time agent data - fetched from database
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(true);
+
+  // Users data - fetched from database
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [usersPagination, setUsersPagination] = useState({ current: 1, pages: 1, total: 0 });
+
+  // Notification state
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
 
   const [ticketsData, setTicketsData] = useState<TicketData>({
     total: 92,
@@ -464,6 +485,32 @@ export const AdminDashboard = () => {
       setIsLoadingAgents(false);
     }
   }, []);
+
+  // Fetch users data from database
+  const fetchUsersData = useCallback(async (page = 1) => {
+    try {
+      setIsLoadingUsers(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5001/api/admin/users?page=${page}&limit=20`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.users && Array.isArray(data.users)) {
+          setUsers(data.users);
+          setUsersPagination(data.pagination || { current: 1, pages: 1, total: data.users.length });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching users data:', error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }, []);
   
   // Subscribe to real-time updates
   useEffect(() => {
@@ -567,7 +614,8 @@ export const AdminDashboard = () => {
     Promise.all([
       fetchDashboardData(),
       fetchAgentPerformance(),
-      fetchAgentPerformanceData()
+      fetchAgentPerformanceData(),
+      fetchUsersData()
     ]);
     
     // Set up a refresh interval
@@ -580,7 +628,7 @@ export const AdminDashboard = () => {
     }, 60000); // Refresh every minute
     
     return () => clearInterval(interval);
-  }, [fetchDashboardData, fetchAgentPerformance, fetchAgentPerformanceData]);
+  }, [fetchDashboardData, fetchAgentPerformance, fetchAgentPerformanceData, fetchUsersData]);
   
   // Handle logout
   const handleLogout = () => {
@@ -938,14 +986,12 @@ export const AdminDashboard = () => {
             className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
-            title="Profile Settings"
+            title="Settings"
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Settings</span>}
           </button>
-        </div>
-        
-        <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} space-y-2`}>
+          
           <button 
             onClick={() => setShowNotifications(!showNotifications)}
             className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
@@ -961,15 +1007,6 @@ export const AdminDashboard = () => {
           >
             <HelpCircle className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
-          </button>
-          
-          <button 
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <ChevronLeft className={`w-5 h-5 flex-shrink-0 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Collapse</span>}
           </button>
         </div>
       </div>
@@ -1004,24 +1041,18 @@ export const AdminDashboard = () => {
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
-              </button>
-              
-              <div className="flex items-center">
-                <div className="flex items-center">
-                  <span className={`w-3 h-3 rounded-full mr-2 ${isConnected ? "bg-green-500" : "bg-red-500"}`}></span>
-                  <span className="text-sm text-gray-600">{isConnected ? "Connected" : "Disconnected"}</span>
-                </div>
-              </div>
+            </button>
               
             <button 
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => {
+                setShowNotifications(true);
+                setHasUnreadNotifications(false);
+              }}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg relative"
             >
               <Bell className="w-5 h-5" />
-              {stats.pending > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {stats.pending}
-                </span>
+              {hasUnreadNotifications && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
               )}
             </button>
             
@@ -1374,39 +1405,178 @@ export const AdminDashboard = () => {
               <h2 className="text-2xl font-semibold text-gray-900 mb-1">User Management</h2>
               <p className="text-gray-600">Manage all registered users</p>
             </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="mb-4 flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Total Users: {stats.totalUsers}</h3>
-                  <p className="text-sm text-gray-600">Active users in the system</p>
+
+            {/* User Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
                 </div>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  Add New User
-                </button>
+                <div className="text-2xl font-bold text-gray-900">{usersPagination.total || stats.totalUsers}</div>
+                <p className="text-sm text-gray-600">Total Users</p>
+              </div>
+              
+              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">{users.filter(u => u.isVerified).length}</div>
+                <p className="text-sm text-gray-600">Verified</p>
+              </div>
+              
+              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                    <Star className="w-5 h-5 text-purple-600" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">{users.filter(u => u.planType === 'Pro' || u.planType === 'Premium').length}</div>
+                <p className="text-sm text-gray-600">Premium Users</p>
+              </div>
+              
+              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-orange-600" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">{users.filter(u => !u.isVerified).length}</div>
+                <p className="text-sm text-gray-600">Pending Verification</p>
+              </div>
+            </div>
+            
+            {/* User List Table */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">All Users</h3>
+                    <p className="text-sm text-gray-600">View and manage user accounts</p>
+                  </div>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Add New User
+                  </button>
+                </div>
               </div>
               
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                        User management interface coming soon...
-                      </td>
-                    </tr>
+                    {isLoadingUsers ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                            <p className="text-gray-500">Loading users...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : users.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <Users className="w-12 h-12 text-gray-300 mb-3" />
+                            <p className="text-gray-500 font-medium">No users found</p>
+                            <p className="text-gray-400 text-sm">Users will appear here once registered</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      users.map((userData, index) => (
+                        <tr key={userData._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {(usersPagination.current - 1) * 20 + index + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                                {userData.name?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                              <div className="ml-3">
+                                <div className="text-sm font-medium text-gray-900">{userData.name}</div>
+                                <div className="text-sm text-gray-500">{userData.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {userData.phoneNumber || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              userData.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${
+                                userData.isVerified ? 'bg-green-600' : 'bg-yellow-600'
+                              }`}></div>
+                              {userData.isVerified ? 'Verified' : 'Pending'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              userData.planType === 'Premium' ? 'bg-purple-100 text-purple-800' :
+                              userData.planType === 'Pro' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {userData.planType || 'Free'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(userData.createdAt).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
+                            <button className="text-gray-600 hover:text-gray-900">Edit</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
+              
+              {/* Pagination */}
+              {usersPagination.pages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    Showing page {usersPagination.current} of {usersPagination.pages} ({usersPagination.total} total users)
+                  </p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => fetchUsersData(usersPagination.current - 1)}
+                      disabled={usersPagination.current <= 1}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button 
+                      onClick={() => fetchUsersData(usersPagination.current + 1)}
+                      disabled={usersPagination.current >= usersPagination.pages}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1809,105 +1979,107 @@ export const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Notification Preferences */}
+                {/* Preferences & Security Settings - Combined */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
-                    <p className="text-sm text-gray-600 mt-1">Manage how you receive notifications</p>
+                    <h3 className="text-lg font-semibold text-gray-900">Preferences & Security</h3>
+                    <p className="text-sm text-gray-600 mt-1">Manage notifications and account security</p>
                   </div>
                   <div className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Bell className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">Email Notifications</p>
-                            <p className="text-sm text-gray-600">Receive email updates for system alerts</p>
+                    {/* Notification Toggles */}
+                    <div className="mb-6">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Notification Channels</p>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg text-center">
+                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                            <Bell className="w-5 h-5 text-purple-600" />
                           </div>
+                          <p className="text-sm font-medium text-gray-900 mb-2">Email</p>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={settings.notifications.email}
+                              onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, email: e.target.checked}})}
+                              className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.notifications.email}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, email: e.target.checked}})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                        </label>
-                      </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <MessageCircle className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">SMS Notifications</p>
-                            <p className="text-sm text-gray-600">Get text messages for urgent alerts</p>
+                        <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg text-center">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <MessageCircle className="w-5 h-5 text-blue-600" />
                           </div>
+                          <p className="text-sm font-medium text-gray-900 mb-2">SMS</p>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={settings.notifications.sms}
+                              onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, sms: e.target.checked}})}
+                              className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.notifications.sms}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, sms: e.target.checked}})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                        </label>
-                      </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Bell className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">Push Notifications</p>
-                            <p className="text-sm text-gray-600">Receive in-app notifications</p>
+                        <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg text-center">
+                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                            <Bell className="w-5 h-5 text-green-600" />
                           </div>
+                          <p className="text-sm font-medium text-gray-900 mb-2">Push</p>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={settings.notifications.push}
+                              onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, push: e.target.checked}})}
+                              className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.notifications.push}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, push: e.target.checked}})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                        </label>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Security Settings */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Security Settings</h3>
-                    <p className="text-sm text-gray-600 mt-1">Manage your account security</p>
-                  </div>
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
-                        <div>
-                          <p className="font-medium text-gray-900">Change Password</p>
-                          <p className="text-sm text-gray-600">Update your account password</p>
-                        </div>
-                        <ChevronDown className="w-5 h-5 text-gray-400 -rotate-90" />
-                      </button>
-                      
-                      <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
-                        <div>
-                          <p className="font-medium text-gray-900">Two-Factor Authentication</p>
-                          <p className="text-sm text-gray-600">Add an extra layer of security</p>
-                        </div>
-                        <ChevronDown className="w-5 h-5 text-gray-400 -rotate-90" />
-                      </button>
-                      
-                      <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
-                        <div>
-                          <p className="font-medium text-gray-900">Active Sessions</p>
-                          <p className="text-sm text-gray-600">Manage your active login sessions</p>
-                        </div>
-                        <ChevronDown className="w-5 h-5 text-gray-400 -rotate-90" />
-                      </button>
+                    {/* Security Options */}
+                    <div className="border-t border-gray-200 pt-5">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Security Options</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">Change Password</p>
+                            <p className="text-xs text-gray-500">Update password</p>
+                          </div>
+                        </button>
+                        
+                        <button className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">Two-Factor Auth</p>
+                            <p className="text-xs text-gray-500">Extra security</p>
+                          </div>
+                        </button>
+                        
+                        <button className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                          <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">Active Sessions</p>
+                            <p className="text-xs text-gray-500">Manage logins</p>
+                          </div>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1929,6 +2101,12 @@ export const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Notifications Modal */}
+      <NotificationCenter
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </div>
   );
 };
