@@ -2,6 +2,15 @@ import express from "express";
 import { Complaint } from "../models/Complaint.js";
 import { User } from "../models/User.js";
 import { authenticate, authorize } from "../middleware/auth.js";
+// Redis caching disabled - uncomment when Redis is enabled
+// import {
+//   cacheAnalyticsOverview,
+//   cacheAnalyticsStatus,
+//   cacheAnalyticsCategory,
+//   cacheAgentPerformance,
+//   cacheDashboardStats,
+//   cacheTrendData,
+// } from "../middleware/cacheMiddleware.js";
 
 const router = express.Router();
 

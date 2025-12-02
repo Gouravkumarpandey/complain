@@ -299,7 +299,7 @@ ${conversationHistory}
 Please provide:
 1. A clear title (max 100 characters)
 2. A detailed description of the issue
-3. The category (choose one: Billing, Technical, Service, Product, General)
+3. The category (choose one: Technical Support, Billing, Product Quality, Customer Service, Delivery, General Inquiry, Refund Request, Account Issues)
 4. The priority level (Low, Medium, High, Urgent)
 5. The sentiment (Positive, Neutral, Negative)
 
@@ -437,9 +437,30 @@ Remember: Be quick, natural, and human-like in your responses.`;
    * Validate and normalize category
    */
   _validateCategory(category) {
-    const validCategories = ['Billing', 'Technical', 'Service', 'Product', 'General'];
-    const normalized = category?.charAt(0).toUpperCase() + category?.slice(1).toLowerCase();
-    return validCategories.includes(normalized) ? normalized : 'General';
+    const validCategories = ['Technical Support', 'Billing', 'Product Quality', 'Customer Service', 'Delivery', 'General Inquiry', 'Refund Request', 'Account Issues'];
+    
+    // Map short names to full names
+    const categoryMap = {
+      'technical': 'Technical Support',
+      'billing': 'Billing',
+      'product': 'Product Quality',
+      'service': 'Customer Service',
+      'delivery': 'Delivery',
+      'general': 'General Inquiry',
+      'refund': 'Refund Request',
+      'account': 'Account Issues'
+    };
+    
+    const lowerCategory = category?.toLowerCase() || '';
+    
+    // Check if it's a short name
+    if (categoryMap[lowerCategory]) {
+      return categoryMap[lowerCategory];
+    }
+    
+    // Check if it matches a valid category
+    const normalized = validCategories.find(c => c.toLowerCase() === lowerCategory);
+    return normalized || 'General Inquiry';
   }
 
   /**
