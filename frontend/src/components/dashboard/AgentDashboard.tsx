@@ -17,7 +17,6 @@ import { useSocket } from '../../hooks/useSocket';
 import { 
   getStatusColor,
   getPriorityColor,
-  getNavItemClasses,
   getMessageSendButtonClasses,
   getProgressBarStyle
 } from '../../utils/agentDashboardUtils';
@@ -27,6 +26,7 @@ export function AgentDashboard() {
   const { complaints, loading: complaintsContextLoading, refreshComplaints } = useComplaints();
   const { isConnected, socket, joinComplaintRoom, updateComplaint, sendMessage } = useSocket();
   const [activeView, setActiveView] = useState('my-tickets');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // Use loading state from context
   const complaintsLoading = complaintsContextLoading;
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
@@ -53,6 +53,7 @@ export function AgentDashboard() {
   
   // We'll implement filtering directly in the component for now
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Simple filtering based on search query
   const filteredTickets = useMemo(() => {
@@ -66,6 +67,15 @@ export function AgentDashboard() {
       (complaint.category && complaint.category.toLowerCase().includes(query))
     );
   }, [filteredComplaints, searchQuery]);
+
+  // Handle search result selection
+  const handleSearchSelect = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setShowSearchModal(false);
+    setSearchQuery('');
+    setActiveView('my-tickets');
+  };
+
   const [agentProfile, setAgentProfile] = useState({
     name: user?.name || 'Agent',
     email: user?.email || 'agent@example.com',
@@ -74,6 +84,13 @@ export function AgentDashboard() {
     role: user?.role || 'agent',
     joinDate: '2024-01-15',
     availability: 'available'
+  });
+  const [settings, setSettings] = useState({
+    notifications: {
+      email: true,
+      sms: false,
+      push: true
+    }
   });
 
   // Update agent profile when user changes
@@ -241,7 +258,7 @@ export function AgentDashboard() {
     };
   }, [showUserMenu]);
 
-  const handleStatusUpdate = async (complaintId: string, newStatus: 'Open' | 'In Progress' | 'Under Review' | 'Resolved' | 'Closed' | 'Escalated') => {
+  const handleStatusUpdate = async (complaintId: string, newStatus: 'Open' | 'In Progress' | 'Under Review' | 'Resolved' | 'Closed') => {
     try {
       // Use socket to update complaint status in real-time
       if (socket && isConnected) {
@@ -320,7 +337,6 @@ export function AgentDashboard() {
     pending: filteredComplaints.filter(c => c.status === 'Open').length,
     inProgress: filteredComplaints.filter(c => c.status === 'In Progress' || c.status === 'Under Review').length,
     resolved: filteredComplaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length,
-    escalated: filteredComplaints.filter(c => c.status === 'Escalated').length,
     urgent: filteredComplaints.filter(c => c.priority === 'High' || c.priority === 'Urgent').length,
     thisWeek: filteredComplaints.filter(c => {
       const createdDate = new Date(c.createdAt);
@@ -336,64 +352,87 @@ export function AgentDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Freshdesk-style Clean Sidebar */}
-      <div className="bg-slate-800 w-16 flex flex-col items-center py-4 space-y-4">
-        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-          <Shield className="w-5 h-5 text-white" />
+      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+        <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <span className="text-white font-semibold text-lg">QuickFix</span>
+            )}
+          </div>
         </div>
         
-        <div className="space-y-2">
+        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
           <button 
             onClick={() => setActiveView('dashboard')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${getNavItemClasses(activeView === 'dashboard')}`}
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
+              activeView === 'dashboard' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
             title="Dashboard"
           >
-            <Home className="w-5 h-5" />
+            <Home className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('my-tickets')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${getNavItemClasses(activeView === 'my-tickets')}`}
-            title="Agent Dashboard"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
+              activeView === 'my-tickets' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+            title="My Tickets"
           >
-            <Inbox className="w-5 h-5" />
+            <Inbox className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">My Tickets</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('performance')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${getNavItemClasses(activeView === 'performance')}`}
-            title="Performance Metrics"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
+              activeView === 'performance' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+            title="Performance"
           >
-            <Star className="w-5 h-5" />
+            <Star className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Performance</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('profile')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${getNavItemClasses(activeView === 'profile')}`}
-            title="Profile Management"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
+              activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+            title="Profile"
           >
-            <User className="w-5 h-5" />
+            <User className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Profile</span>}
           </button>
           
           <button 
             onClick={() => setShowNotifications(true)}
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Notifications"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Notifications</span>}
           </button>
           
           <button 
             onClick={() => setShowChatBot(true)}
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="AI Assistant"
           >
-            <Bot className="w-5 h-5" />
+            <Bot className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">AI Assistant</span>}
           </button>
           
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+          <button 
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Help & Support"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
           </button>
         </div>
       </div>
@@ -403,12 +442,16 @@ export function AgentDashboard() {
         {/* Freshdesk-style Clean Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <button 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
               {activeView === 'dashboard' && 'Agent Dashboard'}
-              {activeView === 'my-tickets' && 'Agent Dashboard'}
+              {activeView === 'my-tickets' && 'My Tickets'}
               {activeView === 'performance' && 'Performance Metrics'}
               {activeView === 'profile' && 'Profile Management'}
             </h1>
@@ -477,7 +520,11 @@ export function AgentDashboard() {
               </button>
             )}
             
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+            <button 
+              onClick={() => setShowSearchModal(true)}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+              title="Search tickets"
+            >
               <Search className="w-5 h-5" />
             </button>
             
@@ -513,25 +560,31 @@ export function AgentDashboard() {
               </button>
               
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <button 
-                    onClick={() => {
-                      setActiveView('profile');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Profile Settings
-                  </button>
-                  <hr className="my-1" />
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900">{agentProfile.name}</p>
+                    <p className="text-sm text-blue-600 truncate" title={agentProfile.email}>{agentProfile.email}</p>
+                    <p className="text-sm text-gray-500 mt-1">Role: {agentProfile.role}</p>
+                  </div>
+                  <div className="p-2">
+                    <button 
+                      onClick={() => {
+                        setActiveView('profile');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                    >
+                      <Settings className="w-4 h-4 text-gray-500" />
+                      Account Settings
+                    </button>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                    >
+                      <LogOut className="w-4 h-4 text-gray-500" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -571,12 +624,6 @@ export function AgentDashboard() {
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Urgent</h3>
                 <div className="text-3xl font-bold text-orange-600">{stats.urgent}</div>
                 <p className="text-xs text-gray-500 mt-1">High priority</p>
-              </div>
-              
-              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Escalated</h3>
-                <div className="text-3xl font-bold text-red-600">{stats.escalated}</div>
-                <p className="text-xs text-gray-500 mt-1">Needs review</p>
               </div>
             </div>
 
@@ -750,13 +797,6 @@ export function AgentDashboard() {
                     <div>
                       <p className="font-medium text-green-900">Resolved</p>
                       <p className="text-sm text-green-700">Successfully completed</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 border border-red-200 rounded-lg bg-red-50">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div>
-                      <p className="font-medium text-red-900">Escalated</p>
-                      <p className="text-sm text-red-700">Needs attention</p>
                     </div>
                   </div>
                 </div>
@@ -1023,100 +1063,195 @@ export function AgentDashboard() {
           </div>
         )}
 
-        {/* Profile Management View */}
+        {/* Freshdesk-Style Profile Settings */}
         {activeView === 'profile' && (
-          <div className="p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Profile Management</h3>
-                    <p className="text-sm text-gray-600">View and update your account details</p>
+          <div className="p-6 bg-gray-50 min-h-screen">
+            <div className="max-w-5xl mx-auto">
+              {/* Profile Header Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+                <div className="p-6">
+                  <div className="flex items-start gap-6">
+                    <div className="relative group">
+                      <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                        {agentProfile.name?.charAt(0).toUpperCase() || 'A'}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-semibold text-gray-900 mb-2">{agentProfile.name}</h2>
+                      <p className="text-gray-600 mb-3">{agentProfile.email}</p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">{agentProfile.role}</span>
+                        <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{agentProfile.department}</span>
+                        <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4" />
+                          Member since {new Date(agentProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="max-w-2xl">
-                  <div className="flex items-center gap-6 mb-8">
-                    <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-2xl">
-                      {agentProfile.name?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-semibold text-gray-900">{agentProfile.name}</h4>
-                      <p className="text-gray-600">{agentProfile.email}</p>
-                      <p className="text-sm text-gray-500">{agentProfile.role} • Member since {new Date(agentProfile.joinDate).toLocaleDateString()}</p>
+
+              {/* Settings Sections */}
+              <div className="space-y-6">
+                {/* Personal Information */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                    <p className="text-sm text-gray-600 mt-1">Update your personal details and contact information</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input 
+                          type="text" 
+                          value={agentProfile.name.split(' ')[0] || ''}
+                          onChange={(e) => setAgentProfile({...agentProfile, name: e.target.value + ' ' + (agentProfile.name.split(' ')[1] || '')})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="Enter first name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input 
+                          type="text" 
+                          value={agentProfile.name.split(' ')[1] || ''}
+                          onChange={(e) => setAgentProfile({...agentProfile, name: (agentProfile.name.split(' ')[0] || '') + ' ' + e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="Enter last name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input 
+                          type="email" 
+                          value={agentProfile.email}
+                          onChange={(e) => setAgentProfile({...agentProfile, email: e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="your.email@example.com"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input 
+                          type="tel" 
+                          value={agentProfile.phone}
+                          onChange={(e) => setAgentProfile({...agentProfile, phone: e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="+1 (555) 000-0000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                        <input 
+                          type="text" 
+                          value={agentProfile.department}
+                          onChange={(e) => setAgentProfile({...agentProfile, department: e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="Your department"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Availability Status</label>
+                        <select
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          value={agentProfile.availability}
+                          onChange={(e) => setAgentProfile({...agentProfile, availability: e.target.value})}
+                        >
+                          <option value="available">Available</option>
+                          <option value="busy">Busy</option>
+                          <option value="offline">Offline</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                      <input 
-                        type="text" 
-                        value={agentProfile.name}
-                        onChange={(e) => setAgentProfile({...agentProfile, name: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                      <input 
-                        type="email" 
-                        value={agentProfile.email}
-                        onChange={(e) => setAgentProfile({...agentProfile, email: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                      <input 
-                        type="tel" 
-                        value={agentProfile.phone}
-                        onChange={(e) => setAgentProfile({...agentProfile, phone: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                      <input 
-                        type="text" 
-                        value={agentProfile.department}
-                        onChange={(e) => setAgentProfile({...agentProfile, department: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Availability Status</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value={agentProfile.availability}
-                        onChange={(e) => setAgentProfile({...agentProfile, availability: e.target.value})}
-                      >
-                        <option value="Available">Available</option>
-                        <option value="Busy">Busy</option>
-                        <option value="Away">Away</option>
-                        <option value="Offline">Offline</option>
-                      </select>
+                </div>
+
+                {/* Notification Preferences */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
+                    <p className="text-sm text-gray-600 mt-1">Manage how you receive notifications</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Bell className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Email Notifications</p>
+                            <p className="text-sm text-gray-600">Receive email updates for ticket assignments and status changes</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={settings.notifications.email}
+                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, email: e.target.checked}})}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <MessageCircle className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">SMS Notifications</p>
+                            <p className="text-sm text-gray-600">Get text messages for urgent ticket updates</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={settings.notifications.sms}
+                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, sms: e.target.checked}})}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Bell className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Push Notifications</p>
+                            <p className="text-sm text-gray-600">Receive in-app notifications for new ticket assignments</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={settings.notifications.push}
+                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, push: e.target.checked}})}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <div className="flex gap-4">
-                      <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-                        Save Changes
-                      </button>
-                      <button 
-                        onClick={() => setActiveView('my-tickets')}
-                        className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+                </div>
+
+                {/* Save Changes Button */}
+                <div className="flex justify-end gap-4">
+                  <button 
+                    onClick={() => setActiveView('my-tickets')}
+                    className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button className="bg-green-600 text-white px-6 py-2.5 rounded-lg hover:bg-green-700 transition-colors">
+                    Save Changes
+                  </button>
                 </div>
               </div>
             </div>
@@ -1414,6 +1549,77 @@ export function AgentDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[70vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <Search className="w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tickets by ID, title, or description..."
+                  className="flex-1 outline-none text-lg"
+                  autoFocus
+                />
+                <button 
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    setSearchQuery('');
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {searchQuery.trim() ? (
+                filteredTickets.length > 0 ? (
+                  <div className="divide-y divide-gray-100">
+                    {filteredTickets.map((complaint) => (
+                      <button
+                        key={complaint.id}
+                        onClick={() => handleSearchSelect(complaint)}
+                        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-blue-600">
+                            #{complaint.complaintId || complaint.id.slice(-8)}
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(complaint.status)}`}>
+                            {complaint.status}
+                          </span>
+                        </div>
+                        <p className="font-medium text-gray-900 truncate">{complaint.title}</p>
+                        <p className="text-sm text-gray-500 truncate">{complaint.description}</p>
+                        {complaint.priority && (
+                          <span className={`text-xs mt-1 inline-block px-2 py-0.5 rounded ${getPriorityColor(complaint.priority)}`}>
+                            {complaint.priority}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No tickets found matching "{searchQuery}"</p>
+                  </div>
+                )
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>Start typing to search tickets...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
