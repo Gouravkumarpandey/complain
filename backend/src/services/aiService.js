@@ -96,6 +96,160 @@ Respond with just the category name and a confidence score (0-1) in JSON format:
   },
 
   /**
+   * Classify a complaint and return category, priority, sentiment
+   * @param {string} text - Complaint description text
+   * @returns {Promise<Object>} Classification with category, priority, sentiment, keywords
+   */
+  async classifyComplaint(text) {
+    const validCategories = [
+      'Technical Support', 'Billing', 'Product Quality', 'Customer Service',
+      'Delivery', 'General Inquiry', 'Refund Request', 'Account Issues'
+    ];
+
+    // Use DeepSeek if available
+    if (USE_DEEPSEEK && deepseekService.apiKey) {
+      try {
+        const prompt = `Analyze this customer complaint and classify it:
+
+"${text}"
+
+Provide a JSON response with:
+1. category: One of [${validCategories.join(', ')}]
+2. priority: One of [Low, Medium, High, Critical] based on urgency
+3. sentiment: One of [Positive, Neutral, Negative]
+4. keywords: Up to 5 relevant keywords
+
+Respond ONLY with valid JSON:
+{"category": "...", "priority": "...", "sentiment": "...", "keywords": [...]}`;
+
+        const response = await axios.post(
+          `${deepseekService.apiUrl}/chat/completions`,
+          {
+            model: deepseekService.model,
+            messages: [
+              { role: 'system', content: 'You are a complaint classification assistant. Respond only with valid JSON.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.3,
+            max_tokens: 200
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${deepseekService.apiKey}`,
+              'Content-Type': 'application/json',
+              ...(deepseekService.isOpenRouter && {
+                'HTTP-Referer': 'http://localhost:5001',
+                'X-Title': 'QuickFix Complaint System'
+              })
+            }
+          }
+        );
+
+        const aiResponse = response.data.choices[0].message.content;
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        const result = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
+        
+        // Validate category
+        let category = result.category;
+        if (!validCategories.includes(category)) {
+          // Try to find a matching category
+          const lowerCategory = category?.toLowerCase() || '';
+          if (lowerCategory.includes('technical') || lowerCategory.includes('support')) {
+            category = 'Technical Support';
+          } else if (lowerCategory.includes('billing') || lowerCategory.includes('payment')) {
+            category = 'Billing';
+          } else if (lowerCategory.includes('product') || lowerCategory.includes('quality')) {
+            category = 'Product Quality';
+          } else if (lowerCategory.includes('service') || lowerCategory.includes('customer')) {
+            category = 'Customer Service';
+          } else if (lowerCategory.includes('delivery') || lowerCategory.includes('shipping')) {
+            category = 'Delivery';
+          } else if (lowerCategory.includes('refund')) {
+            category = 'Refund Request';
+          } else if (lowerCategory.includes('account') || lowerCategory.includes('login')) {
+            category = 'Account Issues';
+          } else {
+            category = 'General Inquiry';
+          }
+        }
+
+        // Validate priority
+        const validPriorities = ['Low', 'Medium', 'High', 'Critical'];
+        let priority = result.priority;
+        if (!validPriorities.includes(priority)) {
+          priority = 'Medium';
+        }
+
+        // Validate sentiment
+        const validSentiments = ['Positive', 'Neutral', 'Negative'];
+        let sentiment = result.sentiment;
+        if (!validSentiments.includes(sentiment)) {
+          sentiment = 'Neutral';
+        }
+
+        return {
+          category,
+          priority,
+          sentiment,
+          keywords: result.keywords || [],
+          confidence: 0.9,
+          model: 'deepseek-r1'
+        };
+      } catch (error) {
+        console.warn('DeepSeek complaint classification failed, using fallback:', error.message);
+      }
+    }
+    
+    // Fallback: keyword-based classification
+    const textLower = text.toLowerCase();
+    let category = 'General Inquiry';
+    let priority = 'Medium';
+    let sentiment = 'Neutral';
+    
+    // Category detection
+    if (textLower.includes('password') || textLower.includes('login') || textLower.includes('access') || textLower.includes('account')) {
+      category = 'Account Issues';
+    } else if (textLower.includes('payment') || textLower.includes('bill') || textLower.includes('charge') || textLower.includes('invoice')) {
+      category = 'Billing';
+    } else if (textLower.includes('slow') || textLower.includes('error') || textLower.includes('crash') || textLower.includes('bug') || textLower.includes('not working')) {
+      category = 'Technical Support';
+    } else if (textLower.includes('delivery') || textLower.includes('shipping') || textLower.includes('order') || textLower.includes('package')) {
+      category = 'Delivery';
+    } else if (textLower.includes('refund') || textLower.includes('money back') || textLower.includes('return')) {
+      category = 'Refund Request';
+    } else if (textLower.includes('quality') || textLower.includes('defect') || textLower.includes('broken') || textLower.includes('damaged')) {
+      category = 'Product Quality';
+    } else if (textLower.includes('service') || textLower.includes('support') || textLower.includes('help')) {
+      category = 'Customer Service';
+    }
+    
+    // Priority detection
+    if (textLower.includes('urgent') || textLower.includes('emergency') || textLower.includes('critical') || textLower.includes('asap')) {
+      priority = 'Critical';
+    } else if (textLower.includes('important') || textLower.includes('soon') || textLower.includes('frustrated')) {
+      priority = 'High';
+    } else if (textLower.includes('minor') || textLower.includes('small') || textLower.includes('whenever')) {
+      priority = 'Low';
+    }
+    
+    // Sentiment detection
+    if (textLower.includes('angry') || textLower.includes('frustrated') || textLower.includes('terrible') || textLower.includes('worst') || textLower.includes('unacceptable')) {
+      sentiment = 'Negative';
+    } else if (textLower.includes('thank') || textLower.includes('appreciate') || textLower.includes('great') || textLower.includes('happy')) {
+      sentiment = 'Positive';
+    }
+    
+    return {
+      category,
+      priority,
+      sentiment,
+      keywords: [],
+      confidence: 0.7,
+      model: 'keyword-fallback'
+    };
+  },
+
+  /**
    * Analyze text sentiment
    * @param {string} text - Text to analyze
    * @returns {Promise<Object>} Sentiment analysis result

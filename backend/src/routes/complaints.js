@@ -6,6 +6,7 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import { validateComplaint, validateComplaintUpdate } from '../validators/complaintValidators.js';
 import aiService from '../services/aiService.js';
 import { sendComplaintConfirmationEmail } from '../services/emailService.js';
+import { invalidateComplaintCache } from '../services/cacheService.js';
 
 const router = express.Router();
 
@@ -301,6 +302,9 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.log('✅ COMPLAINT SAVED SUCCESSFULLY!');
     console.log('   Complaint ID:', complaint._id);
     console.log('   Complaint Number:', complaint.complaintId);
+    
+    // Invalidate cache since new complaint was created
+    await invalidateComplaintCache(complaint._id.toString());
   } catch (saveError) {
     console.error('❌ MONGODB SAVE ERROR:', saveError);
     console.error('   Error name:', saveError.name);
@@ -557,6 +561,9 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   }
 
   await complaint.save();
+  
+  // Invalidate cache since complaint was updated
+  await invalidateComplaintCache(complaint._id.toString());
 
   // Emit socket event for real-time updates
   const io = req.app.get('io');
@@ -608,6 +615,9 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
   } catch (err) {
     console.error('Error updating agent availability to busy:', err);
   }
+  
+  // Invalidate cache since complaint was assigned
+  await invalidateComplaintCache(complaint._id.toString());
 
   // Emit socket event
   const io = req.app.get('io');
@@ -650,6 +660,9 @@ router.post('/:id/updates', authenticate, asyncHandler(async (req, res) => {
 
   complaint.updatedAt = new Date();
   await complaint.save();
+  
+  // Invalidate cache since complaint was updated
+  await invalidateComplaintCache(complaint._id.toString());
 
   // Emit socket event
   const io = req.app.get('io');

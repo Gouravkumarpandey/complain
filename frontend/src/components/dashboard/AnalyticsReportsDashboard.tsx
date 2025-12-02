@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { 
   TrendingUp, Download, Settings, Search,
   Clock, Users, Shield, Home,
-  Bell, HelpCircle, Menu, User,
+  Bell, HelpCircle, Menu,
   ChevronDown, LogOut, BarChart3,
   Activity, FileText, CheckCircle, Star,
-  Lock, Globe, Save, AlertCircle,
+  Save, AlertCircle,
   Calendar, MessageCircle, X, RefreshCw
 } from 'lucide-react';
 import { useComplaints } from '../../contexts/ComplaintContext';
@@ -237,6 +237,7 @@ export function AnalyticsReportsDashboard() {
   };
 
   // SLA Compliance data
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const slaData = {
     onTime: filteredComplaints.filter(c => {
       if (!c.slaTarget) return true;
@@ -265,6 +266,7 @@ export function AnalyticsReportsDashboard() {
   };
 
   // Agent performance data
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const agentPerformance = (() => {
     const agentMap = new Map<string, { name: string; assigned: number; resolved: number; avgTime: number[] }>();
     
@@ -304,13 +306,17 @@ export function AnalyticsReportsDashboard() {
   ].filter(item => item.value > 0);
 
   const categoryData = [
-    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length },
-    { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length },
-    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length },
-    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length },
-    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length }
+    { category: 'Technical Support', count: filteredComplaints.filter(c => c.category === 'Technical Support').length, color: '#3B82F6' },
+    { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length, color: '#10B981' },
+    { category: 'Product Quality', count: filteredComplaints.filter(c => c.category === 'Product Quality').length, color: '#F59E0B' },
+    { category: 'Customer Service', count: filteredComplaints.filter(c => c.category === 'Customer Service').length, color: '#8B5CF6' },
+    { category: 'Delivery', count: filteredComplaints.filter(c => c.category === 'Delivery').length, color: '#EC4899' },
+    { category: 'General Inquiry', count: filteredComplaints.filter(c => c.category === 'General Inquiry').length, color: '#6B7280' },
+    { category: 'Refund Request', count: filteredComplaints.filter(c => c.category === 'Refund Request').length, color: '#EF4444' },
+    { category: 'Account Issues', count: filteredComplaints.filter(c => c.category === 'Account Issues').length, color: '#14B8A6' }
   ].filter(item => item.count > 0);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const priorityData = [
     { priority: 'Urgent', count: filteredComplaints.filter(c => c.priority === 'Urgent').length, color: '#EF4444' },
     { priority: 'High', count: filteredComplaints.filter(c => c.priority === 'High').length, color: '#F97316' },
@@ -570,38 +576,26 @@ export function AnalyticsReportsDashboard() {
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-500">Total Complaints</h3>
-                      <FileText className="w-5 h-5 text-blue-500" />
-                    </div>
+                    <p className="text-sm text-gray-600 mb-2">Total Complaints</p>
                     <p className="text-3xl font-bold text-gray-800">{analyticsData.total}</p>
                     <div className="mt-2 text-sm text-green-600">+12% from previous period</div>
                   </div>
                   
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-500">Resolved Complaints</h3>
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    </div>
-                    <p className="text-3xl font-bold text-gray-800">{analyticsData.resolved}</p>
+                    <p className="text-sm text-gray-600 mb-2">Resolved Complaints</p>
+                    <p className="text-3xl font-bold text-green-600">{analyticsData.resolved}</p>
                     <div className="mt-2 text-sm text-green-600">+5% from previous period</div>
                   </div>
                   
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-500">Avg. Resolution Time</h3>
-                      <Clock className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <p className="text-3xl font-bold text-gray-800">{analyticsData.avgResolutionTime}</p>
+                    <p className="text-sm text-gray-600 mb-2">Avg. Resolution Time</p>
+                    <p className="text-3xl font-bold text-yellow-600">{analyticsData.avgResolutionTime}</p>
                     <div className="mt-2 text-sm text-red-500">+0.2 days from previous period</div>
                   </div>
                   
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-500">Customer Satisfaction</h3>
-                      <Star className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <p className="text-3xl font-bold text-gray-800">{analyticsData.satisfactionScore}/5</p>
+                    <p className="text-sm text-gray-600 mb-2">Customer Satisfaction</p>
+                    <p className="text-3xl font-bold text-orange-500">{analyticsData.satisfactionScore}/5</p>
                     <div className="mt-2 text-sm text-green-600">+0.1 from previous period</div>
                   </div>
                 </div>
