@@ -3,7 +3,7 @@ import {
   Shield, Activity, FileText, UserCheck, RefreshCw,
   Users, Home, Settings, Bell, HelpCircle, LogOut,
   ChevronDown, Menu, TrendingUp, BarChart3, AlertCircle,
-  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X
+  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X, Search
 } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
@@ -217,6 +217,10 @@ export const AdminDashboard = () => {
 
   // Notification state
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const [ticketsData, setTicketsData] = useState<TicketData>({
     total: 92,
@@ -757,15 +761,24 @@ export const AdminDashboard = () => {
   ]);
   
   // Refresh data on demand
-  const refreshData = () => {
+  const refreshData = async () => {
     if (isRefreshing) return;
+    setIsRefreshing(true);
     
-    // Fetch fresh data from API including system stats
-    Promise.all([
-      fetchDashboardData(),
-      fetchAgentPerformance(),
-      fetchSystemStats()
-    ]);
+    try {
+      // Fetch fresh data from API including system stats and complaints
+      await Promise.all([
+        fetchDashboardData(),
+        fetchAgentPerformance(),
+        fetchSystemStats(),
+        refreshComplaints()
+      ]);
+      console.log('Dashboard data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
   
   // Assign ticket function - keeping for future use
@@ -834,7 +847,26 @@ export const AdminDashboard = () => {
   // Add new state for view management
   const [activeView, setActiveView] = useState('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
-  const { complaints } = useComplaints();
+  const { complaints, refreshComplaints } = useComplaints();
+
+  // Filter complaints by search query
+  const filteredBySearch = searchQuery.trim() ? complaints.filter(c => 
+    c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.ticketId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) : [];
+
+  // Handle search result selection
+  const handleSearchSelect = (complaint: Complaint) => {
+    console.log('Selected complaint:', complaint._id);
+    setShowSearchModal(false);
+    setSearchQuery('');
+    setActiveView('complaints');
+    // Could also set a selected complaint state here
+  };
 
   // Fetch system stats on mount and periodically
   useEffect(() => {
@@ -1035,6 +1067,14 @@ export const AdminDashboard = () => {
           
           <div className="flex items-center gap-4">
             <button 
+              onClick={() => setShowSearchModal(true)}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+              title="Search complaints"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+            
+            <button 
               onClick={refreshData}
               disabled={isRefreshing}
               className="text-slate-800 hover:text-slate-900 font-medium text-sm flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg disabled:opacity-50"
@@ -1080,25 +1120,31 @@ export const AdminDashboard = () => {
               </button>
               
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <button 
-                    onClick={() => {
-                      setActiveView('profile');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Profile Settings
-                  </button>
-                  <hr className="my-1" />
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900">{adminProfile.name}</p>
+                    <p className="text-sm text-blue-600 truncate" title={adminProfile.email}>{adminProfile.email}</p>
+                    <p className="text-sm text-gray-500 mt-1">Role: {adminProfile.role}</p>
+                  </div>
+                  <div className="p-2">
+                    <button 
+                      onClick={() => {
+                        setActiveView('profile');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                    >
+                      <Settings className="w-4 h-4 text-gray-500" />
+                      Account Settings
+                    </button>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                    >
+                      <LogOut className="w-4 h-4 text-gray-500" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -2101,6 +2147,81 @@ export const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[70vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <Search className="w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search complaints, users, or agents..."
+                  className="flex-1 outline-none text-lg"
+                  autoFocus
+                />
+                <button 
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    setSearchQuery('');
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {searchQuery.trim() ? (
+                filteredBySearch.length > 0 ? (
+                  <div className="divide-y divide-gray-100">
+                    {filteredBySearch.map((complaint) => (
+                      <button
+                        key={complaint._id || Math.random().toString()}
+                        onClick={() => handleSearchSelect(complaint)}
+                        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-purple-600">
+                            #{complaint.ticketId || complaint._id?.slice(-8) || 'N/A'}
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                            complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                            complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
+                            complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {complaint.status}
+                          </span>
+                        </div>
+                        <p className="font-medium text-gray-900 truncate">{complaint.title}</p>
+                        <p className="text-sm text-gray-500 truncate">{complaint.description}</p>
+                        {complaint.category && (
+                          <span className="text-xs text-gray-400 mt-1 inline-block">{complaint.category}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No results found for "{searchQuery}"</p>
+                  </div>
+                )
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>Start typing to search...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notifications Modal */}
       <NotificationCenter

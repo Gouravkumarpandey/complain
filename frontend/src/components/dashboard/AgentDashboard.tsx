@@ -53,6 +53,7 @@ export function AgentDashboard() {
   
   // We'll implement filtering directly in the component for now
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Simple filtering based on search query
   const filteredTickets = useMemo(() => {
@@ -66,6 +67,15 @@ export function AgentDashboard() {
       (complaint.category && complaint.category.toLowerCase().includes(query))
     );
   }, [filteredComplaints, searchQuery]);
+
+  // Handle search result selection
+  const handleSearchSelect = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setShowSearchModal(false);
+    setSearchQuery('');
+    setActiveView('my-tickets');
+  };
+
   const [agentProfile, setAgentProfile] = useState({
     name: user?.name || 'Agent',
     email: user?.email || 'agent@example.com',
@@ -510,7 +520,11 @@ export function AgentDashboard() {
               </button>
             )}
             
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+            <button 
+              onClick={() => setShowSearchModal(true)}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+              title="Search tickets"
+            >
               <Search className="w-5 h-5" />
             </button>
             
@@ -546,25 +560,31 @@ export function AgentDashboard() {
               </button>
               
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <button 
-                    onClick={() => {
-                      setActiveView('profile');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Profile Settings
-                  </button>
-                  <hr className="my-1" />
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900">{agentProfile.name}</p>
+                    <p className="text-sm text-blue-600 truncate" title={agentProfile.email}>{agentProfile.email}</p>
+                    <p className="text-sm text-gray-500 mt-1">Role: {agentProfile.role}</p>
+                  </div>
+                  <div className="p-2">
+                    <button 
+                      onClick={() => {
+                        setActiveView('profile');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                    >
+                      <Settings className="w-4 h-4 text-gray-500" />
+                      Account Settings
+                    </button>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                    >
+                      <LogOut className="w-4 h-4 text-gray-500" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1529,6 +1549,77 @@ export function AgentDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[70vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <Search className="w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tickets by ID, title, or description..."
+                  className="flex-1 outline-none text-lg"
+                  autoFocus
+                />
+                <button 
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    setSearchQuery('');
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {searchQuery.trim() ? (
+                filteredTickets.length > 0 ? (
+                  <div className="divide-y divide-gray-100">
+                    {filteredTickets.map((complaint) => (
+                      <button
+                        key={complaint.id}
+                        onClick={() => handleSearchSelect(complaint)}
+                        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-blue-600">
+                            #{complaint.complaintId || complaint.id.slice(-8)}
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(complaint.status)}`}>
+                            {complaint.status}
+                          </span>
+                        </div>
+                        <p className="font-medium text-gray-900 truncate">{complaint.title}</p>
+                        <p className="text-sm text-gray-500 truncate">{complaint.description}</p>
+                        {complaint.priority && (
+                          <span className={`text-xs mt-1 inline-block px-2 py-0.5 rounded ${getPriorityColor(complaint.priority)}`}>
+                            {complaint.priority}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No tickets found matching "{searchQuery}"</p>
+                  </div>
+                )
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>Start typing to search tickets...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
