@@ -2,44 +2,47 @@ import { createClient } from 'redis';
 
 let redisClient = null;
 let isConnected = false;
+let connectionAttempted = false;
 
 /**
  * Initialize Redis connection
  * Falls back gracefully if Redis is not available
  */
 const connectRedis = async () => {
+  // Only attempt connection once
+  if (connectionAttempted) {
+    return null;
+  }
+  connectionAttempted = true;
+
   try {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     
     redisClient = createClient({
       url: redisUrl,
       socket: {
+        connectTimeout: 3000, // 3 second timeout
         reconnectStrategy: (retries) => {
-          if (retries > 3) {
-            console.log('⚠️ Redis: Max reconnection attempts reached, operating without cache');
-            return false; // Stop reconnecting
+          if (retries > 1) {
+            // Stop reconnecting after 2 attempts - Redis is likely not installed
+            return false;
           }
-          return Math.min(retries * 100, 3000); // Reconnect after delay
+          return 1000; // Try once more after 1 second
         }
       }
     });
 
-    redisClient.on('error', (err) => {
-      console.error('❌ Redis Client Error:', err.message);
-      isConnected = false;
-    });
-
-    redisClient.on('connect', () => {
-      console.log('🔗 Redis connecting...');
+    // Suppress repeated error logs
+    redisClient.on('error', () => {
+      // Silent - we'll handle this gracefully
     });
 
     redisClient.on('ready', () => {
-      console.log('✅ Redis Connected and Ready');
+      console.log('✅ Redis Connected - Caching enabled');
       isConnected = true;
     });
 
     redisClient.on('end', () => {
-      console.log('🔌 Redis connection closed');
       isConnected = false;
     });
 
@@ -51,9 +54,9 @@ const connectRedis = async () => {
     
     return redisClient;
   } catch (error) {
-    console.warn('⚠️ Redis connection failed:', error.message);
-    console.log('📝 Application will continue without caching');
+    console.log('ℹ️  Redis not available - Running without cache (this is fine)');
     isConnected = false;
+    redisClient = null;
     return null;
   }
 };

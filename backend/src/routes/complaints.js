@@ -6,7 +6,8 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import { validateComplaint, validateComplaintUpdate } from '../validators/complaintValidators.js';
 import aiService from '../services/aiService.js';
 import { sendComplaintConfirmationEmail } from '../services/emailService.js';
-import { invalidateComplaintCache } from '../services/cacheService.js';
+// Redis cache disabled - uncomment when Redis is enabled
+// import { invalidateComplaintCache } from '../services/cacheService.js';
 
 const router = express.Router();
 
@@ -303,8 +304,8 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.log('   Complaint ID:', complaint._id);
     console.log('   Complaint Number:', complaint.complaintId);
     
-    // Invalidate cache since new complaint was created
-    await invalidateComplaintCache(complaint._id.toString());
+    // Redis cache disabled
+    // await invalidateComplaintCache(complaint._id.toString());
   } catch (saveError) {
     console.error('❌ MONGODB SAVE ERROR:', saveError);
     console.error('   Error name:', saveError.name);
