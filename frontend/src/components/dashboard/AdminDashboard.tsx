@@ -3,7 +3,7 @@ import {
   Shield, Activity, FileText, UserCheck, RefreshCw,
   Users, Home, Settings, Bell, HelpCircle, LogOut,
   ChevronDown, Menu, TrendingUp, BarChart3, AlertCircle,
-  Clock, CheckCircle, Star, Eye
+  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X, ChevronLeft
 } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
@@ -103,13 +103,28 @@ interface ApiAgentData {
   name?: string;
   firstName?: string;
   lastName?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
   agentStatus?: string;
   availability?: string;
+  status?: string;
   activeComplaints?: Array<unknown>;
   metrics?: {
     avgResponseTime?: number;
   };
   lastStatusChange?: string | Date;
+  stats?: {
+    totalTickets: number;
+    resolvedTickets: number;
+    openTickets: number;
+    inProgressTickets: number;
+    closedTickets: number;
+    pendingTickets: number;
+    resolutionRate: number;
+    rating: number;
+    avgResolutionTime: string;
+  };
 }
 
 interface ApiPerformanceData {
@@ -154,92 +169,33 @@ export const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  
+  // Profile settings state
+  const [settings, setSettings] = useState({
+    notifications: {
+      email: true,
+      sms: false,
+      push: true
+    },
+    theme: 'light',
+    language: 'en'
+  });
   
   // Admin profile information
-  const [adminProfile, setAdminProfile] = useState<{name: string; email: string; role: string}>({ 
+  const [adminProfile, setAdminProfile] = useState<{name: string; email: string; role: string; phone: string; organization: string; joinDate: string}>({ 
     name: user?.name || 'Admin',
     email: user?.email || 'admin@example.com',
-    role: user?.role || 'admin'
+    role: user?.role || 'admin',
+    phone: '',
+    organization: 'QuickFix Support',
+    joinDate: new Date().toISOString()
   });
 
-  // Real-time agent data with default values
-  const [agents, setAgents] = useState<Agent[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      initials: 'JD',
-      status: 'available',
-      availability: 'available',
-      currentLoad: 3,
-      avgResponseTime: '4m 30s',
-      color: 'blue',
-      lastUpdated: new Date(),
-      email: 'john.doe@example.com',
-      currentTickets: 3,
-      resolvedToday: 5,
-      rating: 4.8
-    },
-    {
-      id: '2',
-      name: 'Alice Smith',
-      initials: 'AS',
-      status: 'busy',
-      availability: 'busy',
-      currentLoad: 6,
-      avgResponseTime: '5m 12s',
-      color: 'purple',
-      lastUpdated: new Date(),
-      email: 'alice.smith@example.com',
-      currentTickets: 6,
-      resolvedToday: 7,
-      rating: 4.9
-    },
-    {
-      id: '3',
-      name: 'Robert Johnson',
-      initials: 'RJ',
-      status: 'available',
-      availability: 'available',
-      currentLoad: 2,
-      avgResponseTime: '3m 45s',
-      color: 'green',
-      lastUpdated: new Date(),
-      email: 'robert.johnson@example.com',
-      currentTickets: 2,
-      resolvedToday: 4,
-      rating: 4.7
-    },
-    {
-      id: '4',
-      name: 'Emily Davis',
-      initials: 'ED',
-      status: 'offline',
-      availability: 'offline',
-      currentLoad: 0,
-      avgResponseTime: '4m 15s',
-      color: 'gray',
-      lastUpdated: new Date(),
-      email: 'emily.davis@example.com',
-      currentTickets: 0,
-      resolvedToday: 3,
-      rating: 4.6
-    },
-    {
-      id: '5',
-      name: 'Michael Wilson',
-      initials: 'MW',
-      status: 'busy',
-      availability: 'busy',
-      currentLoad: 8,
-      avgResponseTime: '6m 20s',
-      color: 'orange',
-      lastUpdated: new Date(),
-      email: 'michael.wilson@example.com',
-      currentTickets: 8,
-      resolvedToday: 6,
-      rating: 4.5
-    }
-  ]); // Closing the agents array properly
+  // Real-time agent data - fetched from database
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(true);
 
   const [ticketsData, setTicketsData] = useState<TicketData>({
     total: 92,
@@ -311,13 +267,31 @@ export const AdminDashboard = () => {
   // Update admin profile when user changes
   useEffect(() => {
     if (user) {
-      setAdminProfile({
+      setAdminProfile(prev => ({
+        ...prev,
         name: user.name,
         email: user.email,
         role: user.role
-      });
+      }));
     }
   }, [user]);
+
+  // Handle photo upload
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle photo remove
+  const handlePhotoRemove = () => {
+    setProfilePhoto(null);
+  };
 
   // Get initials from name
   const getInitials = (name: string): string => {
@@ -392,6 +366,104 @@ export const AdminDashboard = () => {
       setIsRefreshing(false);
     }
   }, [setIsRefreshing]);
+
+  // Real-time system statistics from database
+  const [systemStats, setSystemStats] = useState({
+    totalUsers: 0,
+    activeAgents: 0,
+    totalComplaints: 0,
+    resolved: 0,
+    pending: 0,
+    critical: 0,
+    escalated: 0,
+    avgResolutionTime: '0 days',
+    newToday: 0,
+    resolvedToday: 0
+  });
+
+  // Fetch system statistics from database
+  const fetchSystemStats = useCallback(async () => {
+    try {
+      const response = await apiService.getSystemStats();
+      if (response.data) {
+        const data = response.data as {
+          summary?: {
+            users?: number;
+            agents?: number;
+            total?: number;
+            resolved?: number;
+            pending?: number;
+            critical?: number;
+          };
+          totalUsers?: number;
+          activeAgents?: number;
+          totalComplaints?: number;
+          resolvedComplaints?: number;
+          closedComplaints?: number;
+          pendingComplaints?: number;
+          criticalComplaints?: number;
+          escalatedComplaints?: number;
+          newToday?: number;
+          resolvedToday?: number;
+        };
+        
+        setSystemStats({
+          totalUsers: data.summary?.users || data.totalUsers || 0,
+          activeAgents: data.summary?.agents || data.activeAgents || 0,
+          totalComplaints: data.summary?.total || data.totalComplaints || 0,
+          resolved: data.summary?.resolved || (data.resolvedComplaints || 0) + (data.closedComplaints || 0),
+          pending: data.summary?.pending || data.pendingComplaints || 0,
+          critical: data.summary?.critical || data.criticalComplaints || 0,
+          escalated: data.escalatedComplaints || 0,
+          avgResolutionTime: ticketsData.avgResolutionTime || '0 days',
+          newToday: data.newToday || 0,
+          resolvedToday: data.resolvedToday || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching system stats:', error);
+    }
+  }, [ticketsData.avgResolutionTime]);
+
+  // Fetch agent performance data from database
+  const fetchAgentPerformanceData = useCallback(async () => {
+    try {
+      setIsLoadingAgents(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/admin/agents/performance', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.agents && Array.isArray(data.agents)) {
+          const formattedAgents: Agent[] = data.agents.map((agent: ApiAgentData) => ({
+            id: agent._id || agent.id || '',
+            name: agent.name || 'Unknown Agent',
+            initials: getInitials(agent.name || 'Unknown Agent'),
+            status: agent.status || 'offline',
+            availability: agent.availability || 'offline',
+            currentLoad: agent.stats?.pendingTickets || 0,
+            avgResponseTime: agent.stats?.avgResolutionTime || 'N/A',
+            color: getAgentColor(agent.stats?.pendingTickets || 0),
+            lastUpdated: new Date(),
+            email: agent.email || '',
+            currentTickets: agent.stats?.totalTickets || 0,
+            resolvedToday: agent.stats?.resolvedTickets || 0,
+            rating: agent.stats?.rating || 0
+          }));
+          setAgents(formattedAgents);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching agent performance data:', error);
+    } finally {
+      setIsLoadingAgents(false);
+    }
+  }, []);
   
   // Subscribe to real-time updates
   useEffect(() => {
@@ -494,19 +566,21 @@ export const AdminDashboard = () => {
     // Fetch initial data
     Promise.all([
       fetchDashboardData(),
-      fetchAgentPerformance()
+      fetchAgentPerformance(),
+      fetchAgentPerformanceData()
     ]);
     
     // Set up a refresh interval
     const interval = setInterval(() => {
       Promise.all([
         fetchDashboardData(),
-        fetchAgentPerformance()
+        fetchAgentPerformance(),
+        fetchAgentPerformanceData()
       ]);
     }, 60000); // Refresh every minute
     
     return () => clearInterval(interval);
-  }, [fetchDashboardData, fetchAgentPerformance]);
+  }, [fetchDashboardData, fetchAgentPerformance, fetchAgentPerformanceData]);
   
   // Handle logout
   const handleLogout = () => {
@@ -609,7 +683,8 @@ export const AdminDashboard = () => {
         // Refresh dashboard data when a new complaint is received
         Promise.all([
           fetchDashboardData(),
-          fetchAgentPerformance()
+          fetchAgentPerformance(),
+          fetchSystemStats()
         ]);
       });
       
@@ -621,7 +696,7 @@ export const AdminDashboard = () => {
         socket.off('new_complaint');
       };
     }
-  }, [socket, isConnected, fetchDashboardData, handleAgentStatusUpdate, fetchAgentPerformance]);
+  }, [socket, isConnected, fetchDashboardData, handleAgentStatusUpdate, fetchAgentPerformance, fetchSystemStats]);
   
   // Complaint categories data - keeping for future use
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -637,10 +712,11 @@ export const AdminDashboard = () => {
   const refreshData = () => {
     if (isRefreshing) return;
     
-    // Fetch fresh data from API
+    // Fetch fresh data from API including system stats
     Promise.all([
       fetchDashboardData(),
-      fetchAgentPerformance()
+      fetchAgentPerformance(),
+      fetchSystemStats()
     ]);
   };
   
@@ -712,16 +788,26 @@ export const AdminDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const { complaints } = useComplaints();
 
-  // Calculate comprehensive statistics
+  // Fetch system stats on mount and periodically
+  useEffect(() => {
+    fetchSystemStats();
+    
+    // Refresh every 30 seconds for real-time updates
+    const interval = setInterval(fetchSystemStats, 30000);
+    
+    return () => clearInterval(interval);
+  }, [fetchSystemStats]);
+
+  // Calculate comprehensive statistics - now using real data from database
   const stats = {
-    totalUsers: 245, // This would come from API
-    totalAgents: agents.length || 12,
-    totalComplaints: complaints.length || ticketsData.total,
-    resolved: complaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length || ticketsData.resolved,
-    pending: complaints.filter(c => c.status === 'Open' || c.status === 'In Progress').length || ticketsData.pending,
-    critical: complaints.filter(c => c.priority === 'High' || c.priority === 'Urgent').length || ticketsData.critical,
-    escalated: complaints.filter(c => c.status === 'Escalated').length,
-    avgResolutionTime: ticketsData.avgResolutionTime || '1.4 days'
+    totalUsers: systemStats.totalUsers,
+    totalAgents: systemStats.activeAgents || agents.length,
+    totalComplaints: systemStats.totalComplaints || complaints.length || ticketsData.total,
+    resolved: systemStats.resolved || complaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length || ticketsData.resolved,
+    pending: systemStats.pending || complaints.filter(c => c.status === 'Open' || c.status === 'In Progress').length || ticketsData.pending,
+    critical: systemStats.critical || complaints.filter(c => c.priority === 'High' || c.priority === 'Urgent').length || ticketsData.critical,
+    escalated: systemStats.escalated || complaints.filter(c => c.status === 'Escalated').length,
+    avgResolutionTime: systemStats.avgResolutionTime || ticketsData.avgResolutionTime || '1.4 days'
   };
 
   // Chart data for status distribution
@@ -778,87 +864,126 @@ export const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Freshdesk-style Clean Sidebar */}
-      <div className="bg-slate-800 w-16 flex flex-col items-center py-4 space-y-4">
-        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-          <Shield className="w-5 h-5 text-white" />
+      {/* Collapsible Sidebar */}
+      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+        <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <span className="text-white font-semibold text-lg">QuickFix Admin</span>
+            )}
+          </div>
         </div>
         
-        <div className="space-y-2">
+        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'} flex-1`}>
           <button 
             onClick={() => setActiveView('dashboard')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'dashboard' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Dashboard"
           >
-            <Home className="w-5 h-5" />
+            <Home className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('users')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'users' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Users Management"
           >
-            <Users className="w-5 h-5" />
+            <Users className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Users</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('agents')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'agents' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Agents Management"
           >
-            <UserCheck className="w-5 h-5" />
+            <UserCheck className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Agents</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('complaints')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'complaints' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Complaints"
           >
-            <FileText className="w-5 h-5" />
+            <FileText className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Complaints</span>}
           </button>
           
           <button 
             onClick={() => setActiveView('analytics')}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
               activeView === 'analytics' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
             title="Analytics"
           >
-            <Activity className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="mt-auto space-y-2">
-          <button 
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-            title="Settings"
-          >
-            <Settings className="w-5 h-5" />
+            <Activity className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Analytics</span>}
           </button>
           
           <button 
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            onClick={() => setActiveView('profile')}
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
+              activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+            title="Profile Settings"
+          >
+            <Settings className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Settings</span>}
+          </button>
+        </div>
+        
+        <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} space-y-2`}>
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Notifications</span>}
+          </button>
+          
+          <button 
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Help"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
+          </button>
+          
+          <button 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={`w-full h-10 rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronLeft className={`w-5 h-5 flex-shrink-0 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Collapse</span>}
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Freshdesk-style Clean Header */}
+        {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <button 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
@@ -867,6 +992,7 @@ export const AdminDashboard = () => {
               {activeView === 'agents' && 'Agents Management'}
               {activeView === 'complaints' && 'Complaints Management'}
               {activeView === 'analytics' && 'Analytics & Reports'}
+              {activeView === 'profile' && 'Profile Settings'}
             </h1>
           </div>
           
@@ -908,9 +1034,13 @@ export const AdminDashboard = () => {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
               >
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                  {adminProfile.name?.charAt(0).toUpperCase() || 'A'}
-                </div>
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {adminProfile.name?.charAt(0).toUpperCase() || 'A'}
+                  </div>
+                )}
                 <div className="text-left">
                   <p className="text-sm font-medium text-gray-900">{adminProfile.name}</p>
                   <p className="text-xs text-gray-500">{adminProfile.role}</p>
@@ -921,6 +1051,10 @@ export const AdminDashboard = () => {
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <button 
+                    onClick={() => {
+                      setActiveView('profile');
+                      setShowUserMenu(false);
+                    }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                   >
                     <Settings className="w-4 h-4" />
@@ -1356,55 +1490,77 @@ export const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {agents.map((agent) => (
-                      <tr key={agent.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
-                              agent.color === 'blue' ? 'bg-blue-500' :
-                              agent.color === 'green' ? 'bg-green-500' :
-                              agent.color === 'orange' ? 'bg-orange-500' :
-                              agent.color === 'purple' ? 'bg-purple-500' :
-                              agent.color === 'pink' ? 'bg-pink-500' :
-                              'bg-red-500'
-                            }`}>
-                              {agent.name.charAt(0)}
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">{agent.name}</div>
-                              <div className="text-sm text-gray-500">{agent.email}</div>
-                            </div>
+                    {isLoadingAgents ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                            <p className="text-gray-500">Loading agents...</p>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            agent.status === 'active' ? 'bg-green-100 text-green-800' :
-                            agent.status === 'away' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${
-                              agent.status === 'active' ? 'bg-green-600' :
-                              agent.status === 'away' ? 'bg-yellow-600' :
-                              'bg-gray-600'
-                            }`}></div>
-                            {agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.currentTickets}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.resolvedToday}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                            <span className="text-sm text-gray-900">{agent.rating || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.avgResponseTime}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                          <button className="text-gray-600 hover:text-gray-900">Edit</button>
                         </td>
                       </tr>
-                    ))}
+                    ) : agents.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <Users className="w-12 h-12 text-gray-300 mb-3" />
+                            <p className="text-gray-500 font-medium">No agents found</p>
+                            <p className="text-gray-400 text-sm">Add agents to see their performance here</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      agents.map((agent) => (
+                        <tr key={agent.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
+                                agent.color === 'blue' ? 'bg-blue-500' :
+                                agent.color === 'green' ? 'bg-green-500' :
+                                agent.color === 'orange' ? 'bg-orange-500' :
+                                agent.color === 'purple' ? 'bg-purple-500' :
+                                agent.color === 'pink' ? 'bg-pink-500' :
+                                'bg-gray-500'
+                              }`}>
+                                {agent.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="ml-3">
+                                <div className="text-sm font-medium text-gray-900">{agent.name}</div>
+                                <div className="text-sm text-gray-500">{agent.email || 'No email'}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              agent.status === 'online' || agent.status === 'available' ? 'bg-green-100 text-green-800' :
+                              agent.status === 'busy' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${
+                                agent.status === 'online' || agent.status === 'available' ? 'bg-green-600' :
+                                agent.status === 'busy' ? 'bg-yellow-600' :
+                                'bg-gray-600'
+                              }`}></div>
+                              {agent.status === 'online' || agent.status === 'available' ? 'Online' :
+                               agent.status === 'busy' ? 'Busy' : 'Offline'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.currentTickets || 0}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.resolvedToday || 0}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                              <span className="text-sm text-gray-900">{agent.rating?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.avgResponseTime || 'N/A'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
+                            <button className="text-gray-600 hover:text-gray-900">Edit</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1527,6 +1683,248 @@ export const AdminDashboard = () => {
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 Export Current Data
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Settings View */}
+        {activeView === 'profile' && (
+          <div className="p-6 bg-gray-50 min-h-screen">
+            <div className="max-w-5xl mx-auto">
+              {/* Profile Header Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+                <div className="p-6">
+                  <div className="flex items-start gap-6">
+                    <div className="relative group">
+                      {profilePhoto ? (
+                        <>
+                          <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+                          <button
+                            onClick={handlePhotoRemove}
+                            className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Remove photo"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="w-24 h-24 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                          {adminProfile.name?.charAt(0).toUpperCase() || 'A'}
+                        </div>
+                      )}
+                      <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </label>
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-semibold text-gray-900 mb-2">{adminProfile.name}</h2>
+                      <p className="text-gray-600 mb-3">{adminProfile.email}</p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium capitalize">{adminProfile.role}</span>
+                        <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4" />
+                          Member since {new Date(adminProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Settings Sections */}
+              <div className="space-y-6">
+                {/* Personal Information */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                    <p className="text-sm text-gray-600 mt-1">Update your personal details and contact information</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input 
+                          type="text" 
+                          value={adminProfile.name.split(' ')[0] || ''}
+                          onChange={(e) => setAdminProfile({...adminProfile, name: e.target.value + ' ' + (adminProfile.name.split(' ')[1] || '')})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                          placeholder="Enter first name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input 
+                          type="text" 
+                          value={adminProfile.name.split(' ')[1] || ''}
+                          onChange={(e) => setAdminProfile({...adminProfile, name: (adminProfile.name.split(' ')[0] || '') + ' ' + e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                          placeholder="Enter last name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input 
+                          type="email" 
+                          value={adminProfile.email}
+                          onChange={(e) => setAdminProfile({...adminProfile, email: e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                          placeholder="your.email@example.com"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input 
+                          type="tel" 
+                          value={adminProfile.phone}
+                          onChange={(e) => setAdminProfile({...adminProfile, phone: e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                          placeholder="+1 (555) 000-0000"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+                        <input 
+                          type="text" 
+                          value={adminProfile.organization}
+                          onChange={(e) => setAdminProfile({...adminProfile, organization: e.target.value})}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                          placeholder="Your organization name"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notification Preferences */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
+                    <p className="text-sm text-gray-600 mt-1">Manage how you receive notifications</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Bell className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Email Notifications</p>
+                            <p className="text-sm text-gray-600">Receive email updates for system alerts</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={settings.notifications.email}
+                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, email: e.target.checked}})}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <MessageCircle className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">SMS Notifications</p>
+                            <p className="text-sm text-gray-600">Get text messages for urgent alerts</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={settings.notifications.sms}
+                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, sms: e.target.checked}})}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Bell className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Push Notifications</p>
+                            <p className="text-sm text-gray-600">Receive in-app notifications</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={settings.notifications.push}
+                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, push: e.target.checked}})}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Settings */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Security Settings</h3>
+                    <p className="text-sm text-gray-600 mt-1">Manage your account security</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                        <div>
+                          <p className="font-medium text-gray-900">Change Password</p>
+                          <p className="text-sm text-gray-600">Update your account password</p>
+                        </div>
+                        <ChevronDown className="w-5 h-5 text-gray-400 -rotate-90" />
+                      </button>
+                      
+                      <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                        <div>
+                          <p className="font-medium text-gray-900">Two-Factor Authentication</p>
+                          <p className="text-sm text-gray-600">Add an extra layer of security</p>
+                        </div>
+                        <ChevronDown className="w-5 h-5 text-gray-400 -rotate-90" />
+                      </button>
+                      
+                      <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                        <div>
+                          <p className="font-medium text-gray-900">Active Sessions</p>
+                          <p className="text-sm text-gray-600">Manage your active login sessions</p>
+                        </div>
+                        <ChevronDown className="w-5 h-5 text-gray-400 -rotate-90" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end gap-3">
+                  <button 
+                    onClick={() => setActiveView('dashboard')}
+                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
