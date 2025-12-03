@@ -493,6 +493,23 @@ export function UserDashboard() {
             {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
           </button>
         </div>
+        
+        {/* Promotional Banner at Bottom */}
+        {!sidebarCollapsed && (
+          <div className="mt-auto px-4 pb-4">
+            <div className="rounded-lg overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+              <img 
+                src="/poster.png" 
+                alt="QuickFix Promotional Banner"
+                className="w-full h-auto object-cover"
+                onClick={() => setActiveView('profile')}
+                onError={(e) => {
+                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400"%3E%3Cdefs%3E%3ClinearGradient id="sidebarGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23sidebarGrad)" width="240" height="400"/%3E%3Ctext x="120" y="80" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="120" y="110" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="120" y="140" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="120" y="180" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="30" cy="220" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="227" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E01%3C/text%3E%3Ctext x="55" y="227" fill="white" font-size="11"%3EAnalytics%3C/text%3E%3Ccircle cx="30" cy="260" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="267" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E02%3C/text%3E%3Ctext x="55" y="267" fill="white" font-size="11"%3ECustomised%3C/text%3E%3Ccircle cx="30" cy="300" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="307" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E03%3C/text%3E%3Ctext x="55" y="307" fill="white" font-size="11"%3EManagement%3C/text%3E%3Crect x="30" y="340" width="180" height="30" rx="15" fill="%23F59E0B"/%3E%3Ctext x="120" y="360" text-anchor="middle" fill="white" font-size="10" font-weight="bold"%3EVIEW DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -975,6 +992,23 @@ export function UserDashboard() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Side Promotional Panel */}
+          <div className="w-80 p-6">
+            <div className="sticky top-6">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                <img 
+                  src="/Navbar_image.png" 
+                  alt="QuickFix Features - What's in it for you?"
+                  className="w-full h-auto object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                  onClick={() => setActiveView('profile')}
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 600"%3E%3Cdefs%3E%3ClinearGradient id="rightGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="50%25" style="stop-color:%233B82F6;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23rightGrad)" width="320" height="600"/%3E%3Cpath d="M 0 20 L 30 0 L 60 20 L 90 0 L 120 20" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Cpath d="M 200 580 L 230 560 L 260 580 L 290 560 L 320 580" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Ccircle cx="280" cy="60" r="25" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ccircle cx="40" cy="540" r="20" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ctext x="160" y="100" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="160" y="140" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="160" y="180" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="160" y="230" text-anchor="middle" fill="white" font-size="22" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="40" cy="280" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="288" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E01%3C/text%3E%3Ctext x="75" y="288" fill="white" font-size="14"%3EAnalytics Overview%3C/text%3E%3Ccircle cx="40" cy="320" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="328" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E02%3C/text%3E%3Ctext x="75" y="328" fill="white" font-size="14"%3ECompany specific%3C/text%3E%3Ccircle cx="40" cy="360" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="368" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E03%3C/text%3E%3Ctext x="75" y="368" fill="white" font-size="14"%3ECustomised roadmaps%3C/text%3E%3Ccircle cx="40" cy="400" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="408" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E04%3C/text%3E%3Ctext x="75" y="408" fill="white" font-size="14"%3ECategory Breakdowns%3C/text%3E%3Ccircle cx="40" cy="440" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="448" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E05%3C/text%3E%3Ctext x="75" y="448" fill="white" font-size="14"%3EUser Management%3C/text%3E%3Crect x="60" y="490" width="200" height="35" rx="17" fill="%23F59E0B"/%3E%3Ctext x="160" y="514" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3EVIEW LIVE DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
+                  }}
+                />
               </div>
             </div>
           </div>
