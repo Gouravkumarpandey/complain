@@ -236,66 +236,6 @@ export function AnalyticsReportsDashboard() {
     })()
   };
 
-  // SLA Compliance data
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const slaData = {
-    onTime: filteredComplaints.filter(c => {
-      if (!c.slaTarget) return true;
-      if (c.status === 'Resolved' || c.status === 'Closed') return true;
-      return new Date(c.slaTarget) > new Date();
-    }).length,
-    breached: filteredComplaints.filter(c => {
-      if (!c.slaTarget) return false;
-      if (c.status === 'Resolved' || c.status === 'Closed') return false;
-      return new Date(c.slaTarget) <= new Date();
-    }).length,
-    byPriority: ['Urgent', 'High', 'Medium', 'Low'].map(priority => {
-      const priorityComplaints = filteredComplaints.filter(c => c.priority === priority);
-      const onTime = priorityComplaints.filter(c => {
-        if (!c.slaTarget) return true;
-        if (c.status === 'Resolved' || c.status === 'Closed') return true;
-        return new Date(c.slaTarget) > new Date();
-      }).length;
-      return {
-        priority,
-        total: priorityComplaints.length,
-        onTime,
-        compliance: priorityComplaints.length > 0 ? Math.round((onTime / priorityComplaints.length) * 100) : 100
-      };
-    })
-  };
-
-  // Agent performance data
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const agentPerformance = (() => {
-    const agentMap = new Map<string, { name: string; assigned: number; resolved: number; avgTime: number[] }>();
-    
-    filteredComplaints.forEach(c => {
-      if (c.assignedTo) {
-        const agentName = c.assignedAgentName || c.assignedTo;
-        if (!agentMap.has(c.assignedTo)) {
-          agentMap.set(c.assignedTo, { name: agentName, assigned: 0, resolved: 0, avgTime: [] });
-        }
-        const agent = agentMap.get(c.assignedTo)!;
-        agent.assigned++;
-        if (c.status === 'Resolved' || c.status === 'Closed') {
-          agent.resolved++;
-          if (c.resolutionTime) agent.avgTime.push(c.resolutionTime);
-        }
-      }
-    });
-    
-    return Array.from(agentMap.values()).map(agent => ({
-      name: agent.name,
-      assigned: agent.assigned,
-      resolved: agent.resolved,
-      resolutionRate: agent.assigned > 0 ? Math.round((agent.resolved / agent.assigned) * 100) : 0,
-      avgResolutionTime: agent.avgTime.length > 0 
-        ? `${(agent.avgTime.reduce((a, b) => a + b, 0) / agent.avgTime.length / 24).toFixed(1)} days`
-        : 'N/A'
-    })).sort((a, b) => b.resolutionRate - a.resolutionRate);
-  })();
-
   // Chart data from database
   const statusData = [
     { name: 'Open', value: filteredComplaints.filter(c => c.status === 'Open').length, color: '#3B82F6' },
@@ -311,14 +251,6 @@ export function AnalyticsReportsDashboard() {
     { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length, color: '#F59E0B' },
     { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length, color: '#8B5CF6' },
     { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length, color: '#6B7280' }
-  ].filter(item => item.count > 0);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const priorityData = [
-    { priority: 'Urgent', count: filteredComplaints.filter(c => c.priority === 'Urgent').length, color: '#EF4444' },
-    { priority: 'High', count: filteredComplaints.filter(c => c.priority === 'High').length, color: '#F97316' },
-    { priority: 'Medium', count: filteredComplaints.filter(c => c.priority === 'Medium').length, color: '#EAB308' },
-    { priority: 'Low', count: filteredComplaints.filter(c => c.priority === 'Low').length, color: '#22C55E' }
   ].filter(item => item.count > 0);
 
   const getTrendData = () => {
