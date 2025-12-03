@@ -853,15 +853,15 @@ export const AdminDashboard = () => {
   const filteredBySearch = searchQuery.trim() ? complaints.filter(c => 
     c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.ticketId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.complaintId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.category?.toLowerCase().includes(searchQuery.toLowerCase())
   ) : [];
 
   // Handle search result selection
-  const handleSearchSelect = (complaint: Complaint) => {
-    console.log('Selected complaint:', complaint._id);
+  const handleSearchSelect = (complaint: { id: string }) => {
+    console.log('Selected complaint:', complaint.id);
     setShowSearchModal(false);
     setSearchQuery('');
     setActiveView('complaints');
@@ -901,14 +901,11 @@ export const AdminDashboard = () => {
 
   // Chart data for category distribution - using exact category names from database
   const categoryChartData = [
-    { category: 'Technical Support', count: complaints.filter(c => c.category === 'Technical Support').length, color: '#3B82F6' },
+    { category: 'Technical', count: complaints.filter(c => c.category === 'Technical').length, color: '#3B82F6' },
     { category: 'Billing', count: complaints.filter(c => c.category === 'Billing').length, color: '#10B981' },
-    { category: 'Product Quality', count: complaints.filter(c => c.category === 'Product Quality').length, color: '#F59E0B' },
-    { category: 'Customer Service', count: complaints.filter(c => c.category === 'Customer Service').length, color: '#8B5CF6' },
-    { category: 'Delivery', count: complaints.filter(c => c.category === 'Delivery').length, color: '#EC4899' },
-    { category: 'General Inquiry', count: complaints.filter(c => c.category === 'General Inquiry').length, color: '#6B7280' },
-    { category: 'Refund Request', count: complaints.filter(c => c.category === 'Refund Request').length, color: '#EF4444' },
-    { category: 'Account Issues', count: complaints.filter(c => c.category === 'Account Issues').length, color: '#14B8A6' }
+    { category: 'Product', count: complaints.filter(c => c.category === 'Product').length, color: '#F59E0B' },
+    { category: 'Service', count: complaints.filter(c => c.category === 'Service').length, color: '#8B5CF6' },
+    { category: 'General', count: complaints.filter(c => c.category === 'General').length, color: '#6B7280' }
   ].filter(item => item.count > 0);
 
   // Chart data for user/agent distribution
@@ -2162,13 +2159,13 @@ export const AdminDashboard = () => {
                   <div className="divide-y divide-gray-100">
                     {filteredBySearch.map((complaint) => (
                       <button
-                        key={complaint._id || Math.random().toString()}
+                        key={complaint.id || Math.random().toString()}
                         onClick={() => handleSearchSelect(complaint)}
                         className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-medium text-purple-600">
-                            #{complaint.ticketId || complaint._id?.slice(-8) || 'N/A'}
+                            #{complaint.complaintId || complaint.id.slice(-8) || 'N/A'}
                           </span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${
                             complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :

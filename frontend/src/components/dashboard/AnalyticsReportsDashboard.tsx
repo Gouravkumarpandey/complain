@@ -4,7 +4,7 @@ import {
   Clock, Users, Shield, Home,
   Bell, HelpCircle, Menu,
   ChevronDown, LogOut, BarChart3,
-  Activity, FileText, CheckCircle, Star,
+  Activity, CheckCircle, Star,
   Save, AlertCircle,
   Calendar, MessageCircle, X, RefreshCw
 } from 'lucide-react';
@@ -306,14 +306,11 @@ export function AnalyticsReportsDashboard() {
   ].filter(item => item.value > 0);
 
   const categoryData = [
-    { category: 'Technical Support', count: filteredComplaints.filter(c => c.category === 'Technical Support').length, color: '#3B82F6' },
+    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length, color: '#3B82F6' },
     { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length, color: '#10B981' },
-    { category: 'Product Quality', count: filteredComplaints.filter(c => c.category === 'Product Quality').length, color: '#F59E0B' },
-    { category: 'Customer Service', count: filteredComplaints.filter(c => c.category === 'Customer Service').length, color: '#8B5CF6' },
-    { category: 'Delivery', count: filteredComplaints.filter(c => c.category === 'Delivery').length, color: '#EC4899' },
-    { category: 'General Inquiry', count: filteredComplaints.filter(c => c.category === 'General Inquiry').length, color: '#6B7280' },
-    { category: 'Refund Request', count: filteredComplaints.filter(c => c.category === 'Refund Request').length, color: '#EF4444' },
-    { category: 'Account Issues', count: filteredComplaints.filter(c => c.category === 'Account Issues').length, color: '#14B8A6' }
+    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length, color: '#F59E0B' },
+    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length, color: '#8B5CF6' },
+    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length, color: '#6B7280' }
   ].filter(item => item.count > 0);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1243,9 +1240,9 @@ export function AnalyticsReportsDashboard() {
                             #{complaint.complaintId || complaint.id.slice(-8)}
                           </span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${
-                            complaint.status === 'resolved' || complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
-                            complaint.status === 'in-progress' || complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                            complaint.status === 'pending' || complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
+                            complaint.status === 'Resolved' || complaint.status === 'Closed' ? 'bg-green-100 text-green-700' :
+                            complaint.status === 'In Progress' || complaint.status === 'Under Review' ? 'bg-blue-100 text-blue-700' :
+                            complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
                             complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
                             'bg-gray-100 text-gray-700'
                           }`}>
