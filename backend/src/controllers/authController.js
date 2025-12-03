@@ -513,13 +513,13 @@ export const googleSignupWithRole = async (req, res) => {
   }
 };
 
-// Facebook Login
+// Facebook Login - Verifies access token from Facebook SDK
 export const facebookLogin = async (req, res) => {
   try {
-    const { code } = req.body;
+    const { accessToken, isSignup } = req.body;
 
-    if (!code) {
-      return res.status(400).json({ message: "Facebook authorization code is required" });
+    if (!accessToken) {
+      return res.status(400).json({ message: "Facebook access token is required" });
     }
 
     if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
@@ -527,31 +527,30 @@ export const facebookLogin = async (req, res) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    // Exchange code for access token
-    const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-  client_id: process.env.FACEBOOK_APP_ID,
-  client_secret: process.env.FACEBOOK_APP_SECRET,
-  redirect_uri: 'http://localhost:5000/auth/facebook/callback',
-  code: code,
-      }),
-    });
+    // Step 1: Verify the access token with Facebook
+    const appAccessToken = `${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`;
+    const debugTokenUrl = `https://graph.facebook.com/debug_token?input_token=${accessToken}&access_token=${appAccessToken}`;
+    
+    const debugResponse = await fetch(debugTokenUrl);
+    const debugData = await debugResponse.json();
 
-    const tokenData = await tokenResponse.json();
-
-    if (tokenData.error) {
-      return res.status(400).json({ 
-        message: "Facebook authentication failed", 
-        error: tokenData.error.message 
+    if (debugData.error || !debugData.data || !debugData.data.is_valid) {
+      console.error('Facebook token validation failed:', debugData.error || 'Token is invalid');
+      return res.status(401).json({ 
+        message: "Invalid Facebook access token",
+        error: debugData.error?.message || 'Token validation failed'
       });
     }
 
-    // Get user information
-    const userResponse = await fetch(`https://graph.facebook.com/v18.0/me?access_token=${tokenData.access_token}&fields=id,name,email`);
+    // Step 2: Verify the token is for our app
+    if (debugData.data.app_id !== process.env.FACEBOOK_APP_ID) {
+      return res.status(401).json({ 
+        message: "Access token is not for this application" 
+      });
+    }
+
+    // Step 3: Get user information using the verified token
+    const userResponse = await fetch(`https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture`);
     const facebookUser = await userResponse.json();
 
     if (facebookUser.error) {
@@ -565,10 +564,11 @@ export const facebookLogin = async (req, res) => {
 
     if (!email) {
       return res.status(400).json({ 
-        message: "Email not available from Facebook account" 
+        message: "Email not available from Facebook account. Please ensure email permission is granted." 
       });
     }
 
+    // Step 4: Find or create user in database
     let user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
@@ -576,13 +576,14 @@ export const facebookLogin = async (req, res) => {
       user = await User.create({
         name: name,
         email: email.toLowerCase().trim(),
-        password: Math.random().toString(36).slice(-8), // dummy password
+        password: Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8), // Strong random password
         role: "user",
-        isFacebookUser: true, // Mark as Facebook user
+        isFacebookUser: true,
         facebookId: id,
+        isVerified: true, // Facebook accounts are pre-verified
       });
       
-      console.log("New Facebook user created:", {
+      console.log("✅ New Facebook user created:", {
         id: user._id,
         name: user.name,
         email: user.email,
@@ -593,16 +594,20 @@ export const facebookLogin = async (req, res) => {
       if (!user.facebookId) {
         user.facebookId = id;
         user.isFacebookUser = true;
+        user.isVerified = true;
         await user.save();
       }
       
-      console.log("Existing Facebook user logged in:", {
+      console.log("✅ Existing Facebook user logged in:", {
         id: user._id,
         name: user.name,
         email: user.email,
         facebookId: id,
       });
     }
+
+    // Step 5: Generate JWT token for our application
+    const token = generateToken(user._id);
 
     res.json({
       success: true,
@@ -612,10 +617,10 @@ export const facebookLogin = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id),
+      token: token,
     });
   } catch (error) {
-    console.error("Facebook login error:", error);
+    console.error("❌ Facebook login error:", error);
 
     if (error.message && error.message.includes('fetch')) {
       return res.status(500).json({ 

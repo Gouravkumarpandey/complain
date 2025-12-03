@@ -98,6 +98,23 @@ export function UserDashboard() {
   const [saveError, setSaveError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  
+  // Search functionality
+  const filteredBySearch = filteredComplaints.filter(complaint => {
+    const query = searchQuery.toLowerCase();
+    return (
+      complaint.title?.toLowerCase().includes(query) ||
+      complaint.description?.toLowerCase().includes(query) ||
+      complaint.complaintId?.toLowerCase().includes(query) ||
+      complaint.status?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleSearchSelect = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setShowSearchModal(false);
+    setSearchQuery('');
+  };
   const [subscriptionError, setSubscriptionError] = useState('');
 
   // Update user profile when user changes
@@ -334,13 +351,27 @@ export function UserDashboard() {
 
   const trendData = getTrendData();
 
-  // Prepare category data for Bar Chart
+  // Define distinct colors for each category
+  const categoryColors: Record<string, string> = {
+    'Technical': '#3B82F6',   // Blue
+    'Billing': '#10B981',     // Green
+    'Service': '#F59E0B',     // Amber
+    'Product': '#8B5CF6',     // Purple
+    'General': '#EF4444',     // Red
+    'Support': '#06B6D4',     // Cyan
+    'Account': '#EC4899',     // Pink
+    'Delivery': '#14B8A6',    // Teal
+    'Quality': '#F97316',     // Orange
+    'Other': '#6B7280'        // Gray
+  };
+
+  // Prepare category data for Bar Chart with distinct colors
   const categoryData = [
-    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length },
-    { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length },
-    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length },
-    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length },
-    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length }
+    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length, fill: categoryColors['Technical'] },
+    { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length, fill: categoryColors['Billing'] },
+    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length, fill: categoryColors['Service'] },
+    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length, fill: categoryColors['Product'] },
+    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length, fill: categoryColors['General'] }
   ].filter(item => item.count > 0);
 
   // Prepare priority data
@@ -383,8 +414,8 @@ export function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Freshdesk-style Clean Sidebar */}
-      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+      {/* Freshdesk-style Clean Sidebar - Fixed Position */}
+      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen overflow-y-auto z-40`}>
         <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -396,7 +427,7 @@ export function UserDashboard() {
           </div>
         </div>
         
-        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
+        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'} flex-1 overflow-y-auto`}>
           <button 
             onClick={() => setActiveView('dashboard')}
             className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
@@ -475,11 +506,28 @@ export function UserDashboard() {
             <HelpCircle className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
           </button>
+          
+          {/* Promotional Banner - Close to Help */}
+          {!sidebarCollapsed && (
+            <div className="mt-4">
+              <div className="overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+                <img 
+                  src="/poster.png" 
+                  alt="QuickFix Promotional Banner"
+                  className="w-full h-auto object-cover"
+                  onClick={() => setActiveView('profile')}
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400"%3E%3Cdefs%3E%3ClinearGradient id="sidebarGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23sidebarGrad)" width="240" height="400"/%3E%3Ctext x="120" y="80" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="120" y="110" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="120" y="140" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="120" y="180" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="30" cy="220" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="227" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E01%3C/text%3E%3Ctext x="55" y="227" fill="white" font-size="11"%3EAnalytics%3C/text%3E%3Ccircle cx="30" cy="260" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="267" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E02%3C/text%3E%3Ctext x="55" y="267" fill="white" font-size="11"%3ECustomised%3C/text%3E%3Ccircle cx="30" cy="300" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="307" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E03%3C/text%3E%3Ctext x="55" y="307" fill="white" font-size="11"%3EManagement%3C/text%3E%3Crect x="30" y="340" width="180" height="30" rx="15" fill="%23F59E0B"/%3E%3Ctext x="120" y="360" text-anchor="middle" fill="white" font-size="10" font-weight="bold"%3EVIEW DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      {/* Main Content Area - Adjusted for Fixed Sidebar */}
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
         {/* Freshdesk-style Clean Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -593,15 +641,17 @@ export function UserDashboard() {
 
         {/* Dashboard View - Core Complaint Features */}
         {activeView === 'dashboard' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
-            {/* Clean Welcome Section */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back, {userProfile.name}</h2>
-              <p className="text-gray-600">Here's an overview of your tickets</p>
-            </div>
+          <div className="flex bg-gray-50 min-h-screen">
+            {/* Main Content Area */}
+            <div className="flex-1 p-6">
+              {/* Welcome Section */}
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back, {userProfile.name}</h2>
+                <p className="text-gray-600">Here's an overview of your tickets</p>
+              </div>
 
-            {/* Clean Stats Cards - Text Only Style */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+              {/* Clean Stats Cards - Text Only Style */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <p className="text-sm text-gray-600 mb-2">Total Complaints</p>
                 <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -779,7 +829,11 @@ export function UserDashboard() {
                           fontSize: '12px'
                         }}
                       />
-                      <Bar dataKey="count" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -959,6 +1013,24 @@ export function UserDashboard() {
               </div>
             </div>
           </div>
+          
+          {/* Right Side Promotional Panel */}
+          <div className="w-80 p-6">
+            <div className="sticky top-6">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                <img 
+                  src="/Navbar_image.png" 
+                  alt="QuickFix Features - What's in it for you?"
+                  className="w-full h-auto object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                  onClick={() => setActiveView('profile')}
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 600"%3E%3Cdefs%3E%3ClinearGradient id="rightGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="50%25" style="stop-color:%233B82F6;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23rightGrad)" width="320" height="600"/%3E%3Cpath d="M 0 20 L 30 0 L 60 20 L 90 0 L 120 20" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Cpath d="M 200 580 L 230 560 L 260 580 L 290 560 L 320 580" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Ccircle cx="280" cy="60" r="25" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ccircle cx="40" cy="540" r="20" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ctext x="160" y="100" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="160" y="140" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="160" y="180" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="160" y="230" text-anchor="middle" fill="white" font-size="22" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="40" cy="280" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="288" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E01%3C/text%3E%3Ctext x="75" y="288" fill="white" font-size="14"%3EAnalytics Overview%3C/text%3E%3Ccircle cx="40" cy="320" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="328" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E02%3C/text%3E%3Ctext x="75" y="328" fill="white" font-size="14"%3ECompany specific%3C/text%3E%3Ccircle cx="40" cy="360" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="368" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E03%3C/text%3E%3Ctext x="75" y="368" fill="white" font-size="14"%3ECustomised roadmaps%3C/text%3E%3Ccircle cx="40" cy="400" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="408" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E04%3C/text%3E%3Ctext x="75" y="408" fill="white" font-size="14"%3ECategory Breakdowns%3C/text%3E%3Ccircle cx="40" cy="440" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="448" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E05%3C/text%3E%3Ctext x="75" y="448" fill="white" font-size="14"%3EUser Management%3C/text%3E%3Crect x="60" y="490" width="200" height="35" rx="17" fill="%23F59E0B"/%3E%3Ctext x="160" y="514" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3EVIEW LIVE DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          </div>
         )}
 
         {/* Clean Complaints List View */}
@@ -1096,49 +1168,49 @@ export function UserDashboard() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div className="p-6">
                   <div className="flex items-start gap-6">
-                    <div className="relative group">
-                      {profilePhoto ? (
-                        <>
-                          <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
-                          <button
-                            onClick={handlePhotoRemove}
-                            className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Remove photo"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                          {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                      <div className="relative group">
+                        {profilePhoto ? (
+                          <>
+                            <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+                            <button
+                              onClick={handlePhotoRemove}
+                              className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Remove photo"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                            {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                        )}
+                        <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </label>
+                        <input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/webp"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
+                        <p className="text-gray-600 mb-3">{userProfile.email}</p>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{userProfile.role}</span>
+                          <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                            <Calendar className="w-4 h-4" />
+                            Member since {new Date(userProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          </span>
                         </div>
-                      )}
-                      <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </label>
-                      <input
-                        id="photo-upload"
-                        type="file"
-                        accept="image/jpeg,image/png,image/jpg,image/webp"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
-                      <p className="text-gray-600 mb-3">{userProfile.email}</p>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{userProfile.role}</span>
-                        <span className="text-sm text-gray-600 flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4" />
-                          Member since {new Date(userProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </span>
                       </div>
                     </div>
-                  </div>
                 </div>
               </div>
 
@@ -1889,9 +1961,10 @@ export function UserDashboard() {
                               #{complaint.complaintId || complaint.id.slice(-8)}
                             </span>
                             <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              complaint.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                              complaint.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                              complaint.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                              complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                              complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
+                              complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
                               'bg-gray-100 text-gray-700'
                             }`}>
                               {complaint.status}
