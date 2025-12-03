@@ -1340,7 +1340,11 @@ export const AdminDashboard = () => {
                         fontSize: '12px'
                       }}
                     />
-                    <Bar dataKey="count" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
