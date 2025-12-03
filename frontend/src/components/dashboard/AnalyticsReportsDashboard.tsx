@@ -641,7 +641,11 @@ export function AnalyticsReportsDashboard() {
                         <XAxis dataKey="category" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="count" fill="#10B981" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
