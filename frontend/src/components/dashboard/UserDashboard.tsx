@@ -98,6 +98,23 @@ export function UserDashboard() {
   const [saveError, setSaveError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  
+  // Search functionality
+  const filteredBySearch = filteredComplaints.filter(complaint => {
+    const query = searchQuery.toLowerCase();
+    return (
+      complaint.title?.toLowerCase().includes(query) ||
+      complaint.description?.toLowerCase().includes(query) ||
+      complaint.complaintId?.toLowerCase().includes(query) ||
+      complaint.status?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleSearchSelect = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setShowSearchModal(false);
+    setSearchQuery('');
+  };
   const [subscriptionError, setSubscriptionError] = useState('');
 
   // Update user profile when user changes
@@ -593,15 +610,17 @@ export function UserDashboard() {
 
         {/* Dashboard View - Core Complaint Features */}
         {activeView === 'dashboard' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
-            {/* Clean Welcome Section */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back, {userProfile.name}</h2>
-              <p className="text-gray-600">Here's an overview of your tickets</p>
-            </div>
+          <div className="flex bg-gray-50 min-h-screen">
+            {/* Main Content Area */}
+            <div className="flex-1 p-6">
+              {/* Welcome Section */}
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back, {userProfile.name}</h2>
+                <p className="text-gray-600">Here's an overview of your tickets</p>
+              </div>
 
-            {/* Clean Stats Cards - Text Only Style */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+              {/* Clean Stats Cards - Text Only Style */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <p className="text-sm text-gray-600 mb-2">Total Complaints</p>
                 <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -959,6 +978,7 @@ export function UserDashboard() {
               </div>
             </div>
           </div>
+          </div>
         )}
 
         {/* Clean Complaints List View */}
@@ -1096,49 +1116,49 @@ export function UserDashboard() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div className="p-6">
                   <div className="flex items-start gap-6">
-                    <div className="relative group">
-                      {profilePhoto ? (
-                        <>
-                          <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
-                          <button
-                            onClick={handlePhotoRemove}
-                            className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Remove photo"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                          {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                      <div className="relative group">
+                        {profilePhoto ? (
+                          <>
+                            <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+                            <button
+                              onClick={handlePhotoRemove}
+                              className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Remove photo"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                            {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                        )}
+                        <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </label>
+                        <input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/webp"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
+                        <p className="text-gray-600 mb-3">{userProfile.email}</p>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{userProfile.role}</span>
+                          <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                            <Calendar className="w-4 h-4" />
+                            Member since {new Date(userProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          </span>
                         </div>
-                      )}
-                      <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </label>
-                      <input
-                        id="photo-upload"
-                        type="file"
-                        accept="image/jpeg,image/png,image/jpg,image/webp"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
-                      <p className="text-gray-600 mb-3">{userProfile.email}</p>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{userProfile.role}</span>
-                        <span className="text-sm text-gray-600 flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4" />
-                          Member since {new Date(userProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </span>
                       </div>
                     </div>
-                  </div>
                 </div>
               </div>
 
@@ -1889,9 +1909,10 @@ export function UserDashboard() {
                               #{complaint.complaintId || complaint.id.slice(-8)}
                             </span>
                             <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              complaint.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                              complaint.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                              complaint.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                              complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                              complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
+                              complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
                               'bg-gray-100 text-gray-700'
                             }`}>
                               {complaint.status}
