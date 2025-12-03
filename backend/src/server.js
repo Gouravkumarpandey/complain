@@ -1,6 +1,21 @@
 // Load environment variables first, before any other imports
 import dotenv from "dotenv";
-dotenv.config();
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load .env from backend directory (one level up from src)
+const envPath = join(__dirname, '../.env');
+const result = dotenv.config({ path: envPath });
+
+if (result.error) {
+  console.error('❌ Error loading .env file:', result.error);
+} else {
+  console.log('✅ .env file loaded from:', envPath);
+  console.log('✅ DEEPSEEK_API_KEY present:', !!process.env.DEEPSEEK_API_KEY);
+}
 
 import express from "express";
 import cors from "cors";

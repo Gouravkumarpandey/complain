@@ -4,7 +4,7 @@ import {
   Clock, Users, Shield, Home,
   Bell, HelpCircle, Menu,
   ChevronDown, LogOut, BarChart3,
-  Activity, FileText, CheckCircle, Star,
+  Activity, CheckCircle, Star,
   Save, AlertCircle,
   Calendar, MessageCircle, X, RefreshCw
 } from 'lucide-react';
@@ -236,66 +236,6 @@ export function AnalyticsReportsDashboard() {
     })()
   };
 
-  // SLA Compliance data
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const slaData = {
-    onTime: filteredComplaints.filter(c => {
-      if (!c.slaTarget) return true;
-      if (c.status === 'Resolved' || c.status === 'Closed') return true;
-      return new Date(c.slaTarget) > new Date();
-    }).length,
-    breached: filteredComplaints.filter(c => {
-      if (!c.slaTarget) return false;
-      if (c.status === 'Resolved' || c.status === 'Closed') return false;
-      return new Date(c.slaTarget) <= new Date();
-    }).length,
-    byPriority: ['Urgent', 'High', 'Medium', 'Low'].map(priority => {
-      const priorityComplaints = filteredComplaints.filter(c => c.priority === priority);
-      const onTime = priorityComplaints.filter(c => {
-        if (!c.slaTarget) return true;
-        if (c.status === 'Resolved' || c.status === 'Closed') return true;
-        return new Date(c.slaTarget) > new Date();
-      }).length;
-      return {
-        priority,
-        total: priorityComplaints.length,
-        onTime,
-        compliance: priorityComplaints.length > 0 ? Math.round((onTime / priorityComplaints.length) * 100) : 100
-      };
-    })
-  };
-
-  // Agent performance data
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const agentPerformance = (() => {
-    const agentMap = new Map<string, { name: string; assigned: number; resolved: number; avgTime: number[] }>();
-    
-    filteredComplaints.forEach(c => {
-      if (c.assignedTo) {
-        const agentName = c.assignedAgentName || c.assignedTo;
-        if (!agentMap.has(c.assignedTo)) {
-          agentMap.set(c.assignedTo, { name: agentName, assigned: 0, resolved: 0, avgTime: [] });
-        }
-        const agent = agentMap.get(c.assignedTo)!;
-        agent.assigned++;
-        if (c.status === 'Resolved' || c.status === 'Closed') {
-          agent.resolved++;
-          if (c.resolutionTime) agent.avgTime.push(c.resolutionTime);
-        }
-      }
-    });
-    
-    return Array.from(agentMap.values()).map(agent => ({
-      name: agent.name,
-      assigned: agent.assigned,
-      resolved: agent.resolved,
-      resolutionRate: agent.assigned > 0 ? Math.round((agent.resolved / agent.assigned) * 100) : 0,
-      avgResolutionTime: agent.avgTime.length > 0 
-        ? `${(agent.avgTime.reduce((a, b) => a + b, 0) / agent.avgTime.length / 24).toFixed(1)} days`
-        : 'N/A'
-    })).sort((a, b) => b.resolutionRate - a.resolutionRate);
-  })();
-
   // Chart data from database
   const statusData = [
     { name: 'Open', value: filteredComplaints.filter(c => c.status === 'Open').length, color: '#3B82F6' },
@@ -306,22 +246,11 @@ export function AnalyticsReportsDashboard() {
   ].filter(item => item.value > 0);
 
   const categoryData = [
-    { category: 'Technical Support', count: filteredComplaints.filter(c => c.category === 'Technical Support').length, color: '#3B82F6' },
+    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length, color: '#3B82F6' },
     { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length, color: '#10B981' },
-    { category: 'Product Quality', count: filteredComplaints.filter(c => c.category === 'Product Quality').length, color: '#F59E0B' },
-    { category: 'Customer Service', count: filteredComplaints.filter(c => c.category === 'Customer Service').length, color: '#8B5CF6' },
-    { category: 'Delivery', count: filteredComplaints.filter(c => c.category === 'Delivery').length, color: '#EC4899' },
-    { category: 'General Inquiry', count: filteredComplaints.filter(c => c.category === 'General Inquiry').length, color: '#6B7280' },
-    { category: 'Refund Request', count: filteredComplaints.filter(c => c.category === 'Refund Request').length, color: '#EF4444' },
-    { category: 'Account Issues', count: filteredComplaints.filter(c => c.category === 'Account Issues').length, color: '#14B8A6' }
-  ].filter(item => item.count > 0);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const priorityData = [
-    { priority: 'Urgent', count: filteredComplaints.filter(c => c.priority === 'Urgent').length, color: '#EF4444' },
-    { priority: 'High', count: filteredComplaints.filter(c => c.priority === 'High').length, color: '#F97316' },
-    { priority: 'Medium', count: filteredComplaints.filter(c => c.priority === 'Medium').length, color: '#EAB308' },
-    { priority: 'Low', count: filteredComplaints.filter(c => c.priority === 'Low').length, color: '#22C55E' }
+    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length, color: '#F59E0B' },
+    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length, color: '#8B5CF6' },
+    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length, color: '#6B7280' }
   ].filter(item => item.count > 0);
 
   const getTrendData = () => {
@@ -641,7 +570,11 @@ export function AnalyticsReportsDashboard() {
                         <XAxis dataKey="category" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="count" fill="#10B981" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1239,9 +1172,9 @@ export function AnalyticsReportsDashboard() {
                             #{complaint.complaintId || complaint.id.slice(-8)}
                           </span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${
-                            complaint.status === 'resolved' || complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
-                            complaint.status === 'in-progress' || complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                            complaint.status === 'pending' || complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
+                            complaint.status === 'Resolved' || complaint.status === 'Closed' ? 'bg-green-100 text-green-700' :
+                            complaint.status === 'In Progress' || complaint.status === 'Under Review' ? 'bg-blue-100 text-blue-700' :
+                            complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
                             complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
                             'bg-gray-100 text-gray-700'
                           }`}>
