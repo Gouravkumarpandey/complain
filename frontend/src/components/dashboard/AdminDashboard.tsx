@@ -149,20 +149,6 @@ interface ApiAnalyticsData {
   avgResolutionTime?: string;
 }
 
-interface Complaint {
-  _id: string;
-  ticketId?: string;
-  title: string;
-  description: string;
-  status: string;
-  priority?: string;
-  category?: string;
-  userId?: string;
-  agentId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface UserData {
   _id: string;
   name: string;
@@ -234,61 +220,6 @@ export const AdminDashboard = () => {
     avgResolutionTime: '1.4 days'
   });
   
-  // Agent performance data - commented out for now as we're using 'agents' directly
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [agentPerformance, setAgentPerformance] = useState<AgentPerformance[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      initials: 'JD',
-      color: 'blue',
-      resolvedToday: 5,
-      totalResolved: 28,
-      avgResolutionTime: '1.2 days',
-      satisfaction: 94
-    },
-    {
-      id: '2',
-      name: 'Alice Smith',
-      initials: 'AS',
-      color: 'purple',
-      resolvedToday: 7,
-      totalResolved: 42,
-      avgResolutionTime: '1.0 days',
-      satisfaction: 96
-    },
-    {
-      id: '3',
-      name: 'Robert Johnson',
-      initials: 'RJ',
-      color: 'green',
-      resolvedToday: 3,
-      totalResolved: 19,
-      avgResolutionTime: '1.5 days',
-      satisfaction: 88
-    },
-    {
-      id: '4',
-      name: 'Emily Davis',
-      initials: 'ED',
-      color: 'orange',
-      resolvedToday: 0,
-      totalResolved: 23,
-      avgResolutionTime: '1.3 days',
-      satisfaction: 92
-    },
-    {
-      id: '5',
-      name: 'Michael Wilson',
-      initials: 'MW',
-      color: 'pink',
-      resolvedToday: 4,
-      totalResolved: 31,
-      avgResolutionTime: '1.1 days',
-      satisfaction: 90
-    }
-  ]);
-
   // Update admin profile when user changes
   useEffect(() => {
     if (user) {
@@ -603,9 +534,8 @@ export const AdminDashboard = () => {
           satisfaction: agent.satisfactionScore || 0
         }));
         
-        setAgentPerformance(prevPerformance => {
-          return formattedPerformance.length > 0 ? formattedPerformance : prevPerformance;
-        });
+        // Agent performance data formatted successfully
+        console.log('Agent performance data formatted:', formattedPerformance);
       }
     } catch (error) {
       console.error('Error fetching agent performance:', error);
@@ -750,16 +680,6 @@ export const AdminDashboard = () => {
     }
   }, [socket, isConnected, fetchDashboardData, handleAgentStatusUpdate, fetchAgentPerformance, fetchSystemStats]);
   
-  // Complaint categories data - keeping for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [complaintCategories] = useState([
-    { name: 'Technical Issues', count: 34, percentage: 37 },
-    { name: 'Billing Problems', count: 26, percentage: 28 },
-    { name: 'Product Quality', count: 18, percentage: 20 },
-    { name: 'Delivery Issues', count: 9, percentage: 10 },
-    { name: 'Other', count: 5, percentage: 5 }
-  ]);
-  
   // Refresh data on demand
   const refreshData = async () => {
     if (isRefreshing) return;
@@ -776,69 +696,6 @@ export const AdminDashboard = () => {
       console.log('Dashboard data refreshed successfully');
     } catch (error) {
       console.error('Failed to refresh data:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-  
-  // Assign ticket function - keeping for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const assignTicket = async (agentId: string) => {
-    try {
-      setIsRefreshing(true);
-      
-      // Check if agent is available first
-      const agent = agents.find(a => a.id === agentId);
-      if (!agent) {
-        alert('Agent not found');
-        return;
-      }
-      
-      if (agent.availability !== 'available') {
-        alert(`Cannot assign ticket: Agent ${agent.name} is currently ${agent.availability}`);
-        return;
-      }
-      
-      // Get pending complaints
-      const complaintsResponse = await apiService.getComplaints({ status: 'New' });
-      if (!complaintsResponse.data || !Array.isArray(complaintsResponse.data) || complaintsResponse.data.length === 0) {
-        alert('No new complaints available for assignment');
-        return;
-      }
-      
-      // Assign first pending complaint to selected agent
-      const complaintToAssign = complaintsResponse.data[0] as Complaint;
-      await apiService.assignComplaint(complaintToAssign._id, agentId);
-      
-      // Update agent availability to busy
-      await agentService.updateAvailability(agentId, 'busy');
-      
-      // Update local state optimistically
-      setAgents(prevAgents => {
-        return prevAgents.map(agent => {
-          if (agent.id === agentId) {
-            return { 
-              ...agent, 
-              currentLoad: agent.currentLoad + 1,
-              availability: 'busy',
-              status: 'busy'
-            };
-          }
-          return agent;
-        });
-      });
-      
-      // Refresh data after assignment
-      Promise.all([
-        fetchDashboardData(),
-        fetchAgentPerformance()
-      ]);
-      
-      // Inform the user
-      alert(`Assigned complaint #${complaintToAssign.ticketId || complaintToAssign._id} to agent`);
-    } catch (error) {
-      console.error('Error assigning ticket:', error);
-      alert('Failed to assign ticket');
     } finally {
       setIsRefreshing(false);
     }
