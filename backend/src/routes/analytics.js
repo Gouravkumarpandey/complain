@@ -2,6 +2,7 @@ import express from "express";
 import { Complaint } from "../models/Complaint.js";
 import { User } from "../models/User.js";
 import { authenticate, authorize } from "../middleware/auth.js";
+import DeepSeekService from "../services/deepseekService.js";
 // Redis caching disabled - uncomment when Redis is enabled
 // import {
 //   cacheAnalyticsOverview,
@@ -67,7 +68,7 @@ router.get("/status", authenticate, async (req, res) => {
 
 /**
  * @route   GET /api/analytics/category
- * @desc    Get complaint distribution by category
+ * @desc    Get complaint distribution by category with AI-powered insights
  * @access  Private (Admin/Agent)
  */
 router.get("/category", authenticate, async (req, res) => {
@@ -80,7 +81,28 @@ router.get("/category", authenticate, async (req, res) => {
       { $group: { _id: "$category", count: { $sum: 1 } } },
     ]);
 
-    res.json(result);
+    // Define distinct colors for each category
+    const categoryColors = {
+      'Technical': '#3B82F6',      // Blue
+      'Billing': '#10B981',        // Green
+      'Service': '#F59E0B',        // Amber
+      'Product': '#8B5CF6',        // Purple
+      'General': '#EF4444',        // Red
+      'Support': '#06B6D4',        // Cyan
+      'Account': '#EC4899',        // Pink
+      'Delivery': '#14B8A6',       // Teal
+      'Quality': '#F97316',        // Orange
+      'Other': '#6B7280'           // Gray
+    };
+
+    // Enrich result with colors
+    const enrichedResult = result.map(item => ({
+      _id: item._id,
+      count: item.count,
+      color: categoryColors[item._id] || '#6B7280'
+    }));
+
+    res.json(enrichedResult);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error fetching category distribution" });
@@ -639,6 +661,92 @@ router.get("/team-performance", authenticate, authorize('admin', 'manager', 'ana
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error fetching team performance", error: err.message });
+  }
+}));
+
+/**
+ * @route   GET /api/analytics/category-insights
+ * @desc    Get AI-powered category insights using DeepSeek
+ * @access  Private (Admin/Agent)
+ */
+router.get("/category-insights", authenticate, asyncHandler(async (req, res) => {
+  try {
+    const { role, _id: userId } = req.user;
+    const match = role === "agent" ? { assignedTo: userId } : {};
+
+    // Get category distribution
+    const categoryStats = await Complaint.aggregate([
+      { $match: match },
+      { 
+        $group: { 
+          _id: "$category", 
+          count: { $sum: 1 },
+          avgResolutionTime: { $avg: "$resolutionTime" },
+          resolvedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "Resolved"] }, 1, 0] }
+          }
+        } 
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Get recent complaints for context
+    const recentComplaints = await Complaint.find(match)
+      .select('category title description status priority')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    // Initialize DeepSeek service
+    const deepseekService = new DeepSeekService();
+
+    // Create analysis prompt
+    const analysisPrompt = `Analyze the following complaint data and provide insights:
+
+Category Statistics:
+${categoryStats.map(cat => `- ${cat._id}: ${cat.count} complaints (${cat.resolvedCount} resolved)`).join('\n')}
+
+Recent Complaint Titles (sample):
+${recentComplaints.slice(0, 10).map(c => `- [${c.category}] ${c.title}`).join('\n')}
+
+Provide a brief analysis of:
+1. Most problematic category
+2. Trends or patterns
+3. Recommended actions
+Keep response under 150 words.`;
+
+    // Get AI insights
+    const aiResponse = await deepseekService.chat(analysisPrompt, [], {
+      role: 'analytics_assistant',
+      task: 'category_analysis'
+    });
+
+    // Define category colors
+    const categoryColors = {
+      'Technical': '#3B82F6',
+      'Billing': '#10B981',
+      'Service': '#F59E0B',
+      'Product': '#8B5CF6',
+      'General': '#EF4444',
+      'Support': '#06B6D4',
+      'Account': '#EC4899',
+      'Delivery': '#14B8A6',
+      'Quality': '#F97316',
+      'Other': '#6B7280'
+    };
+
+    res.json({
+      categoryStats: categoryStats.map(cat => ({
+        ...cat,
+        color: categoryColors[cat._id] || '#6B7280',
+        resolutionRate: cat.count > 0 ? ((cat.resolvedCount / cat.count) * 100).toFixed(1) : 0
+      })),
+      aiInsights: aiResponse.response,
+      totalComplaints: recentComplaints.length,
+      timestamp: new Date()
+    });
+  } catch (err) {
+    console.error('Category insights error:', err);
+    res.status(500).json({ message: "Error generating category insights", error: err.message });
   }
 }));
 
