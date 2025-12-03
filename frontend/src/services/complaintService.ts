@@ -160,10 +160,44 @@ export async function generateSummary(id: string): Promise<Complaint> {
   return getComplaint(id);
 }
 
+/**
+ * Get AI-powered category insights using DeepSeek
+ * @returns Promise with category statistics and AI analysis
+ */
+export async function getCategoryInsights(): Promise<{
+  categoryStats: Array<{
+    _id: string;
+    count: number;
+    color: string;
+    resolutionRate: string;
+    avgResolutionTime: number;
+    resolvedCount: number;
+  }>;
+  aiInsights: string;
+  totalComplaints: number;
+  timestamp: Date;
+}> {
+  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/analytics/category-insights`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch category insights');
+  }
+  
+  return response.json();
+}
+
 export default {
   getComplaint,
   acceptDraftReply,
   sendReply,
   regenerateReply,
-  generateSummary
+  generateSummary,
+  getCategoryInsights
 };

@@ -351,13 +351,27 @@ export function UserDashboard() {
 
   const trendData = getTrendData();
 
-  // Prepare category data for Bar Chart
+  // Define distinct colors for each category
+  const categoryColors: Record<string, string> = {
+    'Technical': '#3B82F6',   // Blue
+    'Billing': '#10B981',     // Green
+    'Service': '#F59E0B',     // Amber
+    'Product': '#8B5CF6',     // Purple
+    'General': '#EF4444',     // Red
+    'Support': '#06B6D4',     // Cyan
+    'Account': '#EC4899',     // Pink
+    'Delivery': '#14B8A6',    // Teal
+    'Quality': '#F97316',     // Orange
+    'Other': '#6B7280'        // Gray
+  };
+
+  // Prepare category data for Bar Chart with distinct colors
   const categoryData = [
-    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length },
-    { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length },
-    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length },
-    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length },
-    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length }
+    { category: 'Technical', count: filteredComplaints.filter(c => c.category === 'Technical').length, fill: categoryColors['Technical'] },
+    { category: 'Billing', count: filteredComplaints.filter(c => c.category === 'Billing').length, fill: categoryColors['Billing'] },
+    { category: 'Service', count: filteredComplaints.filter(c => c.category === 'Service').length, fill: categoryColors['Service'] },
+    { category: 'Product', count: filteredComplaints.filter(c => c.category === 'Product').length, fill: categoryColors['Product'] },
+    { category: 'General', count: filteredComplaints.filter(c => c.category === 'General').length, fill: categoryColors['General'] }
   ].filter(item => item.count > 0);
 
   // Prepare priority data
@@ -400,8 +414,8 @@ export function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Freshdesk-style Clean Sidebar */}
-      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+      {/* Freshdesk-style Clean Sidebar - Fixed Position */}
+      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen overflow-y-auto z-40`}>
         <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -413,7 +427,7 @@ export function UserDashboard() {
           </div>
         </div>
         
-        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
+        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'} flex-1 overflow-y-auto`}>
           <button 
             onClick={() => setActiveView('dashboard')}
             className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
@@ -492,28 +506,28 @@ export function UserDashboard() {
             <HelpCircle className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
           </button>
-        </div>
-        
-        {/* Promotional Banner at Bottom */}
-        {!sidebarCollapsed && (
-          <div className="mt-auto px-4 pb-4">
-            <div className="rounded-lg overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
-              <img 
-                src="/poster.png" 
-                alt="QuickFix Promotional Banner"
-                className="w-full h-auto object-cover"
-                onClick={() => setActiveView('profile')}
-                onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400"%3E%3Cdefs%3E%3ClinearGradient id="sidebarGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23sidebarGrad)" width="240" height="400"/%3E%3Ctext x="120" y="80" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="120" y="110" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="120" y="140" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="120" y="180" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="30" cy="220" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="227" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E01%3C/text%3E%3Ctext x="55" y="227" fill="white" font-size="11"%3EAnalytics%3C/text%3E%3Ccircle cx="30" cy="260" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="267" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E02%3C/text%3E%3Ctext x="55" y="267" fill="white" font-size="11"%3ECustomised%3C/text%3E%3Ccircle cx="30" cy="300" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="307" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E03%3C/text%3E%3Ctext x="55" y="307" fill="white" font-size="11"%3EManagement%3C/text%3E%3Crect x="30" y="340" width="180" height="30" rx="15" fill="%23F59E0B"/%3E%3Ctext x="120" y="360" text-anchor="middle" fill="white" font-size="10" font-weight="bold"%3EVIEW DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
-                }}
-              />
+          
+          {/* Promotional Banner - Close to Help */}
+          {!sidebarCollapsed && (
+            <div className="mt-4">
+              <div className="overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+                <img 
+                  src="/poster.png" 
+                  alt="QuickFix Promotional Banner"
+                  className="w-full h-auto object-cover"
+                  onClick={() => setActiveView('profile')}
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400"%3E%3Cdefs%3E%3ClinearGradient id="sidebarGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23sidebarGrad)" width="240" height="400"/%3E%3Ctext x="120" y="80" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="120" y="110" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="120" y="140" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="120" y="180" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="30" cy="220" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="227" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E01%3C/text%3E%3Ctext x="55" y="227" fill="white" font-size="11"%3EAnalytics%3C/text%3E%3Ccircle cx="30" cy="260" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="267" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E02%3C/text%3E%3Ctext x="55" y="267" fill="white" font-size="11"%3ECustomised%3C/text%3E%3Ccircle cx="30" cy="300" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="307" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E03%3C/text%3E%3Ctext x="55" y="307" fill="white" font-size="11"%3EManagement%3C/text%3E%3Crect x="30" y="340" width="180" height="30" rx="15" fill="%23F59E0B"/%3E%3Ctext x="120" y="360" text-anchor="middle" fill="white" font-size="10" font-weight="bold"%3EVIEW DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      {/* Main Content Area - Adjusted for Fixed Sidebar */}
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
         {/* Freshdesk-style Clean Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -815,7 +829,11 @@ export function UserDashboard() {
                           fontSize: '12px'
                         }}
                       />
-                      <Bar dataKey="count" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
