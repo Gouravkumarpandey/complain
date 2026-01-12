@@ -69,8 +69,7 @@ export function useTokenValidation() {
    */
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-      console.log('Attempting to refresh token at:', apiUrl);
+      console.log('Attempting to refresh token');
 
       // Check if token exists first - if not, return early
       const currentToken = localStorage.getItem('token');
@@ -91,7 +90,9 @@ export function useTokenValidation() {
       // Record this attempt
       localStorage.setItem('lastTokenRefresh', now.toString());
 
-      const response = await fetch(`${apiUrl}/auth/refresh`, {
+      // Note: This would need to be imported at the top: import api from '../utils/api';
+      // For now, keeping the fetch implementation but note it should use the shared instance
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
