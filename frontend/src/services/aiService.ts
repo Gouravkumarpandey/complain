@@ -1,12 +1,12 @@
 // AIService.ts
+import api from '../utils/api';
+
 export interface AIAnalysis {
   category: 'Billing' | 'Technical' | 'Service' | 'Product' | 'General';
   sentiment: 'Positive' | 'Neutral' | 'Negative';
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
   confidence: number;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 class AIService {
   private keywords = {
@@ -22,34 +22,14 @@ class AIService {
 
   // For backend integration, we'll make API calls
   async classifyComplaint(text: string): Promise<AIAnalysis> {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.warn('No token found in localStorage, using local classification');
-      return this.localClassification(text);
-    }
-
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/classify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ text })
-      });
-
-      if (response.ok) {
-        return await response.json();
-      } else {
-        const errorText = await response.text();
-        console.error('AI API classification error:', response.status, errorText);
-      }
+      const response = await api.post('/ai/classify', { text });
+      return response.data;
     } catch (error) {
       console.warn('API classification failed, using fallback logic', error);
+      // Fallback to local classification
+      return this.localClassification(text);
     }
-
-    // Fallback to local classification
-    return this.localClassification(text);
   }
 
   private localClassification(text: string): AIAnalysis {
