@@ -7,30 +7,9 @@
  * - POST /api/complaints/:id/generate-summary - Generate AI summary
  * - POST /api/complaints/:id/accept-reply - Accept and save draft reply
  * - POST /api/complaints/:id/send-reply - Send reply to customer
- * 
- * Example API response for GET /api/complaints/:id:
- * {
- *   id: "123",
- *   title: "Cannot login",
- *   description: "I can't login to my account...",
- *   aiSummary: {
- *     text: "Customer cannot login after password reset. Email not received.",
- *     confidence: 0.85,
- *     model: "facebook/bart-large-cnn",
- *     generatedAt: "2025-11-07T10:30:00Z"
- *   },
- *   aiDraftReply: {
- *     text: "Hi, sorry for the trouble. Please click this reset link...",
- *     confidence: 0.82,
- *     needsHumanReview: true,
- *     model: "openai/gpt-4o-mini",
- *     source: "OpenAI API",
- *     tone: "empathetic",
- *     generatedAt: "2025-11-07T10:30:00Z"
- *   }
- * }
  */
 
+import api from '../utils/api';
 import apiService from './apiService';
 import { Complaint } from '../types/complaint';
 
@@ -65,23 +44,8 @@ export async function getComplaint(id: string): Promise<Complaint> {
  * @returns Promise with updated complaint
  */
 export async function acceptDraftReply(id: string, reply: string): Promise<Complaint> {
-  // Since apiService doesn't have a specific method for this, we'll refetch after accepting
-  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/complaints/${id}/accept-reply`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: JSON.stringify({ reply })
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to accept draft reply');
-  }
-  
-  const data = await response.json();
-  return data.complaint;
+  const response = await api.post(`/complaints/${id}/accept-reply`, { reply });
+  return response.data.complaint;
 }
 
 /**
@@ -93,21 +57,8 @@ export async function acceptDraftReply(id: string, reply: string): Promise<Compl
  * @returns Promise with send status
  */
 export async function sendReply(id: string, reply: string): Promise<SendReplyResponse> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/complaints/${id}/send-reply`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: JSON.stringify({ reply })
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to send reply');
-  }
-  
-  return response.json();
+  const response = await api.post(`/complaints/${id}/send-reply`, { reply });
+  return response.data;
 }
 
 /**
@@ -118,19 +69,7 @@ export async function sendReply(id: string, reply: string): Promise<SendReplyRes
  * @returns Promise with new draft reply
  */
 export async function regenerateReply(id: string): Promise<Complaint> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/complaints/${id}/generate-reply`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to regenerate reply');
-  }
-  
+  await api.post(`/complaints/${id}/generate-reply`);
   // Refetch the full complaint to get updated data
   return getComplaint(id);
 }
@@ -143,19 +82,7 @@ export async function regenerateReply(id: string): Promise<Complaint> {
  * @returns Promise with updated complaint including summary
  */
 export async function generateSummary(id: string): Promise<Complaint> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/complaints/${id}/generate-summary`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to generate summary');
-  }
-  
+  await api.post(`/complaints/${id}/generate-summary`);
   // Refetch the full complaint to get updated data
   return getComplaint(id);
 }
@@ -177,20 +104,8 @@ export async function getCategoryInsights(): Promise<{
   totalComplaints: number;
   timestamp: Date;
 }> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/analytics/category-insights`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch category insights');
-  }
-  
-  return response.json();
+  const response = await api.get('/analytics/category-insights');
+  return response.data;
 }
 
 export default {

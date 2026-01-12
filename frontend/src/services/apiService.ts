@@ -1,185 +1,60 @@
 // ApiService.ts - API Service for frontend-backend communication
-import type { Agent } from './agentService';  // Import the Agent interface
+import api, { getErrorMessage } from '../utils/api';
+import type { Agent } from './agentService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-
-console.log(`API Service initialized with base URL: ${API_BASE_URL}`);
-
-/**
- * Safe fetch wrapper that handles JSON parsing errors and logs raw responses
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function safeFetchJson(url: string, options: RequestInit = {}): Promise<any> {
-  try {
-    const res = await fetch(url, options);
-    // read raw text to allow logging of HTML error pages or empty bodies
-    const text = await res.text();
-
-    if (!res.ok) {
-      console.error('API error', { url, status: res.status, statusText: res.statusText, body: text });
-      // throw a structured error so callers can handle
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const err: any = new Error(`API ${res.status}: ${res.statusText}`);
-      err.name = 'ApiError';
-      err.data = { status: res.status, body: text };
-      throw err;
-    }
-
-    if (!text) {
-      // empty body: return empty object
-      return {};
-    }
-
-    // parse JSON safely
-    try {
-      return JSON.parse(text);
-    } catch (parseErr) {
-      console.error('Failed to parse JSON response', { url, text });
-      throw parseErr;
-    }
-  } catch (err) {
-    // Re-throw after logging so upper layers can decide fallback behavior
-    console.error('safeFetchJson failed', { url, error: err });
-    throw err;
-  }
-}
+console.log('✅ API Service initialized with shared Axios instance');
 
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
-  networkError?: boolean; // Flag to identify network-related errors
+  networkError?: boolean;
 }
 
 class ApiService {
-  private readonly timeout = 20000; // 20 second timeout for requests
-
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
-    const headers: HeadersInit = { 'Content-Type': 'application/json' };
-
-    if (token) {
-      try {
-        const tokenParts = token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          const expiryTime = payload.exp * 1000; // convert to milliseconds
-          if (Date.now() < expiryTime - 10000) {
-            headers['Authorization'] = `Bearer ${token}`;
-          } else {
-            console.warn('Token expired, not adding to request');
-            window.dispatchEvent(new Event('tokenExpired'));
-          }
-        } else {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-      } catch (err) {
-        console.debug('Failed to parse token, using it anyway', err);
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-    }
-
-    return headers;
-  }
+  // Using shared Axios instance from utils/api.ts
+  // All requests automatically include credentials and auth headers
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {},
-    retries = 2
+    options: {
+      method?: string;
+      body?: unknown;
+      params?: Record<string, unknown>;
+    } = {}
   ): Promise<ApiResponse<T>> {
     try {
-      const url = new URL(`${API_BASE_URL}${endpoint}`);
-      if (!endpoint.includes('?')) url.searchParams.append('_t', Date.now().toString());
+      const config = {
+        method: options.method || 'GET',
+        url: endpoint,
+        data: options.body,
+        params: options.params,
+      };
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-      let response: Response;
-      try {
-        response = await fetch(url.toString(), {
-          headers: this.getAuthHeaders(),
-          signal: controller.signal,
-          ...options,
-        });
-        clearTimeout(timeoutId);
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        throw fetchError;
-      }
-
-      let data = {} as Record<string, unknown>;
-      try {
-        const contentType = response.headers.get('content-type');
-        if (contentType?.includes('application/json')) {
-          data = await response.json();
-        } else {
-          const text = await response.text();
-          data = text ? { message: text } : {};
-        }
-      } catch {
-        // Ignore parse errors
-        data = {};
-      }
-
-      // Handle token expiry
-      if (response.status === 401 && typeof data.message === 'string' && data.message.includes('expired')) {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const refreshResult = await this.refreshToken(refreshToken);
-          if (refreshResult.data?.token) {
-            localStorage.setItem('token', refreshResult.data.token);
-            if (refreshResult.data.refreshToken) localStorage.setItem('refreshToken', refreshResult.data.refreshToken);
-            return this.request(endpoint, options, 0);
-          }
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          window.dispatchEvent(new Event('tokenExpired'));
-        }
-      }
-
-      if (!response.ok) {
-        let errorMsg: string;
-        if (typeof data.error === 'string') {
-          errorMsg = data.error;
-        } else if (typeof data.message === 'string') {
-          errorMsg = data.message;
-        } else {
-          errorMsg = `API Error: ${response.status}`;
-        }
-        return { error: errorMsg };
-      }
-
-      return { data: data as T };
-    } catch (err) {
-      // Retry logic for network errors
-      if (retries > 0 && (err instanceof TypeError || (err instanceof Error && err.message.includes('network')))) {
-        const delay = Math.min(1000 * (3 - retries) + Math.random() * 1000, 5000);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return this.request(endpoint, options, retries - 1);
-      }
-
-      const errorMessage = err instanceof Error ? err.message : 'Network error occurred';
-      return { error: errorMessage, networkError: true };
+      const response = await api.request(config);
+      return { data: response.data as T };
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      const isNetworkErr = error && typeof error === 'object' && !('response' in error);
+      return { error: errorMessage, networkError: Boolean(isNetworkErr) };
     }
   }
 
   // --------------------- Auth ---------------------
   async login(email: string, password: string) {
-    return this.request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    return this.request('/auth/login', { method: 'POST', body: { email, password } });
   }
 
   async register(userData: { firstName: string; lastName: string; email: string; password: string; role?: string; department?: string }) {
-    return this.request('/auth/register', { method: 'POST', body: JSON.stringify(userData) });
+    return this.request('/auth/register', { method: 'POST', body: userData });
   }
   
   async forgotPassword(email: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
     try {
-      console.log("Making forgot password request to:", `${API_BASE_URL}/auth/forgot-password`);
       const result = await this.request<{ success: boolean; message: string }>('/auth/forgot-password', { 
         method: 'POST', 
-        body: JSON.stringify({ email }) 
+        body: { email }
       });
-      console.log("Forgot password API response:", result);
       return result;
     } catch (error) {
       console.error("Failed to process forgot password request:", error);
@@ -189,12 +64,10 @@ class ApiService {
   
   async resetPassword(token: string, password: string) {
     try {
-      console.log("Resetting password with token");
       const result = await this.request('/auth/reset-password', { 
         method: 'POST', 
-        body: JSON.stringify({ token, password }) 
+        body: { token, password }
       });
-      console.log("Reset password response:", result);
       if (result.error) {
         return { 
           error: result.error || "Failed to reset password. Please try again or request a new reset link." 
@@ -205,17 +78,14 @@ class ApiService {
       console.error("Failed to reset password:", error);
       return { 
         error: "Failed to reset password. Please try again or request a new reset link.",
-        networkError: error instanceof Error && 
-          (error.message.includes('network') || error.message.includes('fetch'))
+        networkError: true
       };
     }
   }
   
   async verifyResetToken(token: string) {
     try {
-      console.log("Verifying reset token:", token);
       const result = await this.request(`/auth/verify-reset-token/${token}`);
-      console.log("Verify reset token response:", result);
       if (result.error) {
         return { 
           error: result.error || "Failed to verify reset token. It might be invalid or expired." 
@@ -226,98 +96,157 @@ class ApiService {
       console.error("Failed to verify reset token:", error);
       return { 
         error: "Failed to verify reset token. It might be invalid or expired.",
-        networkError: error instanceof Error && 
-          (error.message.includes('network') || error.message.includes('fetch'))
+        networkError: true
       };
     }
   }
 
   async refreshToken(token: string) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        return { error: errorData?.error || errorData?.message || 'Failed to refresh token' };
-      }
-      const data = await response.json();
-      return { data };
-    } catch {
-      return { error: 'Network error during token refresh', networkError: true };
-    }
+    return this.request('/auth/refresh', { method: 'POST', body: { token } });
   }
 
   // --------------------- Complaints ---------------------
   async getComplaints(filters?: Record<string, string | number | boolean>) {
-    const queryParams = new URLSearchParams();
-    if (filters) Object.entries(filters).forEach(([k, v]) => v !== undefined && v !== null && queryParams.append(k, String(v)));
-    return this.request(`/complaints${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
+    return this.request('/complaints', { params: filters });
   }
 
-  async getComplaint(id: string) { return this.request(`/complaints/${id}`); }
+  async getComplaint(id: string) { 
+    return this.request(`/complaints/${id}`); 
+  }
+  
   async createComplaint(data: { title: string; description: string; category?: string; attachments?: string[] }) {
-    return this.request('/complaints', { method: 'POST', body: JSON.stringify(data) });
+    return this.request('/complaints', { method: 'POST', body: data });
   }
+  
   async updateComplaintStatus(id: string, status: string, message?: string) {
-    return this.request(`/complaints/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, message }) });
+    return this.request(`/complaints/${id}/status`, { method: 'PATCH', body: { status, message } });
   }
+  
   async assignComplaint(id: string, agentId: string) {
-    return this.request(`/complaints/${id}/assign`, { method: 'PATCH', body: JSON.stringify({ agentId }) });
+    return this.request(`/complaints/${id}/assign`, { method: 'PATCH', body: { agentId } });
   }
+  
   async addComplaintUpdate(id: string, data: { message: string; type?: string; isInternal?: boolean; attachments?: string[] }) {
-    return this.request(`/complaints/${id}/updates`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/complaints/${id}/updates`, { method: 'POST', body: data });
   }
-  async escalateComplaint(id: string, reason: string) { return this.request(`/complaints/${id}/escalate`, { method: 'PATCH', body: JSON.stringify({ reason }) }); }
-  async submitFeedback(id: string, rating: number, comment: string) { return this.request(`/complaints/${id}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) }); }
+  
+  async escalateComplaint(id: string, reason: string) { 
+    return this.request(`/complaints/${id}/escalate`, { method: 'PATCH', body: { reason } }); 
+  }
+  
+  async submitFeedback(id: string, rating: number, comment: string) { 
+    return this.request(`/complaints/${id}/feedback`, { method: 'POST', body: { rating, comment } }); 
+  }
 
   // --------------------- Users ---------------------
-  async getUserProfile() { return this.request('/users/profile'); }
-  async updateUserProfile(profileData: Record<string, unknown>) {
-    return this.request('/users/profile', { method: 'PATCH', body: JSON.stringify(profileData) });
+  async getUserProfile() { 
+    return this.request('/users/profile'); 
   }
+  
+  async updateUserProfile(profileData: Record<string, unknown>) {
+    return this.request('/users/profile', { method: 'PATCH', body: profileData });
+  }
+  
   async changePassword(currentPassword: string, newPassword: string) {
-    return this.request('/users/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) });
+    return this.request('/users/password', { method: 'PATCH', body: { currentPassword, newPassword } });
   }
 
   // --------------------- Analytics ---------------------
-  async getDashboardAnalytics(timeRange: string = '30') { return this.request(`/analytics/dashboard?timeRange=${timeRange}`); }
-  async getDashboardComplete(timeRange: string = '30') { return this.request(`/analytics/dashboard-complete?timeRange=${timeRange}`); }
-  async getTeamPerformance(timeRange: string = '30') { return this.request(`/analytics/team-performance?timeRange=${timeRange}`); }
-  async getCategoryTrends(timeRange: string = '90') { return this.request(`/analytics/trends/category?timeRange=${timeRange}`); }
-  async getSLACompliance(timeRange: string = '30') { return this.request(`/analytics/sla-compliance?timeRange=${timeRange}`); }
-  async getAnalyticsOverview() { return this.request('/analytics/overview'); }
-  async getAnalyticsStatus() { return this.request('/analytics/status'); }
-  async getAnalyticsCategory() { return this.request('/analytics/category'); }
-  async getAgentPerformance() { return this.request('/analytics/agent-performance'); }
+  async getDashboardAnalytics(timeRange: string = '30') { 
+    return this.request('/analytics/dashboard', { params: { timeRange } }); 
+  }
+  
+  async getDashboardComplete(timeRange: string = '30') { 
+    return this.request('/analytics/dashboard-complete', { params: { timeRange } }); 
+  }
+  
+  async getTeamPerformance(timeRange: string = '30') { 
+    return this.request('/analytics/team-performance', { params: { timeRange } }); 
+  }
+  
+  async getCategoryTrends(timeRange: string = '90') { 
+    return this.request('/analytics/trends/category', { params: { timeRange } }); 
+  }
+  
+  async getSLACompliance(timeRange: string = '30') { 
+    return this.request('/analytics/sla-compliance', { params: { timeRange } }); 
+  }
+  
+  async getAnalyticsOverview() { 
+    return this.request('/analytics/overview'); 
+  }
+  
+  async getAnalyticsStatus() { 
+    return this.request('/analytics/status'); 
+  }
+  
+  async getAnalyticsCategory() { 
+    return this.request('/analytics/category'); 
+  }
+  
+  async getAgentPerformance() { 
+    return this.request('/analytics/agent-performance'); 
+  }
 
   // --------------------- Admin ---------------------
-  async getSystemStats() { return this.request('/admin/stats'); }
-  async getAllUsers(filters?: Record<string, string | number | boolean>) {
-    const queryParams = new URLSearchParams();
-    if (filters) Object.entries(filters).forEach(([k, v]) => v !== undefined && v !== null && queryParams.append(k, String(v)));
-    return this.request(`/admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
+  async getSystemStats() { 
+    return this.request('/admin/stats'); 
   }
-  async updateUser(id: string, userData: Record<string, unknown>) { return this.request(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(userData) }); }
-  async bulkAssignComplaints(ids: string[], agentId: string) { return this.request('/admin/complaints/bulk-assign', { method: 'PATCH', body: JSON.stringify({ complaintIds: ids, agentId }) }); }
+  
+  async getAllUsers(filters?: Record<string, string | number | boolean>) {
+    return this.request('/admin/users', { params: filters });
+  }
+  
+  async updateUser(id: string, userData: Record<string, unknown>) { 
+    return this.request(`/users/${id}`, { method: 'PATCH', body: userData }); 
+  }
+  
+  async bulkAssignComplaints(ids: string[], agentId: string) { 
+    return this.request('/admin/complaints/bulk-assign', { method: 'PATCH', body: { complaintIds: ids, agentId } }); 
+  }
 
   // --------------------- Notifications ---------------------
-  async getNotifications() { return this.request('/notifications'); }
-  async markNotificationAsRead(id: string) { return this.request(`/notifications/${id}/read`, { method: 'PATCH' }); }
-  async markAllNotificationsAsRead() { return this.request('/notifications/read-all', { method: 'POST' }); }
-  async deleteNotification(id: string) { return this.request(`/notifications/${id}`, { method: 'DELETE' }); }
-  async clearReadNotifications() { return this.request('/notifications/clear/read', { method: 'DELETE' }); }
-  async getNotificationPreferences() { return this.request('/notifications/preferences'); }
-  async updateNotificationPreferences(preferences: Record<string, unknown>) { return this.request('/notifications/preferences', { method: 'PATCH', body: JSON.stringify(preferences) }); }
+  async getNotifications() { 
+    return this.request('/notifications'); 
+  }
+  
+  async markNotificationAsRead(id: string) { 
+    return this.request(`/notifications/${id}/read`, { method: 'PATCH' }); 
+  }
+  
+  async markAllNotificationsAsRead() { 
+    return this.request('/notifications/read-all', { method: 'POST' }); 
+  }
+  
+  async deleteNotification(id: string) { 
+    return this.request(`/notifications/${id}`, { method: 'DELETE' }); 
+  }
+  
+  async clearReadNotifications() { 
+    return this.request('/notifications/clear/read', { method: 'DELETE' }); 
+  }
+  
+  async getNotificationPreferences() { 
+    return this.request('/notifications/preferences'); 
+  }
+  
+  async updateNotificationPreferences(preferences: Record<string, unknown>) { 
+    return this.request('/notifications/preferences', { method: 'PATCH', body: preferences }); 
+  }
 
   // --------------------- Agents ---------------------
-  async getAllAgents() { return this.request<Agent[]>('/agents'); }
-  async getAvailableAgents() { return this.request<Agent[]>('/agents/available'); }
-  async updateAgentAvailability(agentId: string, status: 'available' | 'busy' | 'offline') { 
-    return this.request<Agent>(`/agents/${agentId}/availability`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  async getAllAgents() { 
+    return this.request<Agent[]>('/agents'); 
   }
+  
+  async getAvailableAgents() { 
+    return this.request<Agent[]>('/agents/available'); 
+  }
+  
+  async updateAgentAvailability(agentId: string, status: 'available' | 'busy' | 'offline') { 
+    return this.request<Agent>(`/agents/${agentId}/availability`, { method: 'PATCH', body: { status } });
+  }
+  
   async refreshAgentAvailability(agentId: string) { 
     return this.request<Agent>(`/agents/${agentId}/refresh-availability`, { method: 'POST' });
   }
