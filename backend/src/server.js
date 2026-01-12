@@ -359,7 +359,10 @@ app.use(cors({
       // Production Vercel URLs
       'https://complain-beta.vercel.app',
       'https://complain-git-main-gouravs-projects-95bc4c63.vercel.app',
-      'https://complain-mcfunqw1d-gouravs-projects-95bc4c63.vercel.app'
+      'https://complain-mcfunqw1d-gouravs-projects-95bc4c63.vercel.app',
+      // Production custom domain
+      'https://www.innovexlabs.me',
+      'http://www.innovexlabs.me'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
