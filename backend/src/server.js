@@ -383,6 +383,16 @@ app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check endpoint for uptime monitoring (before DB check middleware)
+// This endpoint is lightweight and always responds, even if DB is down
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'complaint-management-backend',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Import database check middleware
 import { dbConnectionCheck } from './middleware/dbCheck.js';
 // Add database connection check for API routes
