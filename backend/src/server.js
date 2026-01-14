@@ -29,6 +29,7 @@ import connectDB from "./config/db.js";
 // import { connectRedis, isRedisConnected } from "./config/redis.js";
 import { handleConnection } from "./socket/socketHandlers.js";
 import { User } from "./models/User.js";
+import { getHelmetCspConfig, cspReportHandler } from "./middleware/cspConfig.js";
 
 // Add global error handlers to prevent silent crashes
 process.on('unhandledRejection', (reason, promise) => {
@@ -87,6 +88,11 @@ const io = new Server(server, {
         return callback(null, true);
       }
       
+      // Allow Vercel frontend domains (production)
+      if (origin && origin.match(/^https:\/\/.*\.vercel\.app$/)) {
+        return callback(null, true);
+      }
+      
       // Allow your specific origins
       const allowedOrigins = [
         'http://localhost:3000',
@@ -96,7 +102,11 @@ const io = new Server(server, {
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
-        'http://127.0.0.1:4173'
+        'http://127.0.0.1:4173',
+        // Production Vercel URLs
+        'https://complain-beta.vercel.app',
+        'https://complain-git-main-gouravs-projects-95bc4c63.vercel.app',
+        'https://complain-mcfunqw1d-gouravs-projects-95bc4c63.vercel.app'
       ];
       
       if (allowedOrigins.indexOf(origin) !== -1) {
@@ -313,20 +323,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://apis.google.com"],
-      frameSrc: ["'self'", "https://accounts.google.com"],
-      connectSrc: ["'self'", "https://accounts.google.com", "https://www.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
+// Apply production-ready CSP configuration
+const isDevelopment = process.env.NODE_ENV !== 'production';
+app.use(helmet(getHelmetCspConfig(isDevelopment)));
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -341,6 +340,12 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow Vercel frontend domains (production)
+    if (origin && origin.match(/^https:\/\/.*\.vercel\.app$/)) {
+      console.log('Allowing Vercel origin:', origin);
+      return callback(null, true);
+    }
+    
     // Allow your specific origins
     const allowedOrigins = [
       'http://localhost:3000',
@@ -350,7 +355,14 @@ app.use(cors({
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
-      'http://127.0.0.1:4173'
+      'http://127.0.0.1:4173',
+      // Production Vercel URLs
+      'https://complain-beta.vercel.app',
+      'https://complain-git-main-gouravs-projects-95bc4c63.vercel.app',
+      'https://complain-mcfunqw1d-gouravs-projects-95bc4c63.vercel.app',
+      // Production custom domain
+      'https://www.innovexlabs.me',
+      'http://www.innovexlabs.me'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -370,6 +382,16 @@ app.use(cors({
 app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoint for uptime monitoring (before DB check middleware)
+// This endpoint is lightweight and always responds, even if DB is down
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'complaint-management-backend',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Import database check middleware
 import { dbConnectionCheck } from './middleware/dbCheck.js';
@@ -412,6 +434,9 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/payments", paymentsRoutes);
 // app.use("/api/admin", cacheRoutes); // Redis cache routes disabled
+
+// CSP violation reporting endpoint
+app.post("/api/csp-report", express.json({ type: 'application/csp-report' }), cspReportHandler);
 
 // Enhanced Health check
 app.get("/api/health", async (req, res) => {
@@ -553,7 +578,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json(errorResponse);
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
