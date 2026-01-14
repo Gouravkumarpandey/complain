@@ -1,7 +1,7 @@
 import { User, getUserModelByRole, findUserByEmail, findUserById } from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import fetch from "node-fetch";
+// import fetch from "node-fetch"; // Node 18+ has fetch built-in
 import crypto from "crypto";
 import { sendOtpEmail, generateOTP, sendPasswordResetEmail } from "../services/emailService.js";
 import deepseekService from "../services/deepseekService.js";
