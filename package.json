@@ -51,6 +51,7 @@
   "license": "MIT",
   "dependencies": {
     "@lingui/core": "^5.5.0",
-    "@lingui/react": "^5.5.0"
+    "@lingui/react": "^5.5.0",
+    "bcryptjs": "^3.0.3"
   }
 }
