@@ -17,14 +17,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Verify transporter configuration on startup
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error('❌ Email transporter verification failed:', error);
-  } else {
-    console.log('✅ Email server is ready to send messages');
-  }
-});
+
 
 /**
  * Send an OTP email for account verification
