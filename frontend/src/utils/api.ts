@@ -5,7 +5,8 @@
  * All API calls should use this instance instead of fetch or hardcoded URLs.
  * 
  * Environment Variables Required:
- * - VITE_API_BASE_URL: Backend API base URL (e.g., https://complain-backend.vercel.app/api)
+ * - VITE_API_BASE_URL: Backend API base URL (e.g., https://srv-d5kb4pili9vc73farna0.onrender.com
+/api)
  * 
  * Features:
  * - Automatic token attachment to requests
@@ -18,7 +19,8 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 // Get API base URL from environment variables
-// In production, this should be: https://complain-backend.vercel.app/api
+// In production, this should be: https://srv-d5kb4pili9vc73farna0.onrender.com
+
 // In development: http://localhost:5001/api
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
