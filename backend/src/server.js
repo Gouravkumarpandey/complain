@@ -412,6 +412,12 @@ import paymentsRoutes from "./routes/payments.js";
 // Redis cache routes disabled - uncomment when Redis is enabled
 // import cacheRoutes from "./routes/cache.js";
 
+
+// Root route for health check
+app.get("/", (req, res) => {
+  res.status(200).send("Backend is running ✅");
+});
+
 // Health check endpoint that works even when DB is down
 app.get('/api/health', (req, res) => {
   res.json({
@@ -578,9 +584,10 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json(errorResponse);
 });
 
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("Server running on", PORT);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🔌 Socket.IO server initialized`);
