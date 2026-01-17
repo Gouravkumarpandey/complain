@@ -10,7 +10,7 @@ function isAxiosError(error: unknown): error is AxiosError {
     typeof error === "object" &&
     error !== null &&
     "isAxiosError" in error &&
-    (error as any).isAxiosError === true
+    (error as AxiosError).isAxiosError === true
   );
 }
 
@@ -279,7 +279,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Google login error:", error);
       // Handle specific error cases
-      if (isAxiosError(error) && error.response?.data?.requiresSignup) {
+      // Add a type for error.response?.data to avoid TS error
+      if (
+        isAxiosError(error) &&
+        (error.response?.data as { requiresSignup?: boolean } | undefined)?.requiresSignup
+      ) {
         throw new Error("Account not found. Please sign up first to create an account.");
       }
       // Re-throw the error so it can be caught and displayed
