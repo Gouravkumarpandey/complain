@@ -275,7 +275,7 @@ export function HomePage() {
                 autoPlay 
                 loop 
                 muted
-                poster="/videos/freddy-ai-poster.jpg"
+                poster="/poster.png"
               >
                 <source 
                   src="https://dam.freshworks.com/m/3f4f0cf65ec45bed/original/AI-Agent_X2-50.webm" 
