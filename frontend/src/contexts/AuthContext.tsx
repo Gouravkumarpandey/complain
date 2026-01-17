@@ -1,8 +1,18 @@
 import { useState, ReactNode, useEffect, useCallback } from "react";
 import tokenService from "../services/tokenService";
 import { AuthContext, User } from "./AuthContextTypes";
+import api from "../utils/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { AxiosError } from "axios";
+
+function isAxiosError(error: unknown): error is AxiosError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "isAxiosError" in error &&
+    (error as any).isAxiosError === true
+  );
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -44,48 +54,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLastValidationTime(now);
 
       // Validate with the server
-      let response;
-      let data;
-      
       try {
         // Add cache-busting parameter to prevent browser caching
         const cacheBuster = `?_=${Date.now()}`;
-        response = await fetch(`${API_BASE_URL}/auth/validate-session${cacheBuster}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          // Add signal to abort request after timeout
-          signal: AbortSignal.timeout(5000), // 5 second timeout
+        const response = await api.get(`/auth/validate-session${cacheBuster}`, {
+          timeout: 5000, // 5 second timeout
         });
-
-        if (!response.ok) {
-          console.log("Session validation failed with status:", response.status);
-          
-          // Only clear auth data for unauthorized errors
-          // For server errors or 404s, we'll continue using the client-side validation
-          if (response.status === 401 || response.status === 403) {
-            tokenService.clearAuthData();
-            setUser(null);
-            return false;
-          }
-          
-          // For other errors like 404 (endpoint not found), we'll assume the token is valid
-          // if it passed the client-side validation earlier
-          console.log("Server endpoint unavailable, falling back to client-side validation");
-          return true;
-        }
         
-        data = await response.json();
-      } catch (error) {
-        // Handle network errors - continue with client-side validation
-        console.warn("Network error during session validation, using client-side validation:", error);
-        return true;
-      }
-      
-      // Only process server session ID if we got valid data
-      if (data) {
+        const data = response.data;
+        
         // Check if server has restarted by comparing session IDs
         if (serverSessionId && data.sessionId !== serverSessionId) {
           console.log("Server has restarted, forcing re-login");
@@ -99,6 +76,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setServerSessionId(data.sessionId);
           tokenService.setServerSessionId(data.sessionId);
         }
+      } catch (error) {
+        // Only clear auth data for unauthorized errors
+        if (
+          isAxiosError(error) &&
+          (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+          console.log("Session validation failed: unauthorized");
+          tokenService.clearAuthData();
+          setUser(null);
+          return false;
+        }
+        // For other errors (network, timeout, 404), continue with client-side validation
+        console.warn("Network error during session validation, using client-side validation:", error);
+        return true;
       }
       
       // Make sure user state is set if we have a valid token but no user object
@@ -182,16 +173,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
+      const response = await api.post('/auth/login', { email, password });
+      const data = response.data;
       
       // If the user is not verified and needs OTP verification
-      if (response.status === 401 && data.requiresVerification) {
+      if (data.requiresVerification) {
         // Set pending verification state
         setPendingVerification({
           email,
@@ -199,8 +185,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return false; // Don't proceed with login yet
       }
-
-      if (!response.ok) return false;
       
       const userData: User = {
         id: data.user.id,
@@ -238,19 +222,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payload.phoneNumber = phoneNumber;
       }
       
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
+      const response = await api.post('/auth/signup', payload);
+      const data = response.data;
+      // Check if registration failed (no user or token returned)
+      if (!data.user || !data.token) {
         console.error("Registration failed:", data);
         throw new Error(data.message || "Registration failed");
       }
-      
       // Check if verification is required
       if (data.requiresVerification) {
         // Set the pending verification state
@@ -260,7 +238,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return false; // Return false to indicate registration is pending verification
       }
-      
       const userData: User = {
         id: data.user.id,
         firstName: data.user.firstName || data.user.name.split(" ")[0],
@@ -269,11 +246,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.user.email,
         role: data.user.role,
       };
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
-
       return true;
     } catch (error) {
       console.error("Registration error:", error);
@@ -284,22 +259,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Google login
   const googleLogin = async (token: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        console.error("Google login failed:", data.message || data);
-        // Throw error with the message from backend so it can be displayed to user
-        if (data.requiresSignup) {
-          throw new Error("Account not found. Please sign up first to create an account.");
-        }
-        throw new Error(data.message || "Google login failed");
-      }
+      const response = await api.post('/auth/google', { token });
+      const data = response.data;
       
       const userData: User = {
         id: data.user.id,
@@ -317,6 +278,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (error) {
       console.error("Google login error:", error);
+      // Handle specific error cases
+      if (isAxiosError(error) && error.response?.data?.requiresSignup) {
+        throw new Error("Account not found. Please sign up first to create an account.");
+      }
       // Re-throw the error so it can be caught and displayed
       throw error;
     }
@@ -338,18 +303,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body.phoneNumber = phoneNumber;
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/google-signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        console.error("Google signup failed:", data.message || data);
-        throw new Error(data.message || "Google signup failed");
-      }
+      const response = await api.post('/auth/google-signup', body);
+      const data = response.data;
       
       const userData: User = {
         id: data.user.id,
@@ -374,14 +329,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Decode Google token
   const decodeGoogleToken = async (token: string): Promise<{ name: string; email: string } | null> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/google-decode`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      if (!response.ok) return null;
-      const data = await response.json();
+      const response = await api.post('/auth/google-decode', { token });
+      const data = response.data;
       return { name: data.name, email: data.email };
     } catch (error) {
       console.error("Google token decode error:", error);
@@ -395,14 +344,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: "user" | "agent" | "admin" | "analytics"
   ): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/facebook-signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, role }),
-      });
-
-      if (!response.ok) return false;
-      const data = await response.json();
+      const response = await api.post('/auth/facebook-signup', { code, role });
+      const data = response.data;
       const userData: User = {
         id: data.user.id,
         firstName: data.user.name.split(" ")[0],
@@ -427,14 +370,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithFacebook = async (code: string, isSignup: boolean = false): Promise<boolean> => {
     try {
       const endpoint = isSignup ? "/auth/facebook-signup" : "/auth/facebook";
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!response.ok) return false;
-      const data = await response.json();
+      const response = await api.post(endpoint, { code });
+      const data = response.data;
       const userData: User = {
         id: data.user.id,
         firstName: data.user.name.split(" ")[0],
@@ -465,14 +402,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Verify OTP for email verification
   const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-
-      if (!response.ok) return false;
-      const data = await response.json();
+      const response = await api.post('/auth/verify-otp', { email, otp });
+      const data = response.data;
       
       console.log("OTP verification response:", data);
 
@@ -510,13 +441,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Resend OTP
   const resendOTP = async (email: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      return response.ok;
+      await api.post('/auth/resend-otp', { email });
+      return true;
     } catch (error) {
       console.error("Resend OTP error:", error);
       return false;
