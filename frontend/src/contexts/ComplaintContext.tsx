@@ -265,9 +265,12 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Fetch complaints on mount
+  // Fetch complaints on mount - only if user is authenticated
   useEffect(() => {
-    refreshComplaints();
+    const token = localStorage.getItem('token');
+    if (token) {
+      refreshComplaints();
+    }
   }, []);
 
   // Helper function to auto-assign complaints to agents with defensive checks
