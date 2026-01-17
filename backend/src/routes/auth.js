@@ -40,7 +40,18 @@ router.get("/verify-reset-token/:token", verifyResetToken);
 // Session validation
 router.get("/validate-session", authenticate, validateSession);
 
-// Google OAuth login
+// Google OAuth routes
+router.get("/google", (req, res) => {
+  res.json({ 
+    success: true, 
+    message: "Google Auth route working ✅",
+    availableRoutes: {
+      login: "POST /api/auth/google",
+      decode: "POST /api/auth/google-decode",
+      signup: "POST /api/auth/google-signup"
+    }
+  });
+});
 router.post("/google", googleLogin);
 
 // Google OAuth signup with role selection
