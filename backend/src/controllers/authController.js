@@ -5,6 +5,8 @@ import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
 import { sendOtpEmail, generateOTP, sendPasswordResetEmail } from "../services/emailService.js";
 import deepseekService from "../services/deepseekService.js";
+import { validateAndFormatPhoneNumber } from "../utils/phoneValidation.js";
+import { triggerSignupSMS } from "../services/smsTriggers.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -110,9 +112,21 @@ export const registerUser = async (req, res) => {
       isVerified: false
     };
     
-    // Add phone number if provided
+    // Validate and add phone number if provided
     if (phoneNumber && phoneNumber.trim()) {
-      userData.phoneNumber = phoneNumber.trim();
+      const phoneValidation = validateAndFormatPhoneNumber(phoneNumber.trim());
+      
+      if (phoneValidation.isValid) {
+        userData.phoneNumber = phoneValidation.formattedNumber; // Store in E.164 format
+        console.log(`Phone number validated and formatted: ${phoneValidation.internationalFormat}`);
+      } else {
+        console.log("Phone number validation failed:", phoneValidation.error);
+        return res.status(400).json({
+          message: "Invalid phone number",
+          error: phoneValidation.error,
+          hint: "Please provide phone number in international format (e.g., +1234567890 or +911234567890)"
+        });
+      }
     }
     
     const user = await UserModel.create(userData);
@@ -126,6 +140,16 @@ export const registerUser = async (req, res) => {
       // We continue even if email fails, but log the error
     }
 
+    // Send SMS notification if phone number is provided
+    if (user.phoneNumber) {
+      try {
+        await triggerSignupSMS(user);
+        console.log("Signup SMS sent to user");
+      } catch (smsError) {
+        console.error("Failed to send signup SMS:", smsError);
+        // Continue even if SMS fails
+      }
+    }
     console.log("User registered (unverified) in collection:", {
       collection: UserModel.collection.name,
       id: user._id,

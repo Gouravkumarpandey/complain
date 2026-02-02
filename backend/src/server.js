@@ -412,6 +412,7 @@ import agentsRoutes from "./routes/agents.js";
 import aiRoutes from "./routes/ai.js";
 import subscriptionsRoutes from "./routes/subscriptions.js";
 import paymentsRoutes from "./routes/payments.js";
+import smsRoutes from "./routes/sms.js";
 // Redis cache routes disabled - uncomment when Redis is enabled
 // import cacheRoutes from "./routes/cache.js";
 
@@ -442,6 +443,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/payments", paymentsRoutes);
+app.use("/api/sms", smsRoutes);
 // app.use("/api/admin", cacheRoutes); // Redis cache routes disabled
 
 // CSP violation reporting endpoint
