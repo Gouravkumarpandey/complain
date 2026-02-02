@@ -403,27 +403,25 @@ export function LoginForm() {
             {/* Social Login */}
             <div className="space-y-3 mb-4">
               {/* Google Login Button - Custom styled wrapper */}
-              <div className="w-full">
-                <div className="[&>div]:w-full [&>div>div]:w-full [&_button]:w-full [&_button]:h-[44px] [&_button]:flex [&_button]:items-center [&_button]:justify-center [&_button]:border [&_button]:border-gray-300 [&_button]:rounded-lg [&_button]:shadow-sm [&_button]:bg-white [&_button]:hover:bg-gray-50 [&_button]:transition-colors">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => {
-                      console.error('Google Login Failed');
-                      
-                      // Check if it's an origin-related error - always show the current origin
-                      const currentOrigin = window.location.origin;
-                      
-                      // Always show the origin information as it's likely an origin-related issue
-                      setError(`Google authentication failed. Your current origin (${currentOrigin}) may not be authorized in Google Cloud Console. Check console for setup instructions.`);
-                      setupGoogleAuth(); // Show detailed setup guide in console
-                    }}
-                    size="large"
-                    width="100%"
-                    text={isLogin ? "signin_with" : "signup_with"}
-                    theme="outline"
-                    shape="rectangular"
-                  />
-                </div>
+              <div className="w-full [&>div]:w-full [&>div>div]:w-full [&_iframe]:!h-[50px] [&_button]:!w-full [&_button]:!h-[50px] [&_button]:!px-4 [&_button]:!py-3 [&_button]:!flex [&_button]:!items-center [&_button]:!justify-center [&_button]:!border [&_button]:!border-gray-300 [&_button]:!rounded-lg [&_button]:!shadow-sm [&_button]:!bg-white [&_button]:hover:!bg-gray-50 [&_button]:!transition-colors [&_button]:!text-sm [&_button]:!font-medium">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => {
+                    console.error('Google Login Failed');
+                    
+                    // Check if it's an origin-related error - always show the current origin
+                    const currentOrigin = window.location.origin;
+                    
+                    // Always show the origin information as it's likely an origin-related issue
+                    setError(`Google authentication failed. Your current origin (${currentOrigin}) may not be authorized in Google Cloud Console. Check console for setup instructions.`);
+                    setupGoogleAuth(); // Show detailed setup guide in console
+                  }}
+                  size="large"
+                  width="100%"
+                  text={isLogin ? "signin_with" : "signup_with"}
+                  theme="outline"
+                  shape="rectangular"
+                />
               </div>
               
               {/* Facebook Login Button */}
