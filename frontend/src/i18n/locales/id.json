@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "Dasbor",
+        "myTickets": "Tiket Saya",
+        "newTicket": "Tiket Baru",
+        "profile": "Profil",
+        "notifications": "Notifikasi",
+        "aiAssistant": "Asisten AI",
+        "help": "Bantuan",
+        "upgrade": "Tingkatkan",
+        "settings": "Pengaturan",
+        "logout": "Keluar",
+        "search": "Cari tiket",
+        "refresh": "Segarkan",
+        "welcome": "Selamat datang kembali",
+        "totalComplaints": "Total pengaduan",
+        "open": "Terbuka",
+        "inProgress": "Dalam proses",
+        "resolved": "Selesai",
+        "urgent": "Mendesak",
+        "escalated": "Eskalasi",
+        "allTime": "Sepanjang waktu",
+        "needsAttention": "Perlu perhatian",
+        "beingProcessed": "Sedang diproses",
+        "completed": "Tuntas",
+        "highPriority": "Prioritas tinggi",
+        "needsReview": "Perlu tinjauan"
+    }
+}

@@ -15,11 +15,11 @@
  */
 
 import { useState } from 'react';
-import { 
-  Sparkles, 
-  Send, 
-  Check, 
-  RefreshCw, 
+import {
+  Sparkles,
+  Send,
+  Check,
+  RefreshCw,
   AlertTriangle,
   FileText,
   Brain
@@ -101,11 +101,11 @@ export function AIReplyPanel({ complaint, onUpdate, isAgent = false }: AIReplyPa
 
     try {
       const result = await complaintService.sendReply(complaint.id, draftReply);
-      
+
       // Refresh complaint data after sending
       const updatedComplaint = await complaintService.getComplaint(complaint.id);
       onUpdate(updatedComplaint);
-      
+
       showMessage(`Reply sent successfully! ${result.messageId ? `(ID: ${result.messageId})` : ''}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to send reply';
@@ -168,7 +168,7 @@ export function AIReplyPanel({ complaint, onUpdate, isAgent = false }: AIReplyPa
   };
 
   // Calculate confidence percentage
-  const confidencePercent = complaint.aiDraftReply?.confidence 
+  const confidencePercent = complaint.aiDraftReply?.confidence
     ? Math.round(complaint.aiDraftReply.confidence * 100)
     : 0;
 
@@ -242,7 +242,7 @@ export function AIReplyPanel({ complaint, onUpdate, isAgent = false }: AIReplyPa
               <span className={`text-xs font-medium px-2 py-1 rounded ${getConfidenceColor(confidencePercent)}`}>
                 {confidencePercent}% confidence
               </span>
-              
+
               {/* Human Review Warning */}
               {complaint.aiDraftReply.needsHumanReview && (
                 <span className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-800 flex items-center gap-1">

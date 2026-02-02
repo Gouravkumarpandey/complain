@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "Панель",
+        "myTickets": "Мои тикеты",
+        "newTicket": "Новый тикет",
+        "profile": "Профиль",
+        "notifications": "Уведомления",
+        "aiAssistant": "ИИ-помощник",
+        "help": "Помощь",
+        "upgrade": "Обновить",
+        "settings": "Настройки",
+        "logout": "Выйти",
+        "search": "Поиск тикетов",
+        "refresh": "Обновить",
+        "welcome": "С возвращением",
+        "totalComplaints": "Всего жалоб",
+        "open": "Открыто",
+        "inProgress": "В процессе",
+        "resolved": "Решено",
+        "urgent": "Срочно",
+        "escalated": "Передано",
+        "allTime": "За все время",
+        "needsAttention": "Требует внимания",
+        "beingProcessed": "Обрабатывается",
+        "completed": "Завершено",
+        "highPriority": "Высокий приоритет",
+        "needsReview": "Требует проверки"
+    }
+}

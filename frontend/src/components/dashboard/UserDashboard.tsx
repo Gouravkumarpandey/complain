@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react';
 // i18n removed
-import { 
-  Plus, Clock, CheckCircle, Bell, User, MessageCircle, 
-  Search, Calendar, X, Shield, Home, 
+import {
+  Plus, Clock, CheckCircle, Bell, User, MessageCircle,
+  Search, Calendar, X, Shield, Home,
   Inbox, HelpCircle, Menu,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
-  TrendingUp, BarChart3, Activity, Crown, Zap, RefreshCw
+  TrendingUp, BarChart3, Activity, Crown, Zap, RefreshCw, Globe
 } from 'lucide-react';
 import { ComplaintForm } from '../complaints/ComplaintForm';
 import AIAssistant from './AIAssistant';
-// Trans removed after migration
+import { useTranslation } from 'react-i18next';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
 import subscriptionService from '../../services/subscriptionService';
-import { 
+import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
 export function UserDashboard() {
@@ -35,6 +35,29 @@ export function UserDashboard() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showSidebarUserMenu, setShowSidebarUserMenu] = useState(false);
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const { t, i18n } = useTranslation();
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'zh', name: 'Mandarin Chinese' },
+    { code: 'hi', name: 'Hindi' },
+    { code: 'es', name: 'Spanish' },
+    { code: 'ar', name: 'Standard Arabic' },
+    { code: 'fr', name: 'French' },
+    { code: 'bn', name: 'Bengali' },
+    { code: 'pt', name: 'Portuguese' },
+    { code: 'ru', name: 'Russian' },
+    { code: 'id', name: 'Indonesian' },
+    { code: 'ur', name: 'Urdu' },
+    { code: 'de', name: 'Standard German' }
+  ];
+
+  const changeLanguage = (code: string) => {
+    i18n.changeLanguage(code);
+    setShowLanguageMenu(false);
+  };
   const [userProfile, setUserProfile] = useState({
     name: user?.name || 'User',
     email: user?.email || 'user@example.com',
@@ -59,7 +82,7 @@ export function UserDashboard() {
     const handleComplaintUpdated = (event: CustomEvent) => {
       const data = event.detail;
       console.log('📬 Complaint status updated:', data);
-      
+
       // Check if the updated complaint belongs to this user
       if (data.complaint && user && (data.complaint.userId === user.id || data.complaint.user === user.id)) {
         // Show notification for resolved complaints
@@ -72,7 +95,7 @@ export function UserDashboard() {
     };
 
     window.addEventListener('complaintUpdated', handleComplaintUpdated as EventListener);
-    
+
     return () => {
       window.removeEventListener('complaintUpdated', handleComplaintUpdated as EventListener);
     };
@@ -98,7 +121,7 @@ export function UserDashboard() {
   const [saveError, setSaveError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
-  
+
   // Search functionality
   const filteredBySearch = filteredComplaints.filter(complaint => {
     const query = searchQuery.toLowerCase();
@@ -137,7 +160,7 @@ export function UserDashboard() {
     if (complaints && user) {
       // Filter complaints to show only current user's complaints
       // Also match by _id if available
-      const userComplaints = complaints.filter(c => 
+      const userComplaints = complaints.filter(c =>
         c.userId === user.id || c.userId === user._id
       );
       setFilteredComplaints(userComplaints);
@@ -208,7 +231,7 @@ export function UserDashboard() {
 
       setSaveSuccess(true);
       setIsSaving(false);
-      
+
       // Reset password fields
       setSettings(prev => ({
         ...prev,
@@ -239,7 +262,7 @@ export function UserDashboard() {
         setSaveError('Image size must be less than 5MB');
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -261,7 +284,7 @@ export function UserDashboard() {
     const savedProfile = localStorage.getItem('userProfile');
     const savedSettings = localStorage.getItem('userSettings');
     const savedPhoto = localStorage.getItem('userProfilePhoto');
-    
+
     if (savedProfile) {
       try {
         const parsed = JSON.parse(savedProfile);
@@ -270,7 +293,7 @@ export function UserDashboard() {
         console.error('Failed to parse saved profile:', e);
       }
     }
-    
+
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
@@ -279,7 +302,7 @@ export function UserDashboard() {
         console.error('Failed to parse saved settings:', e);
       }
     }
-    
+
     if (savedPhoto) {
       setProfilePhoto(savedPhoto);
     }
@@ -332,7 +355,7 @@ export function UserDashboard() {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
+
       const created = filteredComplaints.filter(c => {
         const complaintDate = new Date(c.createdAt);
         return complaintDate.toDateString() === date.toDateString();
@@ -340,8 +363,8 @@ export function UserDashboard() {
 
       const resolved = filteredComplaints.filter(c => {
         const complaintDate = new Date(c.updatedAt || c.createdAt);
-        return complaintDate.toDateString() === date.toDateString() && 
-               (c.status === 'Resolved' || c.status === 'Closed');
+        return complaintDate.toDateString() === date.toDateString() &&
+          (c.status === 'Resolved' || c.status === 'Closed');
       }).length;
 
       days.push({ date: dateStr, created, resolved });
@@ -414,124 +437,179 @@ export function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Freshdesk-style Clean Sidebar - Fixed Position */}
-      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen overflow-y-auto z-40`}>
-        <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
+      {/* Premium Dark Sidebar */}
+      <div className={`bg-[#0f172a] ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen z-40 border-r border-slate-800`}>
+        {/* Logo Section */}
+        <div className="p-6">
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-[#22c55e] rounded-xl flex items-center justify-center flex-shrink-0">
+              <Shield className="w-6 h-6 text-white" />
             </div>
             {!sidebarCollapsed && (
-              <span className="text-white font-semibold text-lg">QuickFix</span>
+              <span className="text-white font-bold text-2xl tracking-tight">QuickFix</span>
             )}
           </div>
         </div>
-        
-        <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'} flex-1 overflow-y-auto`}>
-          <button 
+
+        {/* Navigation Section */}
+        <div
+          className="flex-1 px-3 space-y-1 overflow-y-auto"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            .overflow-y-auto::-webkit-scrollbar {
+              display: none;
+            }
+          `}} />
+          <button
             onClick={() => setActiveView('dashboard')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'dashboard' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Dashboard"
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 transition-all duration-200 group ${activeView === 'dashboard'
+              ? 'bg-[#1e293b] text-white'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
           >
-            <Home className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
+            <Home className={`w-5 h-5 flex-shrink-0 ${activeView === 'dashboard' ? 'text-blue-400' : 'group-hover:text-blue-400'}`} />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{t('common.dashboard')}</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveView('complaints')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'complaints' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
-            title="My Complaints"
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 transition-all duration-200 group ${activeView === 'complaints'
+              ? 'bg-[#1e293b] text-white'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
           >
-            <Inbox className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">My Tickets</span>}
+            <Clock className={`w-5 h-5 flex-shrink-0 ${activeView === 'complaints' ? 'text-blue-400' : 'group-hover:text-blue-400'}`} />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{t('common.myTickets')}</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveView('new-complaint')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'new-complaint' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
-            title="File New Complaint"
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 transition-all duration-200 group ${activeView === 'new-complaint'
+              ? 'bg-[#1e293b] text-white'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
           >
-            <Plus className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">New Ticket</span>}
+            <Plus className={`w-5 h-5 flex-shrink-0 ${activeView === 'new-complaint' ? 'text-blue-400' : 'group-hover:text-blue-400'}`} />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{t('common.newTicket')}</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveView('profile')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Profile Management"
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 transition-all duration-200 group ${activeView === 'profile'
+              ? 'bg-[#1e293b] text-white'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
           >
-            <User className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Profile</span>}
+            <User className={`w-5 h-5 flex-shrink-0 ${activeView === 'profile' ? 'text-blue-400' : 'group-hover:text-blue-400'}`} />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{t('common.profile')}</span>}
           </button>
-          
-          <button 
-            onClick={() => setActiveView('profile')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 bg-slate-700 text-amber-400 hover:bg-slate-600 transition-colors border border-amber-400/20`}
-            title="Upgrade Plan"
-          >
-            <Crown className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Upgrade</span>}
-          </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowNotifications(true)}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
-            title="Notifications"
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 group`}
           >
-            <Bell className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Notifications</span>}
+            <Bell className="w-5 h-5 flex-shrink-0 group-hover:text-blue-400" />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{t('common.notifications')}</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowChatBot(true)}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
-            title="AI Assistant"
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 group`}
           >
-            <Bot className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">AI Assistant</span>}
+            <Bot className="w-5 h-5 flex-shrink-0 group-hover:text-blue-400" />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{t('common.aiAssistant')}</span>}
           </button>
-          
-          <button 
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
-            title="Help & Support"
+
+          <button
+            className={`w-full h-12 rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-4'} gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 group`}
           >
-            <HelpCircle className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
+            <HelpCircle className="w-5 h-5 flex-shrink-0 group-hover:text-blue-400" />
+            {!sidebarCollapsed && <span className="text-sm font-semibold flex-1 text-left">{t('common.help')}</span>}
+            {!sidebarCollapsed && <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 font-mono">⌘J</span>}
           </button>
-          
-          {/* Promotional Banner - Close to Help */}
-          {!sidebarCollapsed && (
-            <div className="mt-4">
-              <div className="overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
-                <img 
-                  src="/poster.png" 
-                  alt="QuickFix Promotional Banner"
-                  className="w-full h-auto object-cover"
-                  onClick={() => setActiveView('profile')}
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400"%3E%3Cdefs%3E%3ClinearGradient id="sidebarGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23sidebarGrad)" width="240" height="400"/%3E%3Ctext x="120" y="80" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="120" y="110" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="120" y="140" text-anchor="middle" fill="white" font-size="24" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="120" y="180" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="30" cy="220" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="227" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E01%3C/text%3E%3Ctext x="55" y="227" fill="white" font-size="11"%3EAnalytics%3C/text%3E%3Ccircle cx="30" cy="260" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="267" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E02%3C/text%3E%3Ctext x="55" y="267" fill="white" font-size="11"%3ECustomised%3C/text%3E%3Ccircle cx="30" cy="300" r="15" fill="%23F59E0B"/%3E%3Ctext x="30" y="307" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3E03%3C/text%3E%3Ctext x="55" y="307" fill="white" font-size="11"%3EManagement%3C/text%3E%3Crect x="30" y="340" width="180" height="30" rx="15" fill="%23F59E0B"/%3E%3Ctext x="120" y="360" text-anchor="middle" fill="white" font-size="10" font-weight="bold"%3EVIEW DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
+
+          {/* Upgrade Card */}
+          <div className="pt-4 mt-4 border-t border-slate-800/50">
+            <button
+              onClick={() => setActiveView('profile')}
+              className={`w-full rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center p-2' : 'px-4 py-3'} gap-3 bg-[#f59e0b]/10 text-[#f59e0b] hover:bg-[#f59e0b]/20 transition-all duration-200 border border-[#f59e0b]/20 group`}
+            >
+              <Crown className="w-5 h-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span className="text-sm font-bold uppercase tracking-wider">{t('common.upgrade')}</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* User Card Footer */}
+        <div className="p-4 border-t border-slate-800/50 bg-[#0f172a] relative">
+          {showSidebarUserMenu && (
+            <div className={`absolute bottom-full left-4 mb-2 w-56 bg-[#1e293b] border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden transition-all duration-200`}>
+              <div className="p-2">
+                <button
+                  onClick={() => {
+                    setActiveView('profile');
+                    setShowSidebarUserMenu(false);
                   }}
-                />
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  My Profile
+                </button>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setShowSidebarUserMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
               </div>
             </div>
           )}
+
+          <button
+            onClick={() => setShowSidebarUserMenu(!showSidebarUserMenu)}
+            className={`w-full rounded-xl flex items-center ${sidebarCollapsed ? 'justify-center h-12' : 'px-3 py-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 group border border-transparent hover:border-slate-700/50`}
+          >
+            <div className="relative flex-shrink-0">
+              {profilePhoto || user?.photoURL ? (
+                <img
+                  src={profilePhoto || user?.photoURL}
+                  alt="User"
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-800 group-hover:ring-slate-700 transition-all"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs ring-2 ring-slate-800 group-hover:ring-slate-700 transition-all">
+                  {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-[#0f172a] rounded-full"></div>
+            </div>
+
+            {!sidebarCollapsed && (
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sm font-bold text-slate-200 truncate">{userProfile.name}</p>
+                <p className="text-[10px] text-slate-500 truncate font-medium uppercase tracking-wider">{userProfile.role}</p>
+              </div>
+            )}
+
+            {!sidebarCollapsed && (
+              <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${showSidebarUserMenu ? 'rotate-180' : ''}`} />
+            )}
+          </button>
         </div>
       </div>
 
       {/* Main Content Area - Adjusted for Fixed Sidebar */}
-      <div className={`flex-1 flex flex-col min-h-screen ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300`}>
         {/* Freshdesk-style Clean Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -545,34 +623,69 @@ export function UserDashboard() {
               {activeView === 'profile' && 'Profile Management'}
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button
               onClick={handleRefreshComplaints}
               disabled={isRefreshing}
               className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 flex items-center gap-1.5 disabled:opacity-50 text-sm font-medium transition-colors"
-              title="Refresh Complaints"
+              title={t('common.refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh Complaints'}
+              {isRefreshing ? `${t('common.refresh')}...` : t('common.refresh')}
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setActiveView('new-complaint')}
               className="text-slate-800 hover:text-slate-900 font-medium text-sm flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg"
             >
               <Plus className="w-4 h-4" />
-              New Complaint
+              {t('common.newTicket')}
             </button>
-            <button 
+
+            {/* Language Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg flex items-center gap-2"
+                title="Change Language"
+              >
+                <Globe className="w-5 h-5" />
+                <span className="text-xs font-semibold uppercase">{i18n.language.split('-')[0]}</span>
+              </button>
+
+              {showLanguageMenu && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 z-[60] py-2 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Select Language</p>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => changeLanguage(lang.code)}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${i18n.language === lang.code ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                          }`}
+                      >
+                        <div>
+                          <p className="text-sm font-bold">{lang.name}</p>
+                        </div>
+                        {i18n.language === lang.code && <CheckCircle className="w-4 h-4 text-blue-600" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
               onClick={() => setShowSearchModal(true)}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
               title="Search Complaints"
             >
               <Search className="w-5 h-5" />
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowNotifications(true)}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg relative"
             >
@@ -583,13 +696,13 @@ export function UserDashboard() {
                 </span>
               )}
             </button>
-            
+
             <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
               <HelpCircle className="w-5 h-5" />
             </button>
-            
+
             <div className="relative user-menu-container">
-              <button 
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
               >
@@ -606,7 +719,7 @@ export function UserDashboard() {
                 </div>
                 <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   <div className="p-4 border-b border-gray-100">
@@ -615,7 +728,7 @@ export function UserDashboard() {
                     <p className="text-sm text-gray-500 mt-1">Role: {userProfile.role}</p>
                   </div>
                   <div className="p-2">
-                    <button 
+                    <button
                       onClick={() => {
                         setActiveView('profile');
                         setShowUserMenu(false);
@@ -625,7 +738,7 @@ export function UserDashboard() {
                       <Settings className="w-4 h-4 text-gray-500" />
                       Account Settings
                     </button>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
                     >
@@ -637,951 +750,1214 @@ export function UserDashboard() {
               )}
             </div>
           </div>
-        </header>
+        </header >
 
         {/* Dashboard View - Core Complaint Features */}
-        {activeView === 'dashboard' && (
-          <div className="flex bg-gray-50 min-h-screen">
-            {/* Main Content Area */}
-            <div className="flex-1 p-6">
-              {/* Welcome Section */}
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back, {userProfile.name}</h2>
-                <p className="text-gray-600">Here's an overview of your tickets</p>
-              </div>
+        {loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[60vh]">
+            <img src="/loading.gif" alt="Loading..." className="w-80 h-80 object-contain" />
+            <p className="text-gray-500 font-medium -mt-4">Loading your data...</p>
+          </div>
+        ) : (
+          <>
+            {activeView === 'dashboard' && (
+              <div className="flex bg-gray-50 min-h-screen">
+                {/* Main Content Area */}
+                <div className="flex-1 p-6">
+                  {/* Welcome Section */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-1">{t('common.welcome')}, {userProfile.name}</h2>
+                    <p className="text-gray-600">{t('common.dashboardOverview') || "Here's an overview of your tickets"}</p>
+                  </div>
 
-              {/* Clean Stats Cards - Text Only Style */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <p className="text-sm text-gray-600 mb-2">Total Complaints</p>
-                <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-                <p className="text-xs text-gray-500 mt-1">All time</p>
-              </div>
-              
-              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <p className="text-sm text-gray-600 mb-2">Open</p>
-                <div className="text-3xl font-bold text-blue-600">{stats.open}</div>
-                <p className="text-xs text-gray-500 mt-1">Needs attention</p>
-              </div>
-              
-              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <p className="text-sm text-gray-600 mb-2">In Progress</p>
-                <div className="text-3xl font-bold text-yellow-600">{stats.inProgress}</div>
-                <p className="text-xs text-gray-500 mt-1">Being processed</p>
-              </div>
-              
-              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <p className="text-sm text-gray-600 mb-2">Resolved</p>
-                <div className="text-3xl font-bold text-green-600">{stats.resolved}</div>
-                <p className="text-xs text-gray-500 mt-1">Completed</p>
-              </div>
-              
-              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <p className="text-sm text-gray-600 mb-2">Urgent</p>
-                <div className="text-3xl font-bold text-orange-600">{stats.urgent}</div>
-                <p className="text-xs text-gray-500 mt-1">High priority</p>
-              </div>
-              
-              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <p className="text-sm text-gray-600 mb-2">Escalated</p>
-                <div className="text-3xl font-bold text-red-600">{stats.escalated}</div>
-                <p className="text-xs text-gray-500 mt-1">Needs review</p>
-              </div>
-            </div>
+                  {/* Clean Stats Cards - Text Only Style */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <p className="text-sm text-gray-600 mb-2">{t('common.totalComplaints')}</p>
+                      <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+                      <p className="text-xs text-gray-500 mt-1">{t('common.allTime')}</p>
+                    </div>
 
-            {/* Analytics Charts Section - Freshdesk Style */}
-            {filteredComplaints.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Status Distribution Pie Chart */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Status Distribution</h3>
-                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <Activity className="w-4 h-4 text-blue-600" />
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <p className="text-sm text-gray-600 mb-2">{t('common.open')}</p>
+                      <div className="text-3xl font-bold text-blue-600">{stats.open}</div>
+                      <p className="text-xs text-gray-500 mt-1">{t('common.needsAttention')}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <p className="text-sm text-gray-600 mb-2">{t('common.inProgress')}</p>
+                      <div className="text-3xl font-bold text-yellow-600">{stats.inProgress}</div>
+                      <p className="text-xs text-gray-500 mt-1">{t('common.beingProcessed')}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <p className="text-sm text-gray-600 mb-2">{t('common.resolved')}</p>
+                      <div className="text-3xl font-bold text-green-600">{stats.resolved}</div>
+                      <p className="text-xs text-gray-500 mt-1">{t('common.completed')}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <p className="text-sm text-gray-600 mb-2">{t('common.urgent')}</p>
+                      <div className="text-3xl font-bold text-orange-600">{stats.urgent}</div>
+                      <p className="text-xs text-gray-500 mt-1">{t('common.highPriority')}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <p className="text-sm text-gray-600 mb-2">{t('common.escalated')}</p>
+                      <div className="text-3xl font-bold text-red-600">{stats.escalated}</div>
+                      <p className="text-xs text-gray-500 mt-1">{t('common.needsReview')}</p>
                     </div>
                   </div>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={statusChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {statusChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {statusChartData.map((item) => (
-                      <div key={item.name} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
+
+                  {/* Analytics Charts Section - Freshdesk Style */}
+                  {filteredComplaints.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      {/* Status Distribution Pie Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">Status Distribution</h3>
+                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <Activity className="w-4 h-4 text-blue-600" />
+                          </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <PieChart>
+                            <Pie
+                              data={statusChartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {statusChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                          {statusChartData.map((item) => (
+                            <div key={item.name} className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                              <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+
+                      {/* Priority Distribution Pie Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">Priority Levels</h3>
+                          <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                            <AlertCircle className="w-4 h-4 text-orange-600" />
+                          </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <PieChart>
+                            <Pie
+                              data={priorityData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {priorityData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                          {priorityData.map((item) => (
+                            <div key={item.name} className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                              <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Tickets Trend Line Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">7-Day Trend</h3>
+                          <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-green-600" />
+                          </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={trendData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                            <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                fontSize: '12px'
+                              }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <Line
+                              type="monotone"
+                              dataKey="created"
+                              stroke="#3B82F6"
+                              strokeWidth={2}
+                              name="Created"
+                              dot={{ fill: '#3B82F6', r: 4 }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="resolved"
+                              stroke="#10B981"
+                              strokeWidth={2}
+                              name="Resolved"
+                              dot={{ fill: '#10B981', r: 4 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Category Distribution Bar Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">By Category</h3>
+                          <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                            <BarChart3 className="w-4 h-4 text-purple-600" />
+                          </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <BarChart data={categoryData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="category" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                            <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                fontSize: '12px'
+                              }}
+                            />
+                            <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                              {categoryData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Main Content Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Recent Complaints - Clean Freshdesk Style */}
+                    <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                      <div className="p-5 border-b border-gray-200 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">Recent Tickets</h3>
+                        <button
+                          onClick={() => setActiveView('complaints')}
+                          className="text-slate-800 hover:text-slate-900 text-sm font-medium"
+                        >
+                          View all
+                        </button>
+                      </div>
+                      <div className="p-5">
+                        {loading ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-800 border-t-transparent mx-auto"></div>
+                            <p className="text-gray-500 mt-3 text-sm">Loading tickets...</p>
+                          </div>
+                        ) : filteredComplaints.length === 0 ? (
+                          <div className="text-center py-12 text-gray-500">
+                            <Inbox className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                            <p className="text-base font-medium text-gray-700 mb-1">No tickets yet</p>
+                            <p className="text-sm text-gray-500 mb-4">Create your first ticket to get started</p>
+                            <button
+                              onClick={() => setActiveView('new-complaint')}
+                              className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-medium"
+                            >
+                              Create Ticket
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {filteredComplaints.slice(0, 5).map((complaint) => (
+                              <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    {/* Complaint ID Badge */}
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                                        {complaint.complaintId || complaint.id}
+                                      </span>
+                                      {complaint.status === 'Resolved' && (
+                                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
+                                          <CheckCircle className="w-3 h-3" />
+                                          Resolved
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{complaint.title}</h4>
+                                    <p className="text-sm text-gray-600 mb-2 line-clamp-1">{complaint.description}</p>
+                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{new Date(complaint.createdAt).toLocaleDateString()}</span>
+                                      <span>•</span>
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
+                                        {complaint.priority}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <span className={`px-2.5 py-1 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
+                                    {complaint.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quick Actions - Clean Style */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                      <div className="p-5 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                      </div>
+                      <div className="p-5">
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => setActiveView('new-complaint')}
+                            className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                          >
+                            <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Plus className="w-5 h-5 text-slate-800" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 text-sm">New Ticket</h4>
+                              <p className="text-xs text-gray-600">Create a new ticket</p>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => setActiveView('complaints')}
+                            className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                          >
+                            <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Inbox className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 text-sm">My Tickets</h4>
+                              <p className="text-xs text-gray-600">View all tickets</p>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => setActiveView('profile')}
+                            className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                          >
+                            <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <User className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 text-sm">Profile</h4>
+                              <p className="text-xs text-gray-600">Manage account</p>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => setShowChatBot(true)}
+                            className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                          >
+                            <div className="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Bot className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 text-sm">Support</h4>
+                              <p className="text-xs text-gray-600">Get help</p>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Legend - Clean Style */}
+                  <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="p-5 border-b border-gray-200">
+                      <h3 className="text-base font-semibold text-gray-900">Ticket Status Guide</h3>
+                    </div>
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">Open</p>
+                            <p className="text-xs text-gray-600">New tickets</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">In Progress</p>
+                            <p className="text-xs text-gray-600">Under review</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">Resolved</p>
+                            <p className="text-xs text-gray-600">Completed</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">Closed</p>
+                            <p className="text-xs text-gray-600">No further action</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Priority Distribution Pie Chart */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Priority Levels</h3>
-                    <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
-                      <AlertCircle className="w-4 h-4 text-orange-600" />
-                    </div>
-                  </div>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={priorityData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {priorityData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-4 grid grid-cols-3 gap-2">
-                    {priorityData.map((item) => (
-                      <div key={item.name} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tickets Trend Line Chart */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">7-Day Trend</h3>
-                    <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                    </div>
-                  </div>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#6b7280" />
-                      <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '12px'
+                {/* Right Side Promotional Panel */}
+                <div className="w-80 p-6">
+                  <div className="sticky top-6">
+                    <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                      <img
+                        src="/Navbar_image.png"
+                        alt="QuickFix Features - What's in it for you?"
+                        className="w-full h-auto object-cover"
+                        onClick={() => setActiveView('profile')}
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 600"%3E%3Cdefs%3E%3ClinearGradient id="rightGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="50%25" style="stop-color:%233B82F6;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23rightGrad)" width="320" height="600"/%3E%3Cpath d="M 0 20 L 30 0 L 60 20 L 90 0 L 120 20" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Cpath d="M 200 580 L 230 560 L 260 580 L 290 560 L 320 580" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Ccircle cx="280" cy="60" r="25" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ccircle cx="40" cy="540" r="20" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ctext x="160" y="100" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="160" y="140" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="160" y="180" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="160" y="230" text-anchor="middle" fill="white" font-size="22" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="40" cy="280" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="288" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E01%3C/text%3E%3Ctext x="75" y="288" fill="white" font-size="14"%3EAnalytics Overview%3C/text%3E%3Ccircle cx="40" cy="320" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="328" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E02%3C/text%3E%3Ctext x="75" y="328" fill="white" font-size="14"%3ECompany specific%3C/text%3E%3Ccircle cx="40" cy="360" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="368" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E03%3C/text%3E%3Ctext x="75" y="368" fill="white" font-size="14"%3ECustomised roadmaps%3C/text%3E%3Ccircle cx="40" cy="400" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="408" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E04%3C/text%3E%3Ctext x="75" y="408" fill="white" font-size="14"%3ECategory Breakdowns%3C/text%3E%3Ccircle cx="40" cy="440" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="448" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E05%3C/text%3E%3Ctext x="75" y="448" fill="white" font-size="14"%3EUser Management%3C/text%3E%3Crect x="60" y="490" width="200" height="35" rx="17" fill="%23F59E0B"/%3E%3Ctext x="160" y="514" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3EVIEW LIVE DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: '12px' }} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="created" 
-                        stroke="#3B82F6" 
-                        strokeWidth={2}
-                        name="Created"
-                        dot={{ fill: '#3B82F6', r: 4 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="resolved" 
-                        stroke="#10B981" 
-                        strokeWidth={2}
-                        name="Resolved"
-                        dot={{ fill: '#10B981', r: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Category Distribution Bar Chart */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">By Category</h3>
-                    <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="w-4 h-4 text-purple-600" />
                     </div>
                   </div>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={categoryData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="category" tick={{ fontSize: 12 }} stroke="#6b7280" />
-                      <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                </div>
+              </div>
+            )}
+            {/* Clean Complaints List View */}
+            {activeView === 'complaints' && (
+              <div className="p-6 bg-gray-50 min-h-screen">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">My Tickets</h3>
+                      <p className="text-sm text-gray-600 mt-0.5">View and manage all your tickets</p>
+                    </div>
+                    <button
+                      onClick={() => setActiveView('new-complaint')}
+                      className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-sm font-medium"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Ticket
+                    </button>
+                  </div>
+                  <div className="p-5">
+                    {filteredComplaints.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Inbox className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                        <p className="text-lg font-semibold text-gray-800 mb-2">No tickets found</p>
+                        <p className="text-gray-600 mb-6 text-sm">You haven't created any tickets yet</p>
+                        <button
+                          onClick={() => setActiveView('new-complaint')}
+                          className="bg-slate-800 text-white px-6 py-2.5 rounded-lg hover:bg-slate-700 text-sm font-medium"
+                        >
+                          Create Your First Ticket
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredComplaints.map((complaint) => (
+                          <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  {/* Complaint ID Badge */}
+                                  <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                                    {complaint.complaintId || complaint.id}
+                                  </span>
+                                  <h4 className="font-semibold text-gray-900 truncate">{complaint.title}</h4>
+                                  <span className={`px-2.5 py-0.5 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
+                                    {complaint.status}
+                                  </span>
+                                  {complaint.status === 'Resolved' && (
+                                    <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3" />
+                                      ✓
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
+
+                                {/* Resolution message for resolved complaints */}
+                                {complaint.status === 'Resolved' && (
+                                  <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                    <p className="text-xs text-green-700 flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3" />
+                                      <span className="font-medium">Your complaint has been successfully resolved</span>
+                                    </p>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center gap-4 text-xs text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    {new Date(complaint.createdAt).toLocaleDateString()}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    {complaint.category}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(complaint.priority)}`}>
+                                    {complaint.priority}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedComplaint(complaint);
+                                  }}
+                                  className="text-slate-800 hover:text-slate-900 text-sm font-medium whitespace-nowrap"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Recent Complaints - Clean Freshdesk Style */}
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Recent Tickets</h3>
-                  <button 
-                    onClick={() => setActiveView('complaints')}
-                    className="text-slate-800 hover:text-slate-900 text-sm font-medium"
-                  >
-                    View all
-                  </button>
-                </div>
-                <div className="p-5">
-                  {loading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-800 border-t-transparent mx-auto"></div>
-                      <p className="text-gray-500 mt-3 text-sm">Loading tickets...</p>
-                    </div>
-                  ) : filteredComplaints.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <Inbox className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-base font-medium text-gray-700 mb-1">No tickets yet</p>
-                      <p className="text-sm text-gray-500 mb-4">Create your first ticket to get started</p>
-                      <button 
-                        onClick={() => setActiveView('new-complaint')}
-                        className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-medium"
-                      >
-                        Create Ticket
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredComplaints.slice(0, 5).map((complaint) => (
-                        <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              {/* Complaint ID Badge */}
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
-                                  {complaint.complaintId || complaint.id}
-                                </span>
-                                {complaint.status === 'Resolved' && (
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
-                                    <CheckCircle className="w-3 h-3" />
-                                    Resolved
-                                  </span>
-                                )}
-                              </div>
-                              <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{complaint.title}</h4>
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-1">{complaint.description}</p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Clock className="w-3 h-3" />
-                                <span>{new Date(complaint.createdAt).toLocaleDateString()}</span>
-                                <span>•</span>
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
-                                  {complaint.priority}
-                                </span>
-                              </div>
-                            </div>
-                            <span className={`px-2.5 py-1 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
-                              {complaint.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick Actions - Clean Style */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-5 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-                </div>
-                <div className="p-5">
-                  <div className="space-y-2">
-                    <button 
-                      onClick={() => setActiveView('new-complaint')}
-                      className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                    >
-                      <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Plus className="w-5 h-5 text-slate-800" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm">New Ticket</h4>
-                        <p className="text-xs text-gray-600">Create a new ticket</p>
-                      </div>
-                    </button>
-                    
-                    <button 
-                      onClick={() => setActiveView('complaints')}
-                      className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                    >
-                      <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Inbox className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm">My Tickets</h4>
-                        <p className="text-xs text-gray-600">View all tickets</p>
-                      </div>
-                    </button>
-                    
-                    <button 
-                      onClick={() => setActiveView('profile')}
-                      className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                    >
-                      <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <User className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm">Profile</h4>
-                        <p className="text-xs text-gray-600">Manage account</p>
-                      </div>
-                    </button>
-                    
-                    <button 
-                      onClick={() => setShowChatBot(true)}
-                      className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                    >
-                      <div className="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm">Support</h4>
-                        <p className="text-xs text-gray-600">Get help</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Status Legend - Clean Style */}
-            <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-5 border-b border-gray-200">
-                <h3 className="text-base font-semibold text-gray-900">Ticket Status Guide</h3>
-              </div>
-              <div className="p-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            {/* New Complaint View */}
+            {activeView === 'new-complaint' && (
+              <div className="p-6 bg-gray-50 min-h-screen">
+                <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-5 border-b border-gray-200 flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">Open</p>
-                      <p className="text-xs text-gray-600">New tickets</p>
+                      <h3 className="text-xl font-semibold text-gray-900">Create New Ticket</h3>
+                      <p className="text-sm text-gray-600 mt-0.5">Fill in the details to create a new support ticket</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">In Progress</p>
-                      <p className="text-xs text-gray-600">Under review</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">Resolved</p>
-                      <p className="text-xs text-gray-600">Completed</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">Escalated</p>
-                      <p className="text-xs text-gray-600">Needs attention</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Right Side Promotional Panel */}
-          <div className="w-80 p-6">
-            <div className="sticky top-6">
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                <img 
-                  src="/Navbar_image.png" 
-                  alt="QuickFix Features - What's in it for you?"
-                  className="w-full h-auto object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                  onClick={() => setActiveView('profile')}
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 600"%3E%3Cdefs%3E%3ClinearGradient id="rightGrad" x1="0%25" y1="0%25" x2="100%25" y2="0%25"%3E%3Cstop offset="0%25" style="stop-color:%2310B981;stop-opacity:1" /%3E%3Cstop offset="50%25" style="stop-color:%233B82F6;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230F172A;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23rightGrad)" width="320" height="600"/%3E%3Cpath d="M 0 20 L 30 0 L 60 20 L 90 0 L 120 20" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Cpath d="M 200 580 L 230 560 L 260 580 L 290 560 L 320 580" stroke="%23F59E0B" stroke-width="3" fill="none" opacity="0.5"/%3E%3Ccircle cx="280" cy="60" r="25" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ccircle cx="40" cy="540" r="20" stroke="white" stroke-width="3" fill="none" opacity="0.4"/%3E%3Ctext x="160" y="100" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EWHAT\'S%3C/text%3E%3Ctext x="160" y="140" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EIN IT FOR%3C/text%3E%3Ctext x="160" y="180" text-anchor="middle" fill="white" font-size="32" font-weight="bold"%3EYOU?%3C/text%3E%3Ctext x="160" y="230" text-anchor="middle" fill="white" font-size="22" font-weight="bold"%3EQuickFix%3C/text%3E%3Ccircle cx="40" cy="280" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="288" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E01%3C/text%3E%3Ctext x="75" y="288" fill="white" font-size="14"%3EAnalytics Overview%3C/text%3E%3Ccircle cx="40" cy="320" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="328" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E02%3C/text%3E%3Ctext x="75" y="328" fill="white" font-size="14"%3ECompany specific%3C/text%3E%3Ccircle cx="40" cy="360" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="368" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E03%3C/text%3E%3Ctext x="75" y="368" fill="white" font-size="14"%3ECustomised roadmaps%3C/text%3E%3Ccircle cx="40" cy="400" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="408" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E04%3C/text%3E%3Ctext x="75" y="408" fill="white" font-size="14"%3ECategory Breakdowns%3C/text%3E%3Ccircle cx="40" cy="440" r="20" fill="%23F59E0B"/%3E%3Ctext x="40" y="448" text-anchor="middle" fill="white" font-size="16" font-weight="bold"%3E05%3C/text%3E%3Ctext x="75" y="448" fill="white" font-size="14"%3EUser Management%3C/text%3E%3Crect x="60" y="490" width="200" height="35" rx="17" fill="%23F59E0B"/%3E%3Ctext x="160" y="514" text-anchor="middle" fill="white" font-size="12" font-weight="bold"%3EVIEW LIVE DASHBOARD NOW!%3C/text%3E%3C/svg%3E';
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          </div>
-        )}
-
-        {/* Clean Complaints List View */}
-        {activeView === 'complaints' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">My Tickets</h3>
-                  <p className="text-sm text-gray-600 mt-0.5">View and manage all your tickets</p>
-                </div>
-                <button 
-                  onClick={() => setActiveView('new-complaint')}
-                  className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-sm font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Ticket
-                </button>
-              </div>
-              <div className="p-5">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-slate-800 border-t-transparent mx-auto"></div>
-                    <p className="text-gray-600 mt-3 text-sm">Loading tickets...</p>
-                  </div>
-                ) : filteredComplaints.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Inbox className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-semibold text-gray-800 mb-2">No tickets found</p>
-                    <p className="text-gray-600 mb-6 text-sm">You haven't created any tickets yet</p>
-                    <button 
-                      onClick={() => setActiveView('new-complaint')}
-                      className="bg-slate-800 text-white px-6 py-2.5 rounded-lg hover:bg-slate-700 text-sm font-medium"
+                    <button
+                      onClick={() => setActiveView('dashboard')}
+                      className="text-gray-500 hover:text-gray-700"
                     >
-                      Create Your First Ticket
+                      <X className="w-5 h-5" />
                     </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredComplaints.map((complaint) => (
-                      <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              {/* Complaint ID Badge */}
-                              <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
-                                {complaint.complaintId || complaint.id}
-                              </span>
-                              <h4 className="font-semibold text-gray-900 truncate">{complaint.title}</h4>
-                              <span className={`px-2.5 py-0.5 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
-                                {complaint.status}
-                              </span>
-                              {complaint.status === 'Resolved' && (
-                                <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3" />
-                                  ✓
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
-                            
-                            {/* Resolution message for resolved complaints */}
-                            {complaint.status === 'Resolved' && (
-                              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                                <p className="text-xs text-green-700 flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3" />
-                                  <span className="font-medium">Your complaint has been successfully resolved</span>
-                                </p>
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {new Date(complaint.createdAt).toLocaleDateString()}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                {complaint.category}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(complaint.priority)}`}>
-                                {complaint.priority}
-                              </span>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedComplaint(complaint);
-                            }}
-                            className="text-slate-800 hover:text-slate-900 text-sm font-medium whitespace-nowrap"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Clean New Complaint View */}
-        {activeView === 'new-complaint' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-5 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">Create New Ticket</h3>
-                    <p className="text-sm text-gray-600 mt-0.5">Fill in the details to create a new support ticket</p>
-                  </div>
-                  <button 
-                    onClick={() => setActiveView('dashboard')}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6">
-                <ComplaintForm onSuccess={() => setActiveView('complaints')} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Freshdesk-Style Profile Settings */}
-        {activeView === 'profile' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="max-w-5xl mx-auto">
-              {/* Profile Header Card */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                <div className="p-6">
-                  <div className="flex items-start gap-6">
-                      <div className="relative group">
-                        {profilePhoto ? (
-                          <>
-                            <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
-                            <button
-                              onClick={handlePhotoRemove}
-                              className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                              title="Remove photo"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                            {userProfile.name?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                        )}
-                        <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
-                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </label>
-                        <input
-                          id="photo-upload"
-                          type="file"
-                          accept="image/jpeg,image/png,image/jpg,image/webp"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
-                        <p className="text-gray-600 mb-3">{userProfile.email}</p>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{userProfile.role}</span>
-                          <span className="text-sm text-gray-600 flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4" />
-                            Member since {new Date(userProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Settings Sections */}
-              <div className="space-y-6">
-                {/* Personal Information */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-                    <p className="text-sm text-gray-600 mt-1">Update your personal details and contact information</p>
                   </div>
                   <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                        <input 
-                          type="text" 
-                          value={userProfile.name.split(' ')[0] || ''}
-                          onChange={(e) => setUserProfile({...userProfile, name: e.target.value + ' ' + (userProfile.name.split(' ')[1] || '')})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                          placeholder="Enter first name"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                        <input 
-                          type="text" 
-                          value={userProfile.name.split(' ')[1] || ''}
-                          onChange={(e) => setUserProfile({...userProfile, name: (userProfile.name.split(' ')[0] || '') + ' ' + e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                          placeholder="Enter last name"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                        <input 
-                          type="email" 
-                          value={userProfile.email}
-                          onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                          placeholder="your.email@example.com"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                        <input 
-                          type="tel" 
-                          value={userProfile.phone}
-                          onChange={(e) => setUserProfile({...userProfile, phone: e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                          placeholder="+1 (555) 000-0000"
-                        />
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Organization</label>
-                        <input 
-                          type="text" 
-                          value={userProfile.organization}
-                          onChange={(e) => setUserProfile({...userProfile, organization: e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                          placeholder="Your organization name"
-                        />
-                      </div>
-                    </div>
+                    <ComplaintForm onSuccess={() => setActiveView('complaints')} />
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Notification Preferences */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
-                    <p className="text-sm text-gray-600 mt-1">Manage how you receive notifications</p>
-                  </div>
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Bell className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">Email Notifications</p>
-                            <p className="text-sm text-gray-600">Receive email updates for ticket status changes</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.notifications.email}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, email: e.target.checked}})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <MessageCircle className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">SMS Notifications</p>
-                            <p className="text-sm text-gray-600">Get text messages for urgent updates</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.notifications.sms}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, sms: e.target.checked}})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Bell className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">Push Notifications</p>
-                            <p className="text-sm text-gray-600">Receive in-app notifications</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={settings.notifications.push}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, push: e.target.checked}})}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Subscription & Billing */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Subscription & Billing</h3>
-                    <p className="text-sm text-gray-600 mt-1">Manage your subscription plan and billing</p>
-                  </div>
-                  <div className="p-6">
-                    {/* Current Plan Display */}
-                    <div className="bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-lg p-6 mb-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
-                            {user?.planType === 'Premium' ? (
-                              <Crown className="w-6 h-6 text-yellow-400" />
-                            ) : user?.planType === 'Pro' ? (
-                              <Zap className="w-6 h-6 text-blue-400" />
-                            ) : (
-                              <Star className="w-6 h-6 text-gray-400" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">Current Plan</p>
-                            <p className="text-2xl font-bold text-gray-900">{user?.planType || 'Free'}</p>
-                            {user?.planExpiresAt && new Date(user.planExpiresAt) > new Date() && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                Expires on {new Date(user.planExpiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {user?.planType !== 'Free' && (
-                          <div className="text-right">
-                            <p className="text-sm text-gray-600">Billing Cycle</p>
-                            <p className="text-lg font-semibold text-gray-900">Monthly</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Subscription Error */}
-                    {subscriptionError && (
-                      <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                          <p className="text-red-800">{subscriptionError}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Upgrade Options */}
-                    {user?.planType !== 'Premium' && (
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-900 mb-4">Upgrade Your Plan</h4>
-                        
-                        {/* Pro Plan */}
-                        {user?.planType !== 'Pro' && (
-                          <div className="border-2 border-blue-200 rounded-lg p-5 hover:border-blue-400 transition-all">
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                  <Zap className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div>
-                                  <h5 className="font-semibold text-gray-900">Pro Plan</h5>
-                                  <p className="text-sm text-gray-600">For growing teams</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-2xl font-bold text-gray-900">$4.99</p>
-                                <p className="text-sm text-gray-600">/month</p>
-                              </div>
-                            </div>
-                            <ul className="space-y-2 mb-4">
-                              <li className="flex items-start gap-2 text-sm">
-                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-gray-700">AI-powered diagnosis</span>
-                              </li>
-                              <li className="flex items-start gap-2 text-sm">
-                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-gray-700">Unlimited complaints</span>
-                              </li>
-                              <li className="flex items-start gap-2 text-sm">
-                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-gray-700">Priority support (24h)</span>
-                              </li>
-                              <li className="flex items-start gap-2 text-sm">
-                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-gray-700">Analytics dashboard</span>
-                              </li>
-                            </ul>
-                            <button
-                              onClick={() => handleUpgradePlan('Pro')}
-                              disabled={upgradingPlan === 'Pro'}
-                              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                              {upgradingPlan === 'Pro' ? (
-                                <>
-                                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  Processing...
-                                </>
-                              ) : (
-                                'Upgrade to Pro'
-                              )}
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Premium Plan */}
-                        <div className="border-2 border-purple-200 rounded-lg p-5 hover:border-purple-400 transition-all">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <Crown className="w-5 h-5 text-purple-600" />
-                              </div>
-                              <div>
-                                <h5 className="font-semibold text-gray-900">Premium Plan</h5>
-                                <p className="text-sm text-gray-600">For large enterprises</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-gray-900">$9.99</p>
-                              <p className="text-sm text-gray-600">/month</p>
-                            </div>
-                          </div>
-                          <ul className="space-y-2 mb-4">
-                            <li className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              <span className="text-gray-700">Everything in Pro, plus:</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              <span className="text-gray-700">Team management (10 users)</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              <span className="text-gray-700">Advanced analytics & reporting</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              <span className="text-gray-700">Custom branding</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              <span className="text-gray-700">Dedicated account manager</span>
-                            </li>
-                          </ul>
-                          <button
-                            onClick={() => handleUpgradePlan('Premium')}
-                            disabled={upgradingPlan === 'Premium'}
-                            className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            {upgradingPlan === 'Premium' ? (
+            {/* Freshdesk-Style Profile Settings */}
+            {
+              activeView === 'profile' && (
+                <div className="p-6 bg-gray-50 min-h-screen">
+                  <div className="max-w-5xl mx-auto">
+                    {/* Profile Header Card */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+                      <div className="p-6">
+                        <div className="flex items-start gap-6">
+                          <div className="relative group">
+                            {profilePhoto ? (
                               <>
-                                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Processing...
+                                <img src={profilePhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+                                <button
+                                  onClick={handlePhotoRemove}
+                                  className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white border-2 border-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                  title="Remove photo"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
                               </>
                             ) : (
-                              user?.planType === 'Pro' ? 'Upgrade to Premium' : 'Upgrade to Premium'
+                              <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                                {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                            )}
+                            <label htmlFor="photo-upload" className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-colors" title="Upload photo">
+                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </label>
+                            <input
+                              id="photo-upload"
+                              type="file"
+                              accept="image/jpeg,image/png,image/jpg,image/webp"
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h2 className="text-2xl font-semibold text-gray-900 mb-2">{userProfile.name}</h2>
+                            <p className="text-gray-600 mb-3">{userProfile.email}</p>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm font-medium">{userProfile.role}</span>
+                              <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                                <Calendar className="w-4 h-4" />
+                                Member since {new Date(userProfile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Settings Sections */}
+                    <div className="space-y-6">
+                      {/* Personal Information */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-5 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                          <p className="text-sm text-gray-600 mt-1">Update your personal details and contact information</p>
+                        </div>
+                        <div className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                              <input
+                                type="text"
+                                value={userProfile.name.split(' ')[0] || ''}
+                                onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value + ' ' + (userProfile.name.split(' ')[1] || '') })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                placeholder="Enter first name"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                              <input
+                                type="text"
+                                value={userProfile.name.split(' ')[1] || ''}
+                                onChange={(e) => setUserProfile({ ...userProfile, name: (userProfile.name.split(' ')[0] || '') + ' ' + e.target.value })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                placeholder="Enter last name"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                              <input
+                                type="email"
+                                value={userProfile.email}
+                                onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                placeholder="your.email@example.com"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                              <input
+                                type="tel"
+                                value={userProfile.phone}
+                                onChange={(e) => setUserProfile({ ...userProfile, phone: e.target.value })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                placeholder="+1 (555) 000-0000"
+                              />
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+                              <input
+                                type="text"
+                                value={userProfile.organization}
+                                onChange={(e) => setUserProfile({ ...userProfile, organization: e.target.value })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                placeholder="Your organization name"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notification Preferences */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-5 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
+                          <p className="text-sm text-gray-600 mt-1">Manage how you receive notifications</p>
+                        </div>
+                        <div className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Bell className="w-5 h-5 text-gray-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">Email Notifications</p>
+                                  <p className="text-sm text-gray-600">Receive email updates for ticket status changes</p>
+                                </div>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={settings.notifications.email}
+                                  onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, email: e.target.checked } })}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
+                              </label>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <MessageCircle className="w-5 h-5 text-gray-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">SMS Notifications</p>
+                                  <p className="text-sm text-gray-600">Get text messages for urgent updates</p>
+                                </div>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={settings.notifications.sms}
+                                  onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, sms: e.target.checked } })}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
+                              </label>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Bell className="w-5 h-5 text-gray-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">Push Notifications</p>
+                                  <p className="text-sm text-gray-600">Receive in-app notifications</p>
+                                </div>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={settings.notifications.push}
+                                  onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, push: e.target.checked } })}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Subscription & Billing */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-5 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-900">Subscription & Billing</h3>
+                          <p className="text-sm text-gray-600 mt-1">Manage your subscription plan and billing</p>
+                        </div>
+                        <div className="p-6">
+                          {/* Current Plan Display */}
+                          <div className="bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-lg p-6 mb-6">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
+                                  {user?.planType === 'Premium' ? (
+                                    <Crown className="w-6 h-6 text-yellow-400" />
+                                  ) : user?.planType === 'Pro' ? (
+                                    <Zap className="w-6 h-6 text-blue-400" />
+                                  ) : (
+                                    <Star className="w-6 h-6 text-gray-400" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600">Current Plan</p>
+                                  <p className="text-2xl font-bold text-gray-900">{user?.planType || 'Free'}</p>
+                                  {user?.planExpiresAt && new Date(user.planExpiresAt) > new Date() && (
+                                    <p className="text-sm text-gray-600 mt-1">
+                                      Expires on {new Date(user.planExpiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {user?.planType !== 'Free' && (
+                                <div className="text-right">
+                                  <p className="text-sm text-gray-600">Billing Cycle</p>
+                                  <p className="text-lg font-semibold text-gray-900">Monthly</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Subscription Error */}
+                          {subscriptionError && (
+                            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                              <div className="flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <p className="text-red-800">{subscriptionError}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Upgrade Options */}
+                          {user?.planType !== 'Premium' && (
+                            <div className="space-y-4">
+                              <h4 className="font-semibold text-gray-900 mb-4">Upgrade Your Plan</h4>
+
+                              {/* Pro Plan */}
+                              {user?.planType !== 'Pro' && (
+                                <div className="border-2 border-blue-200 rounded-lg p-5 hover:border-blue-400 transition-all">
+                                  <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <Zap className="w-5 h-5 text-blue-600" />
+                                      </div>
+                                      <div>
+                                        <h5 className="font-semibold text-gray-900">Pro Plan</h5>
+                                        <p className="text-sm text-gray-600">For growing teams</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-2xl font-bold text-gray-900">$4.99</p>
+                                      <p className="text-sm text-gray-600">/month</p>
+                                    </div>
+                                  </div>
+                                  <ul className="space-y-2 mb-4">
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span className="text-gray-700">AI-powered diagnosis</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span className="text-gray-700">Unlimited complaints</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span className="text-gray-700">Priority support (24h)</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span className="text-gray-700">Analytics dashboard</span>
+                                    </li>
+                                  </ul>
+                                  <button
+                                    onClick={() => handleUpgradePlan('Pro')}
+                                    disabled={upgradingPlan === 'Pro'}
+                                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                  >
+                                    {upgradingPlan === 'Pro' ? (
+                                      <>
+                                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Processing...
+                                      </>
+                                    ) : (
+                                      'Upgrade to Pro'
+                                    )}
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Premium Plan */}
+                              <div className="border-2 border-purple-200 rounded-lg p-5 hover:border-purple-400 transition-all">
+                                <div className="flex items-start justify-between mb-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                      <Crown className="w-5 h-5 text-purple-600" />
+                                    </div>
+                                    <div>
+                                      <h5 className="font-semibold text-gray-900">Premium Plan</h5>
+                                      <p className="text-sm text-gray-600">For large enterprises</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-2xl font-bold text-gray-900">$9.99</p>
+                                    <p className="text-sm text-gray-600">/month</p>
+                                  </div>
+                                </div>
+                                <ul className="space-y-2 mb-4">
+                                  <li className="flex items-start gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span className="text-gray-700">Everything in Pro, plus:</span>
+                                  </li>
+                                  <li className="flex items-start gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span className="text-gray-700">Team management (10 users)</span>
+                                  </li>
+                                  <li className="flex items-start gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span className="text-gray-700">Advanced analytics & reporting</span>
+                                  </li>
+                                  <li className="flex items-start gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span className="text-gray-700">Custom branding</span>
+                                  </li>
+                                  <li className="flex items-start gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span className="text-gray-700">Dedicated account manager</span>
+                                  </li>
+                                </ul>
+                                <button
+                                  onClick={() => handleUpgradePlan('Premium')}
+                                  disabled={upgradingPlan === 'Premium'}
+                                  className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                  {upgradingPlan === 'Premium' ? (
+                                    <>
+                                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      Processing...
+                                    </>
+                                  ) : (
+                                    user?.planType === 'Pro' ? 'Upgrade to Premium' : 'Upgrade to Premium'
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Already on Premium */}
+                          {user?.planType === 'Premium' && (
+                            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6 text-center">
+                              <Crown className="w-12 h-12 text-purple-600 mx-auto mb-3" />
+                              <h5 className="font-semibold text-gray-900 mb-2">You're on our best plan!</h5>
+                              <p className="text-gray-600">Enjoy all premium features and priority support.</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Security Settings */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-5 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+                          <p className="text-sm text-gray-600 mt-1">Manage your password and security settings</p>
+                        </div>
+                        <div className="p-6">
+                          <div className="space-y-5">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                              <input
+                                type="password"
+                                value={settings.security.currentPassword}
+                                onChange={(e) => setSettings({ ...settings, security: { ...settings.security, currentPassword: e.target.value } })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                placeholder="Enter current password"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                                <input
+                                  type="password"
+                                  value={settings.security.newPassword}
+                                  onChange={(e) => setSettings({ ...settings, security: { ...settings.security, newPassword: e.target.value } })}
+                                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                  placeholder="Enter new password"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                                <input
+                                  type="password"
+                                  value={settings.security.confirmPassword}
+                                  onChange={(e) => setSettings({ ...settings, security: { ...settings.security, confirmPassword: e.target.value } })}
+                                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                                  placeholder="Confirm new password"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                              <div className="flex items-start gap-3">
+                                <Shield className="w-5 h-5 text-slate-600 mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-gray-900 mb-1">Two-Factor Authentication</p>
+                                  <p className="text-sm text-gray-600 mb-3">Add an extra layer of security to your account</p>
+                                  <button className="text-slate-800 hover:text-slate-900 font-medium text-sm">
+                                    Enable 2FA →
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Language & Time Zone */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-5 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-900">Language & Region</h3>
+                          <p className="text-sm text-gray-600 mt-1">Set your preferred language and timezone</p>
+                        </div>
+                        <div className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                              <select
+                                value={settings.language}
+                                onChange={(e) => setSettings({ ...settings, language: e.target.value })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                              >
+                                <option>English (US)</option>
+                                <option>Spanish</option>
+                                <option>French</option>
+                                <option>German</option>
+                                <option>Hindi</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Time Zone</label>
+                              <select
+                                value={settings.timezone}
+                                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                              >
+                                <option>GMT-8 (Pacific Time)</option>
+                                <option>GMT-5 (Eastern Time)</option>
+                                <option>GMT+0 (London)</option>
+                                <option>GMT+5:30 (India)</option>
+                                <option>GMT+8 (Singapore)</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Success/Error Messages */}
+                      {(saveSuccess || saveError) && (
+                        <div className={`rounded-lg p-4 ${saveSuccess ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                          <div className="flex items-center gap-3">
+                            {saveSuccess ? (
+                              <>
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <div>
+                                  <p className="font-medium text-green-900">Settings saved successfully!</p>
+                                  <p className="text-sm text-green-700 mt-0.5">Your profile and preferences have been updated.</p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                <div>
+                                  <p className="font-medium text-red-900">Error saving settings</p>
+                                  <p className="text-sm text-red-700 mt-0.5">{saveError}</p>
+                                </div>
+                              </>
+                            )}
+                            <button
+                              onClick={() => {
+                                setSaveSuccess(false);
+                                setSaveError('');
+                              }}
+                              className="ml-auto text-gray-500 hover:text-gray-700"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <button
+                          onClick={() => setActiveView('dashboard')}
+                          className="text-gray-600 hover:text-gray-800 font-medium text-sm"
+                        >
+                          ← Back to Dashboard
+                        </button>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setActiveView('dashboard')}
+                            className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 font-medium text-sm transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveProfile}
+                            disabled={isSaving}
+                            className="bg-slate-800 text-white px-6 py-2.5 rounded-lg hover:bg-slate-700 font-medium text-sm transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSaving ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4" />
+                                Save All Changes
+                              </>
                             )}
                           </button>
                         </div>
                       </div>
-                    )}
-
-                    {/* Already on Premium */}
-                    {user?.planType === 'Premium' && (
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6 text-center">
-                        <Crown className="w-12 h-12 text-purple-600 mx-auto mb-3" />
-                        <h5 className="font-semibold text-gray-900 mb-2">You're on our best plan!</h5>
-                        <p className="text-gray-600">Enjoy all premium features and priority support.</p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
+              )
+            }
 
-                {/* Security Settings */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Security</h3>
-                    <p className="text-sm text-gray-600 mt-1">Manage your password and security settings</p>
-                  </div>
-                  <div className="p-6">
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                        <input 
-                          type="password"
-                          value={settings.security.currentPassword}
-                          onChange={(e) => setSettings({...settings, security: {...settings.security, currentPassword: e.target.value}})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                          placeholder="Enter current password"
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                          <input 
-                            type="password"
-                            value={settings.security.newPassword}
-                            onChange={(e) => setSettings({...settings, security: {...settings.security, newPassword: e.target.value}})}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                            placeholder="Enter new password"
-                          />
+            {/* Clean Complaint Details Modal */}
+            {
+              selectedComplaint && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+                    <div className="p-5 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-xl font-semibold text-gray-900">Ticket Details</h3>
+                          {/* Complaint ID Badge */}
+                          <span className="px-3 py-1 text-sm font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
+                            {selectedComplaint.complaintId || selectedComplaint.id}
+                          </span>
                         </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                          <input 
-                            type="password"
-                            value={settings.security.confirmPassword}
-                            onChange={(e) => setSettings({...settings, security: {...settings.security, confirmPassword: e.target.value}})}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                            placeholder="Confirm new password"
-                          />
-                        </div>
+                        <button
+                          onClick={() => setSelectedComplaint(null)}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
+                    </div>
+                    <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)] custom-scrollbar">
+                      <div className="space-y-5">
+                        {/* Resolved Banner */}
+                        {selectedComplaint.status === 'Resolved' && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <CheckCircle className="w-6 h-6 text-green-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-green-800">Complaint Resolved</h4>
+                                <p className="text-sm text-green-700">
+                                  Your complaint <span className="font-mono font-semibold">{selectedComplaint.complaintId || selectedComplaint.id}</span> has been successfully resolved.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <Shield className="w-5 h-5 text-slate-600 mt-0.5" />
-                          <div>
-                            <p className="font-medium text-gray-900 mb-1">Two-Factor Authentication</p>
-                            <p className="text-sm text-gray-600 mb-3">Add an extra layer of security to your account</p>
-                            <button className="text-slate-800 hover:text-slate-900 font-medium text-sm">
-                              Enable 2FA →
+                        {/* Header */}
+                        <div>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="text-lg font-semibold text-gray-900 mb-3">{selectedComplaint.title}</h4>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2.5 py-1 text-xs font-medium rounded border ${getStatusColor(selectedComplaint.status)}`}>
+                                  {selectedComplaint.status}
+                                </span>
+                                <span className={`px-2.5 py-1 text-xs font-medium rounded ${getPriorityColor(selectedComplaint.priority)}`}>
+                                  {selectedComplaint.priority} Priority
+                                </span>
+                                <span className="text-xs text-gray-600 flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  {new Date(selectedComplaint.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            {selectedComplaint.status === 'Resolved' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedComplaint(null);
+                                  setShowFeedbackForm(true);
+                                }}
+                                className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-sm font-medium"
+                              >
+                                <Star className="w-4 h-4" />
+                                Give Feedback
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-900 mb-2 text-sm">Description</h5>
+                          <p className="text-sm text-gray-700 leading-relaxed">{selectedComplaint.description}</p>
+                        </div>
+
+                        {/* Timeline */}
+                        <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-900 mb-4 text-sm">Activity Timeline</h5>
+                          <div className="space-y-4 relative">
+                            <div className="absolute left-4 top-4 bottom-4 w-px bg-gray-300"></div>
+
+                            <div className="flex gap-3 relative">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center z-10">
+                                <Clock className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 pt-0.5">
+                                <p className="font-medium text-gray-900 text-sm">Ticket Submitted</p>
+                                <p className="text-xs text-gray-600 mt-0.5">ID: #{selectedComplaint.id}</p>
+                                <p className="text-xs text-gray-500 mt-1">{new Date(selectedComplaint.createdAt).toLocaleString()}</p>
+                              </div>
+                            </div>
+
+                            {selectedComplaint.status !== 'Open' && (
+                              <div className="flex gap-3 relative">
+                                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center z-10">
+                                  <Eye className="w-4 h-4 text-yellow-600" />
+                                </div>
+                                <div className="flex-1 pt-0.5">
+                                  <p className="font-medium text-gray-900 text-sm">Under Review</p>
+                                  <p className="text-xs text-gray-600 mt-0.5">Assigned to support team</p>
+                                  <p className="text-xs text-gray-500 mt-1">Updated recently</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {selectedComplaint.status === 'Resolved' && (
+                              <div className="flex gap-3 relative">
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center z-10">
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div className="flex-1 pt-0.5">
+                                  <p className="font-medium text-gray-900 text-sm">Ticket Resolved</p>
+                                  <p className="text-xs text-gray-600 mt-0.5">Successfully closed</p>
+                                  <p className="text-xs text-gray-500 mt-1">Recently</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Support */}
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">Need Additional Help?</p>
+                              <p className="text-xs text-gray-600 mt-0.5">Chat with our support assistant</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedComplaint(null);
+                                setShowChatBot(true);
+                              }}
+                              className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-medium"
+                            >
+                              Chat Now
                             </button>
                           </div>
                         </div>
@@ -1589,407 +1965,153 @@ export function UserDashboard() {
                     </div>
                   </div>
                 </div>
+              )
+            }
 
-                {/* Language & Time Zone */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-5 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Language & Region</h3>
-                    <p className="text-sm text-gray-600 mt-1">Set your preferred language and timezone</p>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                        <select 
-                          value={settings.language}
-                          onChange={(e) => setSettings({...settings, language: e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+            {/* ChatBot Modal */}
+            {
+              showChatBot && (
+                <AIAssistant onClose={() => setShowChatBot(false)} />
+              )
+            }
+
+            {/* Notifications Modal */}
+            <NotificationCenter
+              isOpen={showNotifications}
+              onClose={() => setShowNotifications(false)}
+            />
+
+            {/* Clean Feedback Form Modal */}
+            {
+              showFeedbackForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+                    <div className="p-5 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">Submit Feedback</h3>
+                        <button
+                          onClick={() => setShowFeedbackForm(false)}
+                          className="text-gray-500 hover:text-gray-700"
                         >
-                          <option>English (US)</option>
-                          <option>Spanish</option>
-                          <option>French</option>
-                          <option>German</option>
-                          <option>Hindi</option>
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Time Zone</label>
-                        <select 
-                          value={settings.timezone}
-                          onChange={(e) => setSettings({...settings, timezone: e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-                        >
-                          <option>GMT-8 (Pacific Time)</option>
-                          <option>GMT-5 (Eastern Time)</option>
-                          <option>GMT+0 (London)</option>
-                          <option>GMT+5:30 (India)</option>
-                          <option>GMT+8 (Singapore)</option>
-                        </select>
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Success/Error Messages */}
-                {(saveSuccess || saveError) && (
-                  <div className={`rounded-lg p-4 ${saveSuccess ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                    <div className="flex items-center gap-3">
-                      {saveSuccess ? (
-                        <>
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                          <div>
-                            <p className="font-medium text-green-900">Settings saved successfully!</p>
-                            <p className="text-sm text-green-700 mt-0.5">Your profile and preferences have been updated.</p>
+                    <div className="p-5">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                className="text-3xl hover:scale-110 transition-transform"
+                              >
+                                ⭐
+                              </button>
+                            ))}
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-5 h-5 text-red-600" />
-                          <div>
-                            <p className="font-medium text-red-900">Error saving settings</p>
-                            <p className="text-sm text-red-700 mt-0.5">{saveError}</p>
-                          </div>
-                        </>
-                      )}
-                      <button 
-                        onClick={() => {
-                          setSaveSuccess(false);
-                          setSaveError('');
-                        }}
-                        className="ml-auto text-gray-500 hover:text-gray-700"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <button 
-                    onClick={() => setActiveView('dashboard')}
-                    className="text-gray-600 hover:text-gray-800 font-medium text-sm"
-                  >
-                    ← Back to Dashboard
-                  </button>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => setActiveView('dashboard')}
-                      className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 font-medium text-sm transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleSaveProfile}
-                      disabled={isSaving}
-                      className="bg-slate-800 text-white px-6 py-2.5 rounded-lg hover:bg-slate-700 font-medium text-sm transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSaving ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4" />
-                          Save All Changes
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Clean Complaint Details Modal */}
-        {selectedComplaint && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
-              <div className="p-5 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-semibold text-gray-900">Ticket Details</h3>
-                    {/* Complaint ID Badge */}
-                    <span className="px-3 py-1 text-sm font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
-                      {selectedComplaint.complaintId || selectedComplaint.id}
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedComplaint(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)] custom-scrollbar">
-                <div className="space-y-5">
-                  {/* Resolved Banner */}
-                  {selectedComplaint.status === 'Resolved' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                          <CheckCircle className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-green-800">Complaint Resolved</h4>
-                          <p className="text-sm text-green-700">
-                            Your complaint <span className="font-mono font-semibold">{selectedComplaint.complaintId || selectedComplaint.id}</span> has been successfully resolved.
-                          </p>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Comments</label>
+                          <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            placeholder="Share your feedback..."
+                          />
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setShowFeedbackForm(false)}
+                            className="flex-1 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 font-medium text-sm"
+                          >
+                            Submit
+                          </button>
+                          <button
+                            onClick={() => setShowFeedbackForm(false)}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm"
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Header */}
-                  <div>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">{selectedComplaint.title}</h4>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`px-2.5 py-1 text-xs font-medium rounded border ${getStatusColor(selectedComplaint.status)}`}>
-                            {selectedComplaint.status}
-                          </span>
-                          <span className={`px-2.5 py-1 text-xs font-medium rounded ${getPriorityColor(selectedComplaint.priority)}`}>
-                            {selectedComplaint.priority} Priority
-                          </span>
-                          <span className="text-xs text-gray-600 flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {new Date(selectedComplaint.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      {selectedComplaint.status === 'Resolved' && (
-                        <button 
-                          onClick={() => {
-                            setSelectedComplaint(null);
-                            setShowFeedbackForm(true);
-                          }}
-                          className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-sm font-medium"
-                        >
-                          <Star className="w-4 h-4" />
-                          Give Feedback
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <h5 className="font-medium text-gray-900 mb-2 text-sm">Description</h5>
-                    <p className="text-sm text-gray-700 leading-relaxed">{selectedComplaint.description}</p>
-                  </div>
-
-                  {/* Timeline */}
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <h5 className="font-medium text-gray-900 mb-4 text-sm">Activity Timeline</h5>
-                    <div className="space-y-4 relative">
-                      <div className="absolute left-4 top-4 bottom-4 w-px bg-gray-300"></div>
-                      
-                      <div className="flex gap-3 relative">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center z-10">
-                          <Clock className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1 pt-0.5">
-                          <p className="font-medium text-gray-900 text-sm">Ticket Submitted</p>
-                          <p className="text-xs text-gray-600 mt-0.5">ID: #{selectedComplaint.id}</p>
-                          <p className="text-xs text-gray-500 mt-1">{new Date(selectedComplaint.createdAt).toLocaleString()}</p>
-                        </div>
-                      </div>
-                      
-                      {selectedComplaint.status !== 'Open' && (
-                        <div className="flex gap-3 relative">
-                          <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center z-10">
-                            <Eye className="w-4 h-4 text-yellow-600" />
-                          </div>
-                          <div className="flex-1 pt-0.5">
-                            <p className="font-medium text-gray-900 text-sm">Under Review</p>
-                            <p className="text-xs text-gray-600 mt-0.5">Assigned to support team</p>
-                            <p className="text-xs text-gray-500 mt-1">Updated recently</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {selectedComplaint.status === 'Resolved' && (
-                        <div className="flex gap-3 relative">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center z-10">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          </div>
-                          <div className="flex-1 pt-0.5">
-                            <p className="font-medium text-gray-900 text-sm">Ticket Resolved</p>
-                            <p className="text-xs text-gray-600 mt-0.5">Successfully closed</p>
-                            <p className="text-xs text-gray-500 mt-1">Recently</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Support */}
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">Need Additional Help?</p>
-                        <p className="text-xs text-gray-600 mt-0.5">Chat with our support assistant</p>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setSelectedComplaint(null);
-                          setShowChatBot(true);
-                        }}
-                        className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-medium"
-                      >
-                        Chat Now
-                      </button>
-                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+              )
+            }
 
-        {/* ChatBot Modal */}
-        {showChatBot && (
-          <AIAssistant onClose={() => setShowChatBot(false)} />
-        )}
-
-        {/* Notifications Modal */}
-        <NotificationCenter
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
-        />
-
-        {/* Clean Feedback Form Modal */}
-        {showFeedbackForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-              <div className="p-5 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Submit Feedback</h3>
-                  <button 
-                    onClick={() => setShowFeedbackForm(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-5">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button 
-                          key={star} 
-                          className="text-3xl hover:scale-110 transition-transform"
-                        >
-                          ⭐
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Comments</label>
-                    <textarea 
-                      className="w-full border border-gray-300 rounded-lg p-3 h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      placeholder="Share your feedback..."
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => setShowFeedbackForm(false)}
-                      className="flex-1 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 font-medium text-sm"
-                    >
-                      Submit
-                    </button>
-                    <button 
-                      onClick={() => setShowFeedbackForm(false)}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Search Modal */}
-        {showSearchModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[70vh] flex flex-col">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <Search className="w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search complaints by ID, title, or description..."
-                    className="flex-1 outline-none text-lg"
-                    autoFocus
-                  />
-                  <button 
-                    onClick={() => {
-                      setShowSearchModal(false);
-                      setSearchQuery('');
-                    }}
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {searchQuery.trim() ? (
-                  filteredBySearch.length > 0 ? (
-                    <div className="divide-y divide-gray-100">
-                      {filteredBySearch.map((complaint) => (
+            {/* Search Modal */}
+            {
+              showSearchModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
+                  <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[70vh] flex flex-col">
+                    <div className="p-4 border-b border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <Search className="w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search complaints by ID, title, or description..."
+                          className="flex-1 outline-none text-lg"
+                          autoFocus
+                        />
                         <button
-                          key={complaint.id}
-                          onClick={() => handleSearchSelect(complaint)}
-                          className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                          onClick={() => {
+                            setShowSearchModal(false);
+                            setSearchQuery('');
+                          }}
+                          className="p-1 hover:bg-gray-100 rounded"
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-blue-600">
-                              #{complaint.complaintId || complaint.id.slice(-8)}
-                            </span>
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
-                              complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                              complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
-                              complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              {complaint.status}
-                            </span>
-                          </div>
-                          <p className="font-medium text-gray-900 truncate">{complaint.title}</p>
-                          <p className="text-sm text-gray-500 truncate">{complaint.description}</p>
+                          <X className="w-5 h-5 text-gray-500" />
                         </button>
-                      ))}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="p-8 text-center text-gray-500">
-                      <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p>No complaints found matching "{searchQuery}"</p>
+                    <div className="flex-1 overflow-y-auto">
+                      {searchQuery.trim() ? (
+                        filteredBySearch.length > 0 ? (
+                          <div className="divide-y divide-gray-100">
+                            {filteredBySearch.map((complaint) => (
+                              <button
+                                key={complaint.id}
+                                onClick={() => handleSearchSelect(complaint)}
+                                className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-blue-600">
+                                    #{complaint.complaintId || complaint.id.slice(-8)}
+                                  </span>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                                    complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                      complaint.status === 'Open' ? 'bg-yellow-100 text-yellow-700' :
+                                        complaint.status === 'Escalated' ? 'bg-red-100 text-red-700' :
+                                          'bg-gray-100 text-gray-700'
+                                    }`}>
+                                    {complaint.status}
+                                  </span>
+                                </div>
+                                <p className="font-medium text-gray-900 truncate">{complaint.title}</p>
+                                <p className="text-sm text-gray-500 truncate">{complaint.description}</p>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center text-gray-500">
+                            <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                            <p>No complaints found matching "{searchQuery}"</p>
+                          </div>
+                        )
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                          <p>Start typing to search complaints...</p>
+                        </div>
+                      )}
                     </div>
-                  )
-                ) : (
-                  <div className="p-8 text-center text-gray-500">
-                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>Start typing to search complaints...</p>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
+                </div>
+              )}
+          </>
         )}
       </div>
     </div>

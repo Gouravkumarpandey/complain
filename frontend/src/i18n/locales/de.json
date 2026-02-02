@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "Dashboard",
+        "myTickets": "Meine Tickets",
+        "newTicket": "Neues Ticket",
+        "profile": "Profil",
+        "notifications": "Benachrichtigungen",
+        "aiAssistant": "KI-Assistent",
+        "help": "Hilfe",
+        "upgrade": "Upgrade",
+        "settings": "Einstellungen",
+        "logout": "Abmelden",
+        "search": "Tickets suchen",
+        "refresh": "Aktualisieren",
+        "welcome": "Willkommen zurück",
+        "totalComplaints": "Gesamte Beschwerden",
+        "open": "Offen",
+        "inProgress": "In Bearbeitung",
+        "resolved": "Gelöst",
+        "urgent": "Dringend",
+        "escalated": "Eskaliert",
+        "allTime": "Alle Zeit",
+        "needsAttention": "Benötigt Aufmerksamkeit",
+        "beingProcessed": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "highPriority": "Hohe Priorität",
+        "needsReview": "Überprüfung erforderlich"
+    }
+}

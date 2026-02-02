@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "لوحة القيادة",
+        "myTickets": "تذاكري",
+        "newTicket": "تذكرة جديدة",
+        "profile": "الملف الشخصي",
+        "notifications": "التنبيهات",
+        "aiAssistant": "مساعد الذكاء الاصطناعي",
+        "help": "مساعدة",
+        "upgrade": "ترقية",
+        "settings": "الإعدادات",
+        "logout": "تسجيل الخروج",
+        "search": "البحث عن التذاكر",
+        "refresh": "تحديث",
+        "welcome": "مرحباً بك مجدداً",
+        "totalComplaints": "إجمالي الشكاوى",
+        "open": "مفتوح",
+        "inProgress": "قيد التنفيذ",
+        "resolved": "تم الحل",
+        "urgent": "عاجل",
+        "escalated": "تم تصعيده",
+        "allTime": "كل الوقت",
+        "needsAttention": "يحتاج إلى اهتمام",
+        "beingProcessed": "قيد المعالجة",
+        "completed": "مكتمل",
+        "highPriority": "أولوية عالية",
+        "needsReview": "يحتاج مراجعة"
+    }
+}

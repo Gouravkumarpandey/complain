@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Send, X, Loader2 } from 'lucide-react';
+import { VoiceInput } from '../complaints/agent/VoiceInput';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -15,6 +17,7 @@ interface AIAssistantProps {
 
 const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
   const { user } = useAuth();
+  const { i18n } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -43,6 +46,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  const handleVoiceTranscript = (transcript: string) => {
+    setInputMessage(prev => {
+      const base = prev.trim();
+      return base ? `${base} ${transcript}` : transcript;
+    });
+  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -138,7 +148,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                 <h3 className="font-semibold text-base">AI Assistant</h3>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
             >
@@ -158,20 +168,18 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
               className={`flex items-end gap-2.5 ${message.role === 'user' ? 'flex-row-reverse' : ''} animate-fadeIn`}
             >
               {/* Avatar */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
-                message.role === 'user' 
-                  ? 'bg-slate-800' 
-                  : 'bg-white border border-gray-100'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${message.role === 'user'
+                ? 'bg-slate-800'
+                : 'bg-white border border-gray-100'
+                }`}>
                 <Bot className={`w-4 h-4 ${message.role === 'user' ? 'text-white' : 'text-slate-800'}`} />
               </div>
-              
+
               <div className="flex flex-col max-w-[75%]">
-                <div className={`px-4 py-2.5 rounded-2xl ${
-                  message.role === 'user'
-                    ? 'bg-slate-800 text-white rounded-br-md'
-                    : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
-                }`}>
+                <div className={`px-4 py-2.5 rounded-2xl ${message.role === 'user'
+                  ? 'bg-slate-800 text-white rounded-br-md'
+                  : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
+                  }`}>
                   {message.role === 'assistant' && (
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <span className="text-[11px] font-semibold text-gray-600">Freddy</span>
@@ -179,9 +187,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                   )}
                   <p className="text-[13px] leading-relaxed whitespace-pre-line">{message.content}</p>
                 </div>
-                <span className={`text-[11px] mt-1 px-1 ${
-                  message.role === 'user' ? 'text-right text-gray-500' : 'text-left text-gray-500'
-                }`}>
+                <span className={`text-[11px] mt-1 px-1 ${message.role === 'user' ? 'text-right text-gray-500' : 'text-left text-gray-500'
+                  }`}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -209,16 +216,23 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
         {/* Input Area */}
         <div className="border-t border-gray-200 px-4 py-3 bg-white">
           <div className="flex gap-2 items-end">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
-              disabled={isLoading}
-              className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
-            />
+            <div className="flex-1 relative flex items-center">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..."
+                disabled={isLoading}
+                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
+              />
+              <VoiceInput
+                onTranscript={handleVoiceTranscript}
+                lang={i18n.language}
+                className="absolute right-2"
+              />
+            </div>
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}

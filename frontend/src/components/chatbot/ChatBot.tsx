@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useTranslation } from 'react-i18next';
+import { VoiceInput } from '../complaints/agent/VoiceInput';
 
 interface ChatMessage {
   id: string;
@@ -38,6 +40,7 @@ export function ChatBot() {
   const { createComplaint } = useComplaints();
   const { user } = useAuth();
   const { addNotification } = useNotifications();
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,13 +63,13 @@ export function ChatBot() {
     const userMessage = inputValue.trim();
     setInputValue('');
     setLoading(true);
-    
+
     // Add user message immediately
     addMessage(userMessage, 'user');
 
     try {
       const messageLower = userMessage.toLowerCase();
-      
+
       // Check if user is logged in first
       if (!user && conversationState.step !== 'initial') {
         addMessage("Please log in to register a complaint. I'll redirect you to the login page.", 'bot');
@@ -77,7 +80,7 @@ export function ChatBot() {
         }, 2000);
         return;
       }
-      
+
       // STEP 1: Initial - Ask for issue description
       if (conversationState.step === 'initial' || !conversationState.step) {
         addMessage(
@@ -91,7 +94,7 @@ export function ChatBot() {
         setLoading(false);
         return;
       }
-      
+
       // STEP 2: Select Category
       if (conversationState.step === 'category') {
         addMessage(
@@ -105,12 +108,12 @@ export function ChatBot() {
         setLoading(false);
         return;
       }
-      
+
       // STEP 3: Collect category and determine required details
       if (conversationState.step === 'details' && !conversationState.category) {
         let category: 'Technical Support' | 'Billing' | 'General Inquiry' = 'General Inquiry';
         let detailsNeeded: string[] = [];
-        
+
         if (messageLower.includes('1') || messageLower.includes('tech')) {
           category = 'Technical Support';
           detailsNeeded = [
@@ -139,12 +142,12 @@ export function ChatBot() {
           setLoading(false);
           return;
         }
-        
+
         addMessage(
           `Got it! Category: ${category}\n\nLet me collect some details to help resolve this quickly.\n\n${detailsNeeded[0]}`,
           'bot'
         );
-        
+
         setConversationState({
           ...conversationState,
           category,
@@ -155,15 +158,15 @@ export function ChatBot() {
         setLoading(false);
         return;
       }
-      
+
       // STEP 4: Collect additional details
       if (conversationState.step === 'details' && conversationState.detailsNeeded && conversationState.currentDetailIndex !== undefined) {
         const currentIndex = conversationState.currentDetailIndex;
         const details = conversationState.additionalDetails || {};
         details[conversationState.detailsNeeded[currentIndex]] = userMessage;
-        
+
         const nextIndex = currentIndex + 1;
-        
+
         if (nextIndex < conversationState.detailsNeeded.length) {
           // Ask next question
           addMessage(
@@ -180,7 +183,7 @@ export function ChatBot() {
           const detailsSummary = Object.entries(details)
             .map(([question, answer]) => `• ${question.replace('?', '')}: ${answer}`)
             .join('\n');
-          
+
           addMessage(
             `Perfect! Here's a summary of your complaint:\n\n📋 Issue: ${conversationState.issueDescription}\n📁 Category: ${conversationState.category}\n\n${detailsSummary}\n\nShall I register this complaint? (Reply Yes or No)`,
             'bot'
@@ -194,34 +197,34 @@ export function ChatBot() {
         setLoading(false);
         return;
       }
-      
+
       // STEP 5: Final confirmation and registration
       if (conversationState.step === 'confirmation') {
         if (messageLower.includes('yes') || messageLower.includes('confirm') || messageLower.includes('register')) {
           addMessage("Registering your complaint...", 'bot');
-          
+
           try {
             // Build detailed description
             const detailsText = Object.entries(conversationState.additionalDetails || {})
               .map(([q, a]) => `${q}\n${a}`)
               .join('\n\n');
-            
+
             const fullDescription = `${conversationState.issueDescription}\n\n=== Additional Details ===\n${detailsText}`;
-            
+
             const complaint = await createComplaint(
               conversationState.issueDescription || 'Complaint',
               fullDescription,
               user!.id
             );
-            
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const ticketId = (complaint as any).complaintId || complaint.id || `#${Date.now()}`;
-            
+
             addMessage(
               `✅ Complaint Registered Successfully!\n\nTicket ID: ${ticketId}\nCategory: ${conversationState.category}\nStatus: Open\n\nAn email confirmation has been sent to ${user!.email}`,
               'bot'
             );
-            
+
             addNotification(
               'success',
               'Complaint Registered',
@@ -235,7 +238,7 @@ export function ChatBot() {
               'bot'
             );
           }
-          
+
           // Reset conversation
           setConversationState({ step: 'initial' });
         } else {
@@ -248,19 +251,26 @@ export function ChatBot() {
         setLoading(false);
         return;
       }
-      
+
       // Fallback
       addMessage(
         "I'm here to help! Please describe your issue to get started.",
         'bot'
       );
-      
+
     } catch (error) {
       console.error('Chat error:', error);
       addMessage("I'm sorry, I'm having trouble processing your message. Please try again.", 'bot');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    setInputValue(prev => {
+      const base = prev.trim();
+      return base ? `${base} ${transcript}` : transcript;
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -282,9 +292,9 @@ export function ChatBot() {
       </button>
 
       {isOpen && (
-        <div 
+        <div
           className="fixed bottom-24 right-5 w-[380px] h-[600px] bg-white rounded-2xl flex flex-col z-50 overflow-hidden"
-          style={{ 
+          style={{
             boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)'
           }}
         >
@@ -303,7 +313,7 @@ export function ChatBot() {
                   </div>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
               >
@@ -316,7 +326,7 @@ export function ChatBot() {
           </div>
 
           {/* Freshdesk-style Messages Area */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#f8f9fa]" style={{ 
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#f8f9fa]" style={{
             scrollbarWidth: 'thin',
             scrollbarColor: '#cbd5e1 transparent'
           }}>
@@ -341,13 +351,12 @@ export function ChatBot() {
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
-                  
+
                   <div className="flex flex-col max-w-[75%]">
-                    <div className={`px-4 py-2.5 rounded-2xl ${
-                      message.sender === 'user' 
-                        ? 'bg-slate-800 text-white rounded-br-md' 
-                        : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
-                    }`}>
+                    <div className={`px-4 py-2.5 rounded-2xl ${message.sender === 'user'
+                      ? 'bg-slate-800 text-white rounded-br-md'
+                      : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
+                      }`}>
                       <p className="text-[13px] leading-relaxed whitespace-pre-line">{message.text}</p>
                     </div>
                     <span className={`text-[11px] mt-1 px-1 ${message.sender === 'user' ? 'text-right text-gray-500' : 'text-left text-gray-500'}`}>
@@ -376,18 +385,24 @@ export function ChatBot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Freshdesk-style Input Area */}
           <div className="border-t border-gray-200 px-4 py-3 bg-white">
             <div className="flex gap-2 items-end">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
-                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
-                disabled={loading}
-              />
+              <div className="flex-1 relative flex items-center">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type a message..."
+                  className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
+                  disabled={loading}
+                />
+                <VoiceInput
+                  onTranscript={handleVoiceTranscript}
+                  lang={i18n.language}
+                  className="absolute right-2"
+                />
+              </div>
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || loading}

@@ -35,19 +35,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function DashboardRoute() {
   const { user } = useAuth();
   useNotificationPermission();
-  
+
   // Log user data for debugging
   console.log("DashboardRoute - Current user:", user);
   console.log("DashboardRoute - User role:", user?.role);
-  
+
   // If user data isn't available, check localStorage as fallback
   const [fallbackUser, setFallbackUser] = React.useState(null);
   const [hasAttemptedRecovery, setHasAttemptedRecovery] = React.useState(false);
-  
+
   React.useEffect(() => {
     // Only attempt recovery once per component lifecycle
     if (hasAttemptedRecovery) return;
-    
+
     if (!user) {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -55,10 +55,10 @@ function DashboardRoute() {
           const parsedUser = JSON.parse(storedUser);
           console.log("No user in context, using fallback from localStorage:", parsedUser);
           setFallbackUser(parsedUser);
-          
+
           // Track that we've attempted recovery
           setHasAttemptedRecovery(true);
-          
+
           // Force reload once to properly initialize auth context if needed
           // But only if we haven't tried before in this session
           if (!sessionStorage.getItem('dashboard_loaded')) {
@@ -74,9 +74,9 @@ function DashboardRoute() {
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-  
+
   const activeUser = user || fallbackUser;
 
   return (
@@ -87,9 +87,9 @@ function DashboardRoute() {
       {activeUser?.role === 'user' && <UserDashboard />}
       {activeUser?.role === 'analytics' && <AnalyticsReportsDashboard />}
       {!activeUser?.role && (
-        <div className="p-8 text-white flex flex-col items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <div className="text-xl">Loading dashboard...</div>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+          <img src="/loading.gif" alt="Loading..." className="w-80 h-80 object-contain" />
+          <div className="text-xl font-semibold text-slate-800 -mt-8">Initializing your dashboard...</div>
         </div>
       )}
       <ChatBot />
@@ -103,16 +103,8 @@ function AppContent() {
   // Show loading state when auth is initializing
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="p-8 text-white text-xl">
-            <div className="flex items-center">
-            <svg className="animate-spin h-8 w-8 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Loading application...
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <img src="/loading.gif" alt="Loading..." className="w-80 h-80 object-contain" />
       </div>
     );
   }
@@ -120,60 +112,60 @@ function AppContent() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
             <HomePage />
           )
-        } 
+        }
       />
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
             <LoginForm />
           )
-        } 
+        }
       />
 
       <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
-      
+
       {/* Pricing and Payment Routes */}
       <Route path="/pricing" element={<PricingPlans />} />
-      <Route 
-        path="/payment/success" 
+      <Route
+        path="/payment/success"
         element={
           <ProtectedRoute>
             <PaymentSuccess />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/payment/cancel" 
+      <Route
+        path="/payment/cancel"
         element={
           <ProtectedRoute>
             <PaymentCancel />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Protected Routes */}
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <DashboardRoute />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

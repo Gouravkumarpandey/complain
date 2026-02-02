@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "仪表板",
+        "myTickets": "我的票证",
+        "newTicket": "新票证",
+        "profile": "个人资料",
+        "notifications": "通知",
+        "aiAssistant": "AI助手",
+        "help": "帮助",
+        "upgrade": "升级",
+        "settings": "设置",
+        "logout": "退出",
+        "search": "搜索票证",
+        "refresh": "刷新",
+        "welcome": "欢迎回来",
+        "totalComplaints": "投诉总数",
+        "open": "打开",
+        "inProgress": "进行中",
+        "resolved": "已解决",
+        "urgent": "紧急",
+        "escalated": "已升级",
+        "allTime": "所有时间",
+        "needsAttention": "需要注意",
+        "beingProcessed": "正在处理",
+        "completed": "已完成",
+        "highPriority": "高优先级",
+        "needsReview": "需要审核"
+    }
+}

@@ -21,20 +21,13 @@ router.get('/available', authenticate, authorize('admin'), asyncHandler(async (r
   res.json(availableAgents);
 }));
 
-// Update agent availability
-router.patch('/:agentId/availability', authenticate, asyncHandler(async (req, res) => {
+// Update agent availability (ADMIN ONLY - agents cannot manually change availability)
+router.patch('/:agentId/availability', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
   const { agentId } = req.params;
   const { status } = req.body;
   
-  // Only the agent themselves or an admin can update availability
-  if (
-    req.user.role !== 'admin' && 
-    req.user._id.toString() !== agentId
-  ) {
-    return res.status(403).json({
-      error: 'Not authorized to update this agent\'s availability'
-    });
-  }
+  // Only admins can manually update availability
+  // Agents' availability is automatically managed through ticket assignment/resolution
   
   // Validate status
   if (!['available', 'busy', 'offline'].includes(status)) {
@@ -51,19 +44,12 @@ router.patch('/:agentId/availability', authenticate, asyncHandler(async (req, re
   }
 }));
 
-// Refresh agent availability based on active tickets
-router.post('/:agentId/refresh-availability', authenticate, asyncHandler(async (req, res) => {
+// Refresh agent availability based on active tickets (ADMIN ONLY)
+router.post('/:agentId/refresh-availability', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
   const { agentId } = req.params;
   
-  // Only the agent themselves or an admin can refresh availability
-  if (
-    req.user.role !== 'admin' && 
-    req.user._id.toString() !== agentId
-  ) {
-    return res.status(403).json({
-      error: 'Not authorized to refresh this agent\'s availability'
-    });
-  }
+  // Only admins can manually refresh availability
+  // Agents' availability is automatically refreshed when tickets are resolved/assigned
   
   try {
     const updatedAgent = await refreshAgentAvailability(agentId);

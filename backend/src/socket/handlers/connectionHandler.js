@@ -142,7 +142,11 @@ export const initConnectionHandler = (io) => {
     socket.join(user.role);
     console.log(`User ${userId} joined room: ${user.role}`);
     
-    // Join user-specific room
+    // Join user-specific room (for targeted messages like complaint updates)
+    socket.join(`user:${userId}`);
+    console.log(`User ${userId} joined room: user:${userId}`);
+    
+    // Also join role:userId room for compatibility
     socket.join(`${user.role}:${userId}`);
     console.log(`User ${userId} joined room: ${user.role}:${userId}`);
     

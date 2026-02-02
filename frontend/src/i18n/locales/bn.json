@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "ড্যাশবোর্ড",
+        "myTickets": "আমার টিকিট",
+        "newTicket": "নতুন টিকিট",
+        "profile": "প্রোফাইল",
+        "notifications": "বিজ্ঞপ্তি",
+        "aiAssistant": "এআই সহকারী",
+        "help": "সাহায্য",
+        "upgrade": "আপগ্রেড",
+        "settings": "সেটিংস",
+        "logout": "লগআউট",
+        "search": "টিকিট খুঁজুন",
+        "refresh": "রিফ্রেশ",
+        "welcome": "স্বাগতম",
+        "totalComplaints": "মোট অভিযোগ",
+        "open": "খোলা",
+        "inProgress": "চলমান",
+        "resolved": "সমাধান করা হয়েছে",
+        "urgent": "জরুরী",
+        "escalated": "প্রেরিত",
+        "allTime": "সব সময়",
+        "needsAttention": "মনোযোগ প্রয়োজন",
+        "beingProcessed": "প্রক্রিয়াজাত করা হচ্ছে",
+        "completed": "সম্পন্ন",
+        "highPriority": "উচ্চ অগ্রাধিকার",
+        "needsReview": "পর্যালোচনা প্রয়োজন"
+    }
+}

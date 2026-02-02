@@ -1,0 +1,29 @@
+{
+    "common": {
+        "dashboard": "ڈیش بورڈ",
+        "myTickets": "میرے ٹکٹ",
+        "newTicket": "نیا ٹکٹ",
+        "profile": "پروفائل",
+        "notifications": "اطلاعات",
+        "aiAssistant": "اے آئی اسسٹنٹ",
+        "help": "مدد",
+        "upgrade": "اپ گریڈ",
+        "settings": "سیٹنگز",
+        "logout": "لاگ آؤٹ",
+        "search": "ٹکٹ تلاش کریں",
+        "refresh": "ریفریش",
+        "welcome": "خوش آمدید",
+        "totalComplaints": "کل شکایات",
+        "open": "کھلا",
+        "inProgress": "جاری ہے",
+        "resolved": "حل شدہ",
+        "urgent": "فوری",
+        "escalated": "بڑھایا گیا",
+        "allTime": "ہر وقت",
+        "needsAttention": "توجہ کی ضرورت ہے",
+        "beingProcessed": "کارروائی جاری ہے",
+        "completed": "مکمل",
+        "highPriority": "اعلیٰ ترجیح",
+        "needsReview": "جائزہ لینے کی ضرورت ہے"
+    }
+}

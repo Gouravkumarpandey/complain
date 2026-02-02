@@ -126,7 +126,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         }
       });
       
-      // Listen for complaint status updates
+      // Listen for complaint status updates (multiple event names for compatibility)
       newSocket.on('complaint_status_update', (data) => {
         console.log('Complaint status updated via socket:', data);
         window.dispatchEvent(new CustomEvent('complaintStatusUpdate', { detail: data }));
@@ -140,7 +140,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         }
       });
       
-      // Listen for complaint assignments
+      // Listen for complaintUpdated event (main event from backend)
+      newSocket.on('complaintUpdated', (data) => {
+        console.log('✅ complaintUpdated socket event received:', data);
+        window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
+        
+        // Show browser notification for resolved complaints
+        if (data.complaint?.status === 'Resolved' && Notification.permission === 'granted') {
+          new Notification('Complaint Resolved! 🎉', {
+            body: `Your complaint "${data.complaint.title}" has been resolved!`,
+            icon: '/favicon.ico',
+          });
+        }
+      });
+      
+      newSocket.on('complaint_status_updated', (data) => {
+        console.log('📬 complaint_status_updated event received:', data);
+        window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
+      });
       newSocket.on('complaint_assigned', (data) => {
         console.log('Complaint assigned via socket:', data);
         window.dispatchEvent(new CustomEvent('complaintAssigned', { detail: data }));

@@ -5,7 +5,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { validateComplaint, validateComplaintUpdate } from '../validators/complaintValidators.js';
 import aiService from '../services/aiService.js';
-import { sendComplaintConfirmationEmail } from '../services/emailService.js';
+import { sendComplaintConfirmationEmail, sendComplaintResolvedEmail } from '../services/emailService.js';
+import { publishEvent } from '../../utils/snsPublisher.js';
 // Redis cache disabled - uncomment when Redis is enabled
 // import { invalidateComplaintCache } from '../services/cacheService.js';
 
@@ -466,6 +467,23 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     // Continue even if WhatsApp fails - complaint is still created
   }
   
+  // Publish event to SNS for ticket creation
+  try {
+    await publishEvent('ticket.created', {
+      ticketId: updatedComplaint._id.toString(),
+      complaintId: updatedComplaint.complaintId,
+      userId: req.user._id.toString(),
+      title: updatedComplaint.title,
+      category: updatedComplaint.category,
+      priority: updatedComplaint.priority,
+      assignedTo: updatedComplaint.assignedTo?.toString() || null
+    });
+    console.log(`📡 SNS Event published: ticket.created for ${updatedComplaint.complaintId}`);
+  } catch (snsError) {
+    console.error('❌ Failed to publish ticket.created event:', snsError.message);
+    // Continue even if SNS fails
+  }
+  
   res.status(201).json(updatedComplaint);
 }));
 
@@ -491,6 +509,13 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   const oldStatus = complaint.status;
   complaint.status = status;
   complaint.updatedAt = new Date();
+  
+  console.log(`\n🔄 STATUS UPDATE REQUEST`);
+  console.log(`   Complaint ID: ${complaint.complaintId} (${complaint._id})`);
+  console.log(`   Current status in DB: ${oldStatus}`);
+  console.log(`   New status requested: ${status}`);
+  console.log(`   Status field updated in memory: ${complaint.status}`);
+  console.log(`   Modified? ${complaint.isModified('status')}`);
 
   // Add update record
   const updateRecord = {
@@ -544,39 +569,176 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
         // Continue even if WhatsApp fails
       }
     }
-    
-    // Check if the assigned agent should be marked available again
-    if (complaint.assignedTo) {
-      // Import the agent service
-      const { refreshAgentAvailability } = await import('../services/agentService.js');
+  }
+
+  // Save the complaint FIRST before checking agent availability
+  console.log(`\n💾 SAVING COMPLAINT TO DATABASE...`);
+  console.log(`   Status before save: ${complaint.status}`);
+  console.log(`   Resolution before save:`, complaint.resolution ? JSON.stringify(complaint.resolution) : 'None');
+  
+  await complaint.save();
+  
+  // Verify the save was successful by re-fetching from database
+  const verifyComplaint = await Complaint.findById(complaint._id).lean();
+  console.log(`\n✅ COMPLAINT SAVED AND VERIFIED`);
+  console.log(`   Complaint ID: ${complaint.complaintId}`);
+  console.log(`   Status in memory: ${complaint.status}`);
+  console.log(`   Status in DB (verified): ${verifyComplaint.status}`);
+  console.log(`   Resolution in DB:`, verifyComplaint.resolution ? 'Present' : 'None');
+  console.log(`   Old status: ${oldStatus} → New status: ${verifyComplaint.status}`);
+  
+  if (verifyComplaint.status !== status) {
+    console.error(`\n❌ CRITICAL ERROR: Status mismatch after save!`);
+    console.error(`   Expected: ${status}`);
+    console.error(`   Got: ${verifyComplaint.status}`);
+  }
+  
+  // Get io instance early for use throughout
+  const io = req.app.get('io');
+  
+  // Send resolution email to user if complaint is marked as resolved
+  if (status === 'Resolved') {
+    try {
+      // Get user details for email
+      const complaintUser = await User.findById(complaint.user);
       
-      try {
-        // This will check if agent has any remaining active complaints
-        // and update their availability accordingly
-        await refreshAgentAvailability(complaint.assignedTo);
-        console.log(`🔄 Refreshed agent availability after complaint marked as ${status}`);
-      } catch (err) {
-        console.error('Error updating agent availability:', err);
+      if (complaintUser && complaintUser.email) {
+        console.log(`📧 Sending resolution email to ${complaintUser.email}...`);
+        await sendComplaintResolvedEmail(
+          complaintUser.email,
+          complaintUser.name || complaintUser.username,
+          complaint.complaintId,
+          complaint.title
+        );
+        console.log(`✅ Resolution email sent successfully for complaint ${complaint.complaintId}`);
+      } else {
+        console.log('⚠️  User email not found, skipping resolution email');
       }
+    } catch (emailError) {
+      console.error('❌ Failed to send resolution email:', emailError.message);
+      // Continue even if email fails - don't block the resolution process
+    }
+  }
+  
+  // NOW check if the assigned agent should be marked available (after save)
+  if ((status === 'Resolved' || status === 'Closed') && complaint.assignedTo) {
+    // Import the agent service
+    const { refreshAgentAvailability } = await import('../services/agentService.js');
+    
+    try {
+      // This will check if agent has any remaining active complaints
+      // and update their availability accordingly
+      console.log(`🔍 Checking agent availability for ${complaint.assignedTo}...`);
+      const updatedAgent = await refreshAgentAvailability(complaint.assignedTo);
+      console.log(`🔄 Agent availability refreshed: ${updatedAgent.availability}`);
+      
+      // Broadcast agent status update via socket
+      if (io) {
+        io.emit('agent_status_update', {
+          agentId: updatedAgent._id.toString(),
+          availability: updatedAgent.availability,
+          name: updatedAgent.name,
+          email: updatedAgent.email
+        });
+        console.log(`📡 Agent status broadcast: ${updatedAgent.name} is now ${updatedAgent.availability}`);
+      }
+    } catch (err) {
+      console.error('❌ Error updating agent availability:', err);
+    }
+  }
+  
+  // Get populated complaint for response - FETCH FRESH FROM DB
+  const populatedComplaint = await Complaint.findById(complaint._id)
+    .populate('user', 'name email')
+    .populate('assignedTo', 'name email')
+    .populate('resolution.resolvedBy', 'name email')
+    .lean(); // Use lean() for performance and to get plain object
+  
+  console.log(`\n📊 POPULATED COMPLAINT FOR RESPONSE`);
+  console.log(`   Status: ${populatedComplaint.status}`);
+  console.log(`   Resolution:`, populatedComplaint.resolution ? 'Present' : 'None');
+  console.log(`   Assigned to:`, populatedComplaint.assignedTo?.name || 'Unassigned');
+  
+  if (populatedComplaint.status !== status) {
+    console.error(`\n❌ CRITICAL: Response status doesn't match requested status!`);
+    console.error(`   Requested: ${status}`);
+    console.error(`   Returning: ${populatedComplaint.status}`);
+  }
+  
+  // Invalidate cache since complaint was updated
+  // await invalidateComplaintCache(complaint._id.toString());
+
+  // Emit socket event for real-time updates to user dashboard
+  if (io) {
+    // Create complete complaint data for socket event
+    const complaintData = {
+      _id: populatedComplaint._id,
+      complaintId: populatedComplaint.complaintId,
+      title: populatedComplaint.title,
+      description: populatedComplaint.description,
+      status: populatedComplaint.status,
+      category: populatedComplaint.category,
+      priority: populatedComplaint.priority,
+      userId: populatedComplaint.user?._id || populatedComplaint.user,
+      user: populatedComplaint.user,
+      assignedTo: populatedComplaint.assignedTo?._id || populatedComplaint.assignedTo,
+      assignedAgentName: populatedComplaint.assignedTo?.name,
+      assignedAgentEmail: populatedComplaint.assignedTo?.email,
+      createdAt: populatedComplaint.createdAt,
+      updatedAt: populatedComplaint.updatedAt,
+      resolvedAt: status === 'Resolved' ? populatedComplaint.resolution?.resolvedAt : null,
+      resolution: populatedComplaint.resolution,
+      updates: populatedComplaint.updates
+    };
+    
+    // Emit to specific user for their dashboard (using both patterns for compatibility)
+    const userId = complaint.user.toString();
+    io.to(`user:${userId}`).emit('complaintUpdated', { complaint: complaintData });
+    io.to(`user:${userId}`).emit('complaint_status_updated', { complaint: complaintData });
+    
+    // Broadcast to all for general updates
+    io.emit('complaintStatusChanged', {
+      complaintId: complaint._id,
+      status: complaint.status,
+      updatedBy: req.user._id,
+      complaint: complaintData
+    });
+    
+    console.log(`🔔 Socket events emitted:`);
+    console.log(`   - complaintUpdated to user:${userId}`);
+    console.log(`   - complaint_status_updated to user:${userId}`);
+    console.log(`   - complaintStatusChanged (broadcast)`);
+    console.log(`   Status: ${complaint.status}`);
+  }
+  
+  // Publish event to SNS for ticket resolution (triggers worker for auto-assignment)
+  if (status === 'Resolved') {
+    try {
+      await publishEvent('ticket.resolved', {
+        ticketId: complaint._id.toString(),
+        complaintId: complaint.complaintId,
+        agentId: complaint.assignedTo?.toString() || null,
+        resolvedBy: req.user._id.toString(),
+        resolvedAt: new Date().toISOString(),
+        userId: complaint.user.toString(),
+        title: complaint.title,
+        priority: complaint.priority
+      });
+      console.log(`📡 SNS Event published: ticket.resolved for ${complaint.complaintId}`);
+      console.log(`   Event will trigger worker to mark agent as free and auto-assign next ticket`);
+    } catch (snsError) {
+      console.error('❌ Failed to publish ticket.resolved event:', snsError.message);
+      // Continue even if SNS fails
     }
   }
 
-  await complaint.save();
-  
-  // Invalidate cache since complaint was updated
-  await invalidateComplaintCache(complaint._id.toString());
+  console.log(`\n📤 SENDING RESPONSE TO CLIENT`);
+  console.log(`   Complaint ID: ${populatedComplaint.complaintId}`);
+  console.log(`   Status: ${populatedComplaint.status}`);
+  console.log(`   Has resolution:`, !!populatedComplaint.resolution);
+  console.log(`   ================================\n`);
 
-  // Emit socket event for real-time updates
-  const io = req.app.get('io');
-  if (io) {
-    io.emit('complaintUpdated', {
-      complaintId: complaint._id,
-      status: complaint.status,
-      updatedBy: req.user._id
-    });
-  }
-
-  res.json(complaint);
+  res.json(populatedComplaint);
 }));
 
 // Assign complaint to agent
@@ -607,26 +769,45 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
   });
 
   await complaint.save();
+  console.log(`✅ Complaint ${complaint.complaintId} assigned to agent ${agentId}`);
 
   // Mark the agent as busy after assignment
   try {
     const { updateAgentAvailability } = await import('../services/agentService.js');
     await updateAgentAvailability(agentId, 'busy');
-    console.log(`📌 Agent marked as busy after manual assignment`);
+    console.log(`📌 Agent ${agentId} marked as BUSY after ticket assignment`);
   } catch (err) {
-    console.error('Error updating agent availability to busy:', err);
+    console.error('❌ Error updating agent availability to busy:', err);
+  }
+  
+  // Emit socket event for complaint assignment
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('complaintAssigned', {
+      complaintId: complaint._id,
+      assignedTo: agentId,
+      assignedBy: req.user._id
+    });
+    
+    // Also broadcast agent status update
+    try {
+      const agent = await User.findById(agentId);
+      if (agent) {
+        io.emit('agent_status_update', {
+          agentId: agent._id.toString(),
+          availability: 'busy',
+          name: agent.name,
+          email: agent.email
+        });
+        console.log(`📡 Agent status broadcast: ${agent.name} is now BUSY`);
+      }
+    } catch (socketErr) {
+      console.error('❌ Error broadcasting agent status:', socketErr);
+    }
   }
   
   // Invalidate cache since complaint was assigned
-  await invalidateComplaintCache(complaint._id.toString());
-
-  // Emit socket event
-  const io = req.app.get('io');
-  io.emit('complaintAssigned', {
-    complaintId: complaint._id,
-    assignedTo: agentId,
-    assignedBy: req.user._id
-  });
+  // await invalidateComplaintCache(complaint._id.toString());
 
   res.json(complaint);
 }));

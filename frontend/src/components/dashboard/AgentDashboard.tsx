@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 // i18n removed
 // Trans and t removed after migration
-import { 
-  Clock, CheckCircle, Bell, User, MessageCircle, 
-  Search, Calendar, X, Shield, Home, 
+import {
+  Clock, CheckCircle, Bell, User, MessageCircle,
+  Search, Calendar, X, Shield, Home,
   Inbox, HelpCircle, Menu, Download,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
   Activity, UserCheck, UserX, RefreshCw
@@ -14,7 +14,7 @@ import AIAssistant from './AIAssistant';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
 import { useSocket } from '../../hooks/useSocket';
-import { 
+import {
   getStatusColor,
   getPriorityColor,
   getMessageSendButtonClasses,
@@ -40,7 +40,7 @@ export function AgentDashboard() {
   const [messageText, setMessageText] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedComplaintForMessage, setSelectedComplaintForMessage] = useState<Complaint | null>(null);
-  
+
   // Handle manual refresh of complaints
   const handleRefreshComplaints = async () => {
     setIsRefreshing(true);
@@ -50,17 +50,17 @@ export function AgentDashboard() {
       setIsRefreshing(false);
     }
   };
-  
+
   // We'll implement filtering directly in the component for now
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
-  
+
   // Simple filtering based on search query
   const filteredTickets = useMemo(() => {
     if (!searchQuery.trim()) return filteredComplaints;
-    
+
     const query = searchQuery.toLowerCase().trim();
-    return filteredComplaints.filter(complaint => 
+    return filteredComplaints.filter(complaint =>
       complaint.title.toLowerCase().includes(query) ||
       complaint.description.toLowerCase().includes(query) ||
       complaint.id.toLowerCase().includes(query) ||
@@ -109,7 +109,7 @@ export function AgentDashboard() {
   useEffect(() => {
     console.log('Socket connection status:', isConnected);
     console.log('Socket instance:', socket ? 'exists' : 'null');
-    
+
     // Monitor connection status but don't try to reconnect here
     // Let the SocketContext handle reconnection
   }, [isConnected, socket]);
@@ -119,23 +119,23 @@ export function AgentDashboard() {
     const handleComplaintAssigned = (event: CustomEvent) => {
       const data = event.detail;
       console.log('🎯 New complaint assigned to me:', data);
-      
+
       // Show a prominent notification to the agent
       if (data.complaint && user && (data.agentId === user.id || data.agentId === user._id)) {
         // Create a visual alert with detailed info
-        const aiInfo = data.aiAssignment 
+        const aiInfo = data.aiAssignment
           ? `\n\n🤖 AI Assignment Details:\n• Confidence: ${Math.round((data.aiAssignment.confidence || 0) * 100)}%\n• Reasoning: ${data.aiAssignment.reasoning || 'N/A'}\n• Est. Response Time: ${data.aiAssignment.estimatedResponseTime || 'N/A'}`
           : '';
-        
+
         alert(`✅ New Complaint Assigned!\n\nComplaint ID: ${data.complaint.complaintId || data.complaint._id}\nTitle: ${data.complaint.title}\nCategory: ${data.complaint.category}\nPriority: ${data.complaint.priority}${aiInfo}`);
-        
+
         // Refresh the complaints list to show the new assignment (without full page reload)
         refreshComplaints();
       }
     };
 
     window.addEventListener('complaintAssigned', handleComplaintAssigned as EventListener);
-    
+
     return () => {
       window.removeEventListener('complaintAssigned', handleComplaintAssigned as EventListener);
     };
@@ -148,28 +148,28 @@ export function AgentDashboard() {
       // Match by agent ID, _id, name, or email - DO NOT show unassigned complaints
       const assignedComplaints = complaints.filter(c => {
         const assigned = c.assignedTo;
-        
+
         // Skip if not assigned to anyone
         if (!assigned || assigned === '' || assigned === 'Unassigned') {
           return false;
         }
-        
+
         // Check if assigned to current agent by ID, _id, name, or email
         // Compare case-insensitively for email matching
         const agentEmail = user.email?.toLowerCase();
         const complaintAgentEmail = c.assignedAgentEmail?.toLowerCase();
-        
-        const isMine = assigned === user.id || 
-                       assigned === user._id || 
-                       assigned === user.name ||
-                       c.assignedAgentName === user.name ||
-                       (agentEmail && complaintAgentEmail && complaintAgentEmail === agentEmail);
-        
+
+        const isMine = assigned === user.id ||
+          assigned === user._id ||
+          assigned === user.name ||
+          c.assignedAgentName === user.name ||
+          (agentEmail && complaintAgentEmail && complaintAgentEmail === agentEmail);
+
         console.log(`Complaint ${c.complaintId || c.id}: assigned=${assigned}, agentEmail=${complaintAgentEmail}, userEmail=${agentEmail}, isMine=${isMine}`);
-        
+
         return isMine;
       });
-      
+
       console.log('🎯 Agent Dashboard - Filtering complaints for agent:', {
         agentId: user.id,
         agentName: user.name,
@@ -183,9 +183,9 @@ export function AgentDashboard() {
           assignedAgentName: c.assignedAgentName
         }))
       });
-      
+
       setFilteredComplaints(assignedComplaints);
-      
+
       // Join socket rooms for all assigned complaints to receive real-time updates
       if (isConnected) {
         assignedComplaints.forEach(complaint => {
@@ -193,7 +193,7 @@ export function AgentDashboard() {
           console.log(`Joined complaint room: ${complaint.id}`);
         });
       }
-      
+
       // Refresh agent availability status based on active tickets
       const refreshAvailability = async () => {
         try {
@@ -211,7 +211,7 @@ export function AgentDashboard() {
           console.error('Error refreshing agent availability:', error);
         }
       };
-      
+
       refreshAvailability();
     }
   }, [complaints, user, isConnected, joinComplaintRoom]);
@@ -220,24 +220,24 @@ export function AgentDashboard() {
     logout();
     setShowUserMenu(false);
   };
-  
+
   const handleSendMessage = () => {
     if (selectedComplaintForMessage && messageText.trim()) {
       // Join the complaint room if not already joined
       joinComplaintRoom(selectedComplaintForMessage.id);
-      
+
       // Send the message via socket
       sendMessage(selectedComplaintForMessage.id, messageText);
-      
+
       // Clear the input and close the modal
       setMessageText('');
       setShowMessageModal(false);
-      
+
       // Show success notification
       alert('Message sent successfully');
     }
   };
-  
+
   const openMessageModal = (complaint: Complaint) => {
     setSelectedComplaintForMessage(complaint);
     setShowMessageModal(true);
@@ -264,7 +264,7 @@ export function AgentDashboard() {
       if (socket && isConnected) {
         // First join the complaint room if not already joined
         joinComplaintRoom(complaintId);
-        
+
         // Then send the update via socket
         updateComplaint(complaintId, { status: newStatus }, `Status updated to ${newStatus} by ${user?.name}`);
       } else {
@@ -272,8 +272,8 @@ export function AgentDashboard() {
         // Fallback to API call if socket is not connected
         // await api.updateComplaint(complaintId, { status: newStatus });
       }
-      
-      setFilteredComplaints(prev => 
+
+      setFilteredComplaints(prev =>
         prev.map(c => c.id === complaintId ? { ...c, status: newStatus } : c)
       );
       if (selectedComplaint?.id === complaintId) {
@@ -284,31 +284,10 @@ export function AgentDashboard() {
     }
   };
 
-  // Function to update agent availability
-  const updateAvailability = async (status: 'available' | 'busy' | 'offline') => {
-    if (!user?.id) return;
-    
-    try {
-      const result = await agentService.updateAvailability(user.id, status);
-      
-      const availability = result?.data?.availability;
-      if (typeof availability === 'string') {
-        setAgentProfile(prev => ({
-          ...prev,
-          availability
-        }));
-
-        // Inform the user of the status change
-        alert(`Your availability status has been updated to ${status}`);
-      } else if (result && result.error) {
-        console.error('Error updating availability:', result.error);
-        alert(`Failed to update availability: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Error updating agent availability:', error);
-      alert('An unexpected error occurred while updating your availability');
-    }
-  };
+  // Note: Agent availability is now automatically managed
+  // - Set to "busy" when a ticket is assigned
+  // - Set to "available" when all tickets are resolved
+  // - Agents cannot manually change their availability
 
   const exportToCSV = () => {
     const headers = ['ID', 'Title', 'Category', 'Priority', 'Status', 'Created', 'User'];
@@ -321,7 +300,7 @@ export function AgentDashboard() {
       new Date(c.createdAt).toLocaleDateString(),
       c.userId
     ]);
-    
+
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -363,53 +342,49 @@ export function AgentDashboard() {
             )}
           </div>
         </div>
-        
+
         <div className={`space-y-2 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
-          <button 
+          <button
             onClick={() => setActiveView('dashboard')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'dashboard' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${activeView === 'dashboard' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
             title="Dashboard"
           >
             <Home className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveView('my-tickets')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'my-tickets' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${activeView === 'my-tickets' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
             title="My Tickets"
           >
             <Inbox className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">My Tickets</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveView('performance')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'performance' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${activeView === 'performance' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
             title="Performance"
           >
             <Star className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Performance</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveView('profile')}
-            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${
-              activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
-            }`}
+            className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors ${activeView === 'profile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
             title="Profile"
           >
             <User className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Profile</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowNotifications(true)}
             className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Notifications"
@@ -417,8 +392,8 @@ export function AgentDashboard() {
             <Bell className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Notifications</span>}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowChatBot(true)}
             className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="AI Assistant"
@@ -426,8 +401,8 @@ export function AgentDashboard() {
             <Bot className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">AI Assistant</span>}
           </button>
-          
-          <button 
+
+          <button
             className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors`}
             title="Help & Support"
           >
@@ -442,7 +417,7 @@ export function AgentDashboard() {
         {/* Freshdesk-style Clean Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -456,7 +431,7 @@ export function AgentDashboard() {
               {activeView === 'profile' && 'Profile Management'}
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Refresh Button */}
             <button
@@ -466,36 +441,31 @@ export function AgentDashboard() {
             >
               <RefreshCw className="w-5 h-5" />
             </button>
-            
-            {/* Agent Availability Controls */}
+
+            {/* Agent Availability Status (Read-only - Auto-managed) */}
             <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                <button 
-                  onClick={() => updateAvailability('available')}
-                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'available' ? 'bg-green-500 text-white' : 'hover:bg-gray-200'}`}
-                  title="Set as Available"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span>Available</span>
-                </button>
-
-                <button 
-                  onClick={() => updateAvailability('busy')}
-                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'busy' ? 'bg-orange-500 text-white' : 'hover:bg-gray-200'}`}
-                  title="Set as Busy"
-                >
-                  <Activity className="w-4 h-4" />
-                  <span>Busy</span>
-                </button>
-
-                <button 
-                  onClick={() => updateAvailability('offline')}
-                  className={`px-2 py-1 rounded flex items-center gap-1 ${agentProfile.availability === 'offline' ? 'bg-gray-400 text-white' : 'hover:bg-gray-200'}`}
-                  title="Set as Offline"
-                >
-                  <UserX className="w-4 h-4" />
-                  <span>Offline</span>
-                </button>
+              <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {agentProfile.availability === 'available' && (
+                    <>
+                      <UserCheck className="w-4 h-4 text-green-600" />
+                      <span className="text-green-700 font-medium">Available</span>
+                    </>
+                  )}
+                  {agentProfile.availability === 'busy' && (
+                    <>
+                      <Activity className="w-4 h-4 text-orange-600" />
+                      <span className="text-orange-700 font-medium">Busy</span>
+                    </>
+                  )}
+                  {agentProfile.availability === 'offline' && (
+                    <>
+                      <UserX className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-700 font-medium">Offline</span>
+                    </>
+                  )}
+                  <span className="text-xs text-gray-500 ml-2">(Auto)</span>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -509,7 +479,7 @@ export function AgentDashboard() {
                 </button>
               </div>
             </div>
-            
+
             {activeView === 'my-tickets' && (
               <button
                 onClick={exportToCSV}
@@ -519,16 +489,16 @@ export function AgentDashboard() {
                 Export CSV
               </button>
             )}
-            
-            <button 
+
+            <button
               onClick={() => setShowSearchModal(true)}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
               title="Search tickets"
             >
               <Search className="w-5 h-5" />
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowNotifications(true)}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg relative"
             >
@@ -539,13 +509,13 @@ export function AgentDashboard() {
                 </span>
               )}
             </button>
-            
+
             <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
               <HelpCircle className="w-5 h-5" />
             </button>
-            
+
             <div className="relative user-menu-container">
-              <button 
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
               >
@@ -558,7 +528,7 @@ export function AgentDashboard() {
                 </div>
                 <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   <div className="p-4 border-b border-gray-100">
@@ -567,7 +537,7 @@ export function AgentDashboard() {
                     <p className="text-sm text-gray-500 mt-1">Role: {agentProfile.role}</p>
                   </div>
                   <div className="p-2">
-                    <button 
+                    <button
                       onClick={() => {
                         setActiveView('profile');
                         setShowUserMenu(false);
@@ -577,7 +547,7 @@ export function AgentDashboard() {
                       <Settings className="w-4 h-4 text-gray-500" />
                       Account Settings
                     </button>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
                     >
@@ -601,25 +571,25 @@ export function AgentDashboard() {
                 <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
                 <p className="text-xs text-gray-500 mt-1">All time</p>
               </div>
-              
+
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Open</h3>
                 <div className="text-3xl font-bold text-blue-600">{stats.pending}</div>
                 <p className="text-xs text-gray-500 mt-1">Needs attention</p>
               </div>
-              
+
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">In Progress</h3>
                 <div className="text-3xl font-bold text-yellow-600">{stats.inProgress}</div>
                 <p className="text-xs text-gray-500 mt-1">Being processed</p>
               </div>
-              
+
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Resolved</h3>
                 <div className="text-3xl font-bold text-green-600">{stats.resolved}</div>
                 <p className="text-xs text-gray-500 mt-1">Completed</p>
               </div>
-              
+
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Urgent</h3>
                 <div className="text-3xl font-bold text-orange-600">{stats.urgent}</div>
@@ -633,7 +603,7 @@ export function AgentDashboard() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Assigned Tickets</h3>
-                  <button 
+                  <button
                     onClick={() => setActiveView('my-tickets')}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
@@ -651,7 +621,7 @@ export function AgentDashboard() {
                       <Inbox className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                       <p className="text-lg font-medium">No tickets assigned to you</p>
                       <p className="text-sm">When AI assigns tickets to your account ({user?.email}), they will appear here</p>
-                      <button 
+                      <button
                         onClick={handleRefreshComplaints}
                         disabled={isRefreshing}
                         className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
@@ -714,7 +684,7 @@ export function AgentDashboard() {
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
-                    <button 
+                    <button
                       onClick={() => setActiveView('performance')}
                       className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
                     >
@@ -726,8 +696,8 @@ export function AgentDashboard() {
                         <p className="text-sm text-gray-600">See your metrics and statistics</p>
                       </div>
                     </button>
-                    
-                    <button 
+
+                    <button
                       onClick={() => setActiveView('my-tickets')}
                       className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-colors"
                     >
@@ -739,8 +709,8 @@ export function AgentDashboard() {
                         <p className="text-sm text-gray-600">Track status and updates</p>
                       </div>
                     </button>
-                    
-                    <button 
+
+                    <button
                       onClick={() => setActiveView('profile')}
                       className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-colors"
                     >
@@ -752,8 +722,8 @@ export function AgentDashboard() {
                         <p className="text-sm text-gray-600">Manage your account details</p>
                       </div>
                     </button>
-                    
-                    <button 
+
+                    <button
                       onClick={() => setShowChatBot(true)}
                       className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-200 transition-colors"
                     >
@@ -815,14 +785,14 @@ export function AgentDashboard() {
                   <p className="text-sm text-gray-600">Manage all tickets assigned to you</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button 
+                  <button
                     onClick={exportToCSV}
                     className="border border-gray-300 bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     Export
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveView('performance')}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
                   >
@@ -831,7 +801,7 @@ export function AgentDashboard() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-6">
                 {/* Simple Search */}
                 <div className="mb-6">
@@ -848,7 +818,7 @@ export function AgentDashboard() {
                     />
                   </div>
                 </div>
-                
+
                 {complaintsLoading ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -869,7 +839,7 @@ export function AgentDashboard() {
                       </p>
                     )}
                     {filteredComplaints.length === 0 ? (
-                      <button 
+                      <button
                         onClick={handleRefreshComplaints}
                         disabled={isRefreshing}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
@@ -878,7 +848,7 @@ export function AgentDashboard() {
                         {isRefreshing ? 'Checking...' : 'Check for New Tickets'}
                       </button>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => setSearchQuery('')}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
                       >
@@ -891,8 +861,8 @@ export function AgentDashboard() {
                     {filteredTickets.map((complaint) => (
                       <div key={complaint.id} className="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors">
                         <div className="flex items-start justify-between">
-                          <div 
-                            className="flex-1 cursor-pointer" 
+                          <div
+                            className="flex-1 cursor-pointer"
                             onClick={() => setSelectedComplaint(complaint)}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -906,7 +876,7 @@ export function AgentDashboard() {
                               </span>
                             </div>
                             <p className="text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
-                            
+
                             {/* AI Assignment Info Banner */}
                             {complaint.aiAssignment && (
                               <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -933,7 +903,7 @@ export function AgentDashboard() {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Assignment Info if assigned but no AI info */}
                             {!complaint.aiAssignment && complaint.assignedAgentName && (
                               <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
@@ -943,7 +913,7 @@ export function AgentDashboard() {
                                 </p>
                               </div>
                             )}
-                            
+
                             <div className="flex items-center gap-6 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
@@ -960,7 +930,7 @@ export function AgentDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3 ml-4">
-                            <button 
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedComplaint(complaint);
@@ -1000,7 +970,7 @@ export function AgentDashboard() {
                     <h3 className="text-lg font-semibold text-gray-900">Performance Metrics</h3>
                     <p className="text-sm text-gray-600">Track your productivity and service quality</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setActiveView('my-tickets')}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -1014,18 +984,18 @@ export function AgentDashboard() {
                     <p className="text-sm text-gray-500 mb-1">Average Response Time</p>
                     <p className="text-2xl font-bold text-blue-600">2.5 hours</p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-500 mb-1">Resolution Rate</p>
                     <p className="text-2xl font-bold text-green-600">85%</p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-500 mb-1">Customer Satisfaction</p>
                     <p className="text-2xl font-bold text-amber-600">4.7/5</p>
                   </div>
                 </div>
-                
+
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Activity</h3>
                 <div className="space-y-3">
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -1037,7 +1007,7 @@ export function AgentDashboard() {
                       <div className="bg-green-600 h-2 rounded-full" style={getProgressBarStyle(75)}></div>
                     </div>
                   </div>
-                  
+
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">Average Handle Time</span>
@@ -1047,7 +1017,7 @@ export function AgentDashboard() {
                       <div className="bg-blue-600 h-2 rounded-full" style={getProgressBarStyle(60)}></div>
                     </div>
                   </div>
-                  
+
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">First Contact Resolution</span>
@@ -1104,70 +1074,74 @@ export function AgentDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={agentProfile.name.split(' ')[0] || ''}
-                          onChange={(e) => setAgentProfile({...agentProfile, name: e.target.value + ' ' + (agentProfile.name.split(' ')[1] || '')})}
+                          onChange={(e) => setAgentProfile({ ...agentProfile, name: e.target.value + ' ' + (agentProfile.name.split(' ')[1] || '') })}
                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                           placeholder="Enter first name"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={agentProfile.name.split(' ')[1] || ''}
-                          onChange={(e) => setAgentProfile({...agentProfile, name: (agentProfile.name.split(' ')[0] || '') + ' ' + e.target.value})}
+                          onChange={(e) => setAgentProfile({ ...agentProfile, name: (agentProfile.name.split(' ')[0] || '') + ' ' + e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                           placeholder="Enter last name"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                        <input 
-                          type="email" 
+                        <input
+                          type="email"
                           value={agentProfile.email}
-                          onChange={(e) => setAgentProfile({...agentProfile, email: e.target.value})}
+                          onChange={(e) => setAgentProfile({ ...agentProfile, email: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                           placeholder="your.email@example.com"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                        <input 
-                          type="tel" 
+                        <input
+                          type="tel"
                           value={agentProfile.phone}
-                          onChange={(e) => setAgentProfile({...agentProfile, phone: e.target.value})}
+                          onChange={(e) => setAgentProfile({ ...agentProfile, phone: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                           placeholder="+1 (555) 000-0000"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={agentProfile.department}
-                          onChange={(e) => setAgentProfile({...agentProfile, department: e.target.value})}
+                          onChange={(e) => setAgentProfile({ ...agentProfile, department: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                           placeholder="Your department"
                         />
                       </div>
-                      
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Availability Status</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Availability Status (Auto-Managed)</label>
                         <select
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-100 cursor-not-allowed"
                           value={agentProfile.availability}
-                          onChange={(e) => setAgentProfile({...agentProfile, availability: e.target.value})}
+                          disabled
+                          title="Availability is automatically managed based on ticket assignments"
                         >
                           <option value="available">Available</option>
                           <option value="busy">Busy</option>
                           <option value="offline">Offline</option>
                         </select>
+                        <p className="text-xs text-gray-500 mt-1.5">
+                          🤖 Your availability is automatically managed: BUSY when tickets are assigned, FREE when all tickets are resolved.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1190,11 +1164,11 @@ export function AgentDashboard() {
                           </div>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={settings.notifications.email}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, email: e.target.checked}})}
-                            className="sr-only peer" 
+                            onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, email: e.target.checked } })}
+                            className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
@@ -1209,11 +1183,11 @@ export function AgentDashboard() {
                           </div>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={settings.notifications.sms}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, sms: e.target.checked}})}
-                            className="sr-only peer" 
+                            onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, sms: e.target.checked } })}
+                            className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
@@ -1228,11 +1202,11 @@ export function AgentDashboard() {
                           </div>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={settings.notifications.push}
-                            onChange={(e) => setSettings({...settings, notifications: {...settings.notifications, push: e.target.checked}})}
-                            className="sr-only peer" 
+                            onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, push: e.target.checked } })}
+                            className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
@@ -1243,7 +1217,7 @@ export function AgentDashboard() {
 
                 {/* Save Changes Button */}
                 <div className="flex justify-end gap-4">
-                  <button 
+                  <button
                     onClick={() => setActiveView('my-tickets')}
                     className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors"
                   >
@@ -1265,7 +1239,7 @@ export function AgentDashboard() {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Complaint Details</h3>
-                  <button 
+                  <button
                     onClick={() => setSelectedComplaint(null)}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -1292,7 +1266,7 @@ export function AgentDashboard() {
                       </div>
                     </div>
                     {selectedComplaint.status === 'Resolved' && (
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedComplaint(null);
                           setShowFeedbackForm(true);
@@ -1325,7 +1299,7 @@ export function AgentDashboard() {
                           <p className="text-xs text-gray-500 mt-1">{new Date(selectedComplaint.createdAt).toLocaleString()}</p>
                         </div>
                       </div>
-                      
+
                       {selectedComplaint.status !== 'Open' && (
                         <div className="flex gap-4">
                           <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -1338,7 +1312,7 @@ export function AgentDashboard() {
                           </div>
                         </div>
                       )}
-                      
+
                       {selectedComplaint.status === 'Resolved' && (
                         <div className="flex gap-4">
                           <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -1366,7 +1340,7 @@ export function AgentDashboard() {
                       ) : (
                         <div className="flex flex-wrap gap-3">
                           {selectedComplaint.status !== 'In Progress' && (
-                            <button 
+                            <button
                               onClick={() => handleStatusUpdate(selectedComplaint.id, 'In Progress')}
                               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
                             >
@@ -1374,8 +1348,8 @@ export function AgentDashboard() {
                               Mark In Progress
                             </button>
                           )}
-                          
-                          <button 
+
+                          <button
                             onClick={() => handleStatusUpdate(selectedComplaint.id, 'Resolved')}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-1"
                           >
@@ -1386,7 +1360,7 @@ export function AgentDashboard() {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Communication Section */}
                   <div>
                     <h5 className="font-medium text-gray-900 mb-4">Customer Communication</h5>
@@ -1400,7 +1374,7 @@ export function AgentDashboard() {
                         placeholder="Type your message here..."
                         rows={3}
                       ></textarea>
-                      <button 
+                      <button
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
                       >
                         Send Message
@@ -1431,7 +1405,7 @@ export function AgentDashboard() {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Submit Feedback</h3>
-                  <button 
+                  <button
                     onClick={() => setShowFeedbackForm(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -1453,19 +1427,19 @@ export function AgentDashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Comments</label>
-                    <textarea 
+                    <textarea
                       className="w-full border border-gray-300 rounded-lg p-3 h-24"
                       placeholder="Share your feedback..."
                     />
                   </div>
                   <div className="flex gap-3">
-                    <button 
+                    <button
                       onClick={() => setShowFeedbackForm(false)}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                     >
                       Submit
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowFeedbackForm(false)}
                       className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
                     >
@@ -1486,7 +1460,7 @@ export function AgentDashboard() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Send Message to User</h3>
-                <button 
+                <button
                   onClick={() => setShowMessageModal(false)}
                   className="text-gray-500 hover:text-gray-700"
                 >
@@ -1517,7 +1491,7 @@ export function AgentDashboard() {
                     placeholder="Type your message to the user here..."
                   />
                 </div>
-                
+
                 <div className="flex justify-between pt-4">
                   <div className="text-sm text-gray-500">
                     {isConnected ? (
@@ -1533,13 +1507,13 @@ export function AgentDashboard() {
                     )}
                   </div>
                   <div className="flex gap-3">
-                    <button 
+                    <button
                       onClick={() => setShowMessageModal(false)}
                       className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
                     >
                       Cancel
                     </button>
-                    <button 
+                    <button
                       onClick={handleSendMessage}
                       disabled={!isConnected || !messageText.trim()}
                       className={`px-4 py-2 rounded-lg ${getMessageSendButtonClasses(isConnected && Boolean(messageText.trim()))}`}
@@ -1569,7 +1543,7 @@ export function AgentDashboard() {
                   className="flex-1 outline-none text-lg"
                   autoFocus
                 />
-                <button 
+                <button
                   onClick={() => {
                     setShowSearchModal(false);
                     setSearchQuery('');
