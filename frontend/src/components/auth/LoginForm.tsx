@@ -403,7 +403,7 @@ export function LoginForm() {
             {/* Social Login */}
             <div className="space-y-3 mb-4">
               {/* Google Login Button - Custom styled wrapper */}
-              <div className="w-full [&>div]:w-full [&>div>div]:w-full [&_iframe]:!h-[50px] [&_button]:!w-full [&_button]:!h-[50px] [&_button]:!px-4 [&_button]:!py-3 [&_button]:!flex [&_button]:!items-center [&_button]:!justify-center [&_button]:!border [&_button]:!border-gray-300 [&_button]:!rounded-lg [&_button]:!shadow-sm [&_button]:!bg-white [&_button]:hover:!bg-gray-50 [&_button]:!transition-colors [&_button]:!text-sm [&_button]:!font-medium">
+              <div className="w-full [&>div]:!w-full [&>div]:!min-h-[50px] [&>div>div]:!w-full [&>div>div]:!min-h-[50px] [&>div>div>iframe]:!w-full [&>div>div>iframe]:!h-[50px] [&>div>div>iframe]:!min-h-[50px] [&_iframe]:!w-full [&_iframe]:!h-[50px] [&_iframe]:!min-h-[50px] [&_button]:!w-full [&_button]:!h-[50px] [&_button]:!min-h-[50px] [&_button]:!px-4 [&_button]:!py-3 [&_button]:!flex [&_button]:!items-center [&_button]:!justify-center [&_button]:!border [&_button]:!border-gray-300 [&_button]:!rounded-lg [&_button]:!shadow-sm [&_button]:!bg-white [&_button]:hover:!bg-gray-50 [&_button]:!transition-colors [&_button]:!text-sm [&_button]:!font-medium [&>div>div>div]:!w-full [&>div>div>div]:!min-h-[50px] [&>div>div>div>div]:!w-full [&>div>div>div>div]:!min-h-[50px]">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => {
