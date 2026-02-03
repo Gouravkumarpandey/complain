@@ -205,3 +205,6 @@ smsLogSchema.pre('save', function(next) {
 });
 
 export const SMSLog = mongoose.model('SMSLog', smsLogSchema);
+
+// Default export for compatibility with default imports
+export default SMSLog;

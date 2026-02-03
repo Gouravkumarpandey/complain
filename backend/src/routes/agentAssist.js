@@ -4,12 +4,11 @@
  */
 
 import express from 'express';
-import { AIService } from '../services/aiService.js';
+import aiService from '../services/aiService.js';
 import { Complaint } from '../models/Complaint.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
-const aiService = new AIService();
 
 /**
  * @route POST /api/agent-assist/analyze-complaint

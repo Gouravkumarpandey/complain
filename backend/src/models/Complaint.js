@@ -396,3 +396,6 @@ complaintSchema.index({ assignedTo: 1 });
 complaintSchema.index({ createdAt: -1 });
 
 export const Complaint = mongoose.model('Complaint', complaintSchema);
+
+// Default export for compatibility with default imports
+export default Complaint;

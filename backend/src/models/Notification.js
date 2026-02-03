@@ -212,3 +212,6 @@ notificationSchema.index({ scheduledFor: 1 });
 notificationSchema.index({ createdAt: -1 });
 
 export const Notification = mongoose.model('Notification', notificationSchema);
+
+// Default export for compatibility with default imports
+export default Notification;
