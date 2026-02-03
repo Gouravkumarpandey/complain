@@ -1,11 +1,16 @@
 import Stripe from 'stripe';
 import { User } from '../models/User.js';
 
-// Initialize Stripe instance
-// Make sure to set STRIPE_SECRET_KEY in your .env file
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
-});
+// Initialize Stripe instance only if API key is available
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2024-11-20.acacia',
+  });
+  console.log('✅ Stripe payment service initialized');
+} else {
+  console.warn('⚠️  STRIPE_SECRET_KEY not set. Payment features will be disabled.');
+}
 
 /**
  * Get Stripe publishable key for frontend
@@ -22,6 +27,13 @@ export const getStripeKey = (req, res) => {
  */
 export const createCheckoutSession = async (req, res) => {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: 'Payment service is not configured. Please contact support.' 
+      });
+    }
+
     const { planType } = req.body;
     const userId = req.user.id;
 
@@ -92,6 +104,14 @@ export const createCheckoutSession = async (req, res) => {
  */
 export const verifyPayment = async (req, res) => {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      return res.status(503).json({ 
+        success: false,
+        message: 'Payment service is not configured. Please contact support.' 
+      });
+    }
+
     const { sessionId } = req.body;
     const userId = req.user.id;
 
@@ -197,6 +217,14 @@ export const getPaymentHistory = async (req, res) => {
  * This is called by Stripe when payment status changes
  */
 export const webhookHandler = async (req, res) => {
+  // Check if Stripe is configured
+  if (!stripe) {
+    return res.status(503).json({ 
+      success: false,
+      message: 'Payment service is not configured.' 
+    });
+  }
+
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -275,6 +303,13 @@ export const webhookHandler = async (req, res) => {
  */
 export const refundPayment = async (req, res) => {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: 'Payment service is not configured. Please contact support.' 
+      });
+    }
+
     // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
