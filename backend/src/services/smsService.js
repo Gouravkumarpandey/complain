@@ -51,11 +51,11 @@ const generateMessage = (userName, eventType, eventData = {}) => {
     
     [SMS_EVENTS.REMINDER]: `Reminder: ${eventData.reminderText}`,
     
-    [SMS_EVENTS.COMPLAINT_CREATED]: `Your complaint #${eventData.complaintId} has been registered successfully. We'll update you soon.`,
+    [SMS_EVENTS.COMPLAINT_CREATED]: `Hi ${userName}, your complaint #${eventData.complaintId} has been registered successfully with ${appName}. Our team is working on it and will keep you updated. Thank you for reaching out!`,
     
-    [SMS_EVENTS.COMPLAINT_ASSIGNED]: `Your complaint #${eventData.complaintId} has been assigned to ${eventData.agentName}. They will contact you shortly.`,
+    [SMS_EVENTS.COMPLAINT_ASSIGNED]: `Hi ${userName}, your complaint #${eventData.complaintId} has been assigned to ${eventData.agentName}. They will contact you shortly to assist with your issue.`,
     
-    [SMS_EVENTS.COMPLAINT_RESOLVED]: `Great news! Your complaint #${eventData.complaintId} has been resolved. Thank you for your patience.`,
+    [SMS_EVENTS.COMPLAINT_RESOLVED]: `Hi ${userName}, great news! Your complaint #${eventData.complaintId} with ${appName} has been resolved. Thank you for your patience. If you need further assistance, please don't hesitate to reach out.`,
     
     [SMS_EVENTS.STATUS_UPDATE]: `Complaint #${eventData.complaintId} status updated to: ${eventData.status}. ${eventData.additionalInfo || ''}`,
     
@@ -68,7 +68,7 @@ const generateMessage = (userName, eventType, eventData = {}) => {
 
   const eventMessage = templates[eventType] || eventData.customMessage || 'You have a new notification.';
   
-  return `Hello ${userName}, this is a notification from ${appName}. ${eventMessage} Thank you.`;
+  return eventMessage;
 };
 
 /**

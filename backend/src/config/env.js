@@ -18,12 +18,12 @@ module.exports = {
   // Email configuration (SendGrid)
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   FROM_EMAIL: process.env.FROM_EMAIL || 'noreply@complaints.com',
-  
+
   // SMS configuration (Twilio)
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
-  
+
   // WhatsApp Business API configuration
   WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
   WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,

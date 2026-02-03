@@ -7,6 +7,7 @@ import { validateComplaint, validateComplaintUpdate } from '../validators/compla
 import aiService from '../services/aiService.js';
 import { sendComplaintConfirmationEmail, sendComplaintResolvedEmail } from '../services/emailService.js';
 import { publishEvent } from '../../utils/snsPublisher.js';
+import { triggerComplaintCreatedSMS, triggerComplaintResolvedSMS } from '../services/smsTriggers.js';
 // Redis cache disabled - uncomment when Redis is enabled
 // import { invalidateComplaintCache } from '../services/cacheService.js';
 
@@ -467,6 +468,20 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     // Continue even if WhatsApp fails - complaint is still created
   }
   
+  // Send SMS notification if user has phone number
+  try {
+    if (req.user?.phoneNumber) {
+      console.log(`📱 Sending SMS notification to ${req.user.phoneNumber}...`);
+      await triggerComplaintCreatedSMS(req.user, updatedComplaint.complaintId);
+      console.log(`✅ SMS notification sent successfully for complaint ${updatedComplaint.complaintId}`);
+    } else {
+      console.log('ℹ️  No phone number on user record, skipping SMS notification');
+    }
+  } catch (smsError) {
+    console.error('❌ Failed to send SMS notification:', smsError.message);
+    // Continue even if SMS fails - complaint is still created
+  }
+  
   // Publish event to SNS for ticket creation
   try {
     await publishEvent('ticket.created', {
@@ -617,6 +632,22 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
     } catch (emailError) {
       console.error('❌ Failed to send resolution email:', emailError.message);
       // Continue even if email fails - don't block the resolution process
+    }
+    
+    // Send SMS notification to user if complaint is marked as resolved
+    try {
+      const complaintUser = await User.findById(complaint.user);
+      
+      if (complaintUser && complaintUser.phoneNumber) {
+        console.log(`📱 Sending resolution SMS to ${complaintUser.phoneNumber}...`);
+        await triggerComplaintResolvedSMS(complaintUser, complaint.complaintId);
+        console.log(`✅ Resolution SMS sent successfully for complaint ${complaint.complaintId}`);
+      } else {
+        console.log('⚠️  User phone number not found, skipping resolution SMS');
+      }
+    } catch (smsError) {
+      console.error('❌ Failed to send resolution SMS:', smsError.message);
+      // Continue even if SMS fails - don't block the resolution process
     }
   }
   
