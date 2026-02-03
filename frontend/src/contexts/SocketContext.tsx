@@ -102,7 +102,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (Notification.permission === 'granted') {
           new Notification(data.notification.title, {
             body: data.notification.message,
-            icon: '/favicon.ico',
+            icon: '/logo.svg',
           });
         }
       });
@@ -121,7 +121,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (Notification.permission === 'granted') {
           new Notification('New Complaint Filed', {
             body: `${complaint.title} - ${complaint.description?.substring(0, 50)}...`,
-            icon: '/favicon.ico',
+            icon: '/logo.svg',
           });
         }
       });
@@ -135,7 +135,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (Notification.permission === 'granted') {
           new Notification('Complaint Status Updated', {
             body: `Complaint #${data.complaintId} status is now ${data.status}`,
-            icon: '/favicon.ico',
+            icon: '/logo.svg',
           });
         }
       });
@@ -149,7 +149,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (data.complaint?.status === 'Resolved' && Notification.permission === 'granted') {
           new Notification('Complaint Resolved! 🎉', {
             body: `Your complaint "${data.complaint.title}" has been resolved!`,
-            icon: '/favicon.ico',
+            icon: '/logo.svg',
           });
         }
       });
@@ -174,7 +174,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             
           new Notification(title, {
             body,
-            icon: '/favicon.ico',
+            icon: '/logo.svg',
           });
         }
       });
