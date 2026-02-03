@@ -1,57 +1,31 @@
 require('dotenv').config();
 
 module.exports = {
-  // Server configuration
-  PORT: process.env.PORT || 5000,
   NODE_ENV: process.env.NODE_ENV || 'development',
-  
-  // Database configuration
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/complaint_management',
-  
-  // JWT configuration
-  JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
-  JWT_EXPIRE: process.env.JWT_EXPIRE || '7d',
-  
-  // Frontend URL - can be any port in development environment
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5174', // Updated to 5174 to match current frontend
-  
-  // Email configuration (SendGrid)
-  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
-  FROM_EMAIL: process.env.FROM_EMAIL || 'noreply@complaints.com',
-
-  // SMS configuration (Twilio)
+  PORT: process.env.PORT || 5000,
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:5000',
+  MONGODB_URI: process.env.MONGODB_URI,
+  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
+  FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
-
-  // WhatsApp Business API configuration
-  WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
-  WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
-  WHATSAPP_BUSINESS_ACCOUNT_ID: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-  
-  // AI Service configuration
-  AI_SERVICE_URL: process.env.AI_SERVICE_URL || 'http://localhost:5001',
-  
-  // IBM Watson configuration
-  WATSON_API_KEY: process.env.WATSON_API_KEY,
-  WATSON_REGION: process.env.WATSON_REGION || 'au-syd',
-  WATSON_SERVICE_INSTANCE_ID: process.env.WATSON_SERVICE_INSTANCE_ID,
-  WATSON_ASSISTANT_ID: process.env.WATSON_ASSISTANT_ID,
-  
-  // OAuth configuration
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
-  
-  // File upload configuration
+  AI_SERVICE_URL: process.env.AI_SERVICE_URL || 'http://localhost:8001',
+  USE_DEEPSEEK: process.env.USE_DEEPSEEK === 'true',
+  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
+  DEEPSEEK_API_URL: process.env.DEEPSEEK_API_URL,
+  EMAIL_USER: process.env.EMAIL_USER,
+  EMAIL_PASS: process.env.EMAIL_PASS,
+  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '10485760'),
   UPLOAD_PATH: process.env.UPLOAD_PATH || './uploads',
-  MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || 5 * 1024 * 1024, // 5MB
-  
-  // Rate limiting
-  RATE_LIMIT_WINDOW: 15 * 60 * 1000, // 15 minutes
-  RATE_LIMIT_MAX: 100, // requests per window
-  
-  // Pagination
-  DEFAULT_PAGE_SIZE: 10,
-  MAX_PAGE_SIZE: 100
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 };
