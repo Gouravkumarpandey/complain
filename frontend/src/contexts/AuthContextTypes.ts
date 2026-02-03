@@ -11,6 +11,7 @@ export interface User {
   role: "user" | "agent" | "admin" | "analytics";
   planType?: "Free" | "Pro" | "Premium";
   planExpiresAt?: string | null;
+  photoURL?: string; // User profile photo URL
 }
 
 // OTP verification pending interface
