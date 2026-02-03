@@ -182,3 +182,6 @@ export const findUserById = async (userId) => {
   
   return { user: null, model: null };
 };
+
+// Default export for compatibility with default imports
+export default User;
