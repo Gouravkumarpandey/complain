@@ -43,7 +43,7 @@ export const SMS_EVENTS = {
  */
 const generateMessage = (userName, eventType, eventData = {}) => {
   const templates = {
-    [SMS_EVENTS.SIGNUP]: `Welcome to ${appName}! Thank you for signing up, ${userName}. We're excited to have you on board.`,
+    [SMS_EVENTS.SIGNUP]: `Hello ${userName} 👋\n\nWelcome to QuickFix Complaint Management System.\nWe are here to help you resolve issues quickly and efficiently.\n\nThank you for joining us!\n– QuickFix Team`,
     
     [SMS_EVENTS.OTP_GENERATION]: `Your OTP for ${appName} is: ${eventData.otp}. Valid for ${eventData.expiryMinutes || 10} minutes. Do not share this code.`,
     
@@ -51,11 +51,11 @@ const generateMessage = (userName, eventType, eventData = {}) => {
     
     [SMS_EVENTS.REMINDER]: `Reminder: ${eventData.reminderText}`,
     
-    [SMS_EVENTS.COMPLAINT_CREATED]: `Hi ${userName}, your complaint #${eventData.complaintId} has been registered successfully with ${appName}. Our team is working on it and will keep you updated. Thank you for reaching out!`,
+    [SMS_EVENTS.COMPLAINT_CREATED]: `Hello ${userName},\n\nYour complaint has been successfully registered.\nComplaint ID: ${eventData.complaintId}\n\nOur team will review it shortly.\n– QuickFix Support`,
     
     [SMS_EVENTS.COMPLAINT_ASSIGNED]: `Hi ${userName}, your complaint #${eventData.complaintId} has been assigned to ${eventData.agentName}. They will contact you shortly to assist with your issue.`,
     
-    [SMS_EVENTS.COMPLAINT_RESOLVED]: `Hi ${userName}, great news! Your complaint #${eventData.complaintId} with ${appName} has been resolved. Thank you for your patience. If you need further assistance, please don't hesitate to reach out.`,
+    [SMS_EVENTS.COMPLAINT_RESOLVED]: `✅ *Complaint Resolved*\n\nHello ${userName},\nYour complaint *#${eventData.complaintId}* is now *Resolved*.\n\nIf you still face issues, reply HELP.\nThank you for choosing QuickFix 🙌`,
     
     [SMS_EVENTS.STATUS_UPDATE]: `Complaint #${eventData.complaintId} status updated to: ${eventData.status}. ${eventData.additionalInfo || ''}`,
     
