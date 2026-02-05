@@ -6,16 +6,36 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env from backend directory (one level up from src)
-const envPath = join(__dirname, '../.env');
-const result = dotenv.config({ path: envPath });
+// Load environment variables first, before any other imports
+import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-if (result.error) {
-  console.error('❌ Error loading .env file:', result.error);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Only load .env file in development - Render uses environment variables directly
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = join(__dirname, '../.env');
+  const result = dotenv.config({ path: envPath });
+
+  if (result.error) {
+    console.error('❌ Error loading .env file:', result.error);
+  } else {
+    console.log('✅ .env file loaded from:', envPath);
+  }
 } else {
-  console.log('✅ .env file loaded from:', envPath);
-  console.log('✅ DEEPSEEK_API_KEY present:', !!process.env.DEEPSEEK_API_KEY);
+  console.log('✅ Running in production - using Render environment variables');
 }
+
+// Log important environment variables (without exposing secrets)
+console.log('Node environment:', process.env.NODE_ENV);
+console.log('Server session ID:', `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+console.log('✅ DEEPSEEK_API_KEY present:', !!process.env.DEEPSEEK_API_KEY);
+console.log('✅ MONGODB_URI present:', !!process.env.MONGODB_URI);
+console.log('✅ JWT_SECRET present:', !!process.env.JWT_SECRET);
+console.log('✅ GOOGLE_CLIENT_ID present:', !!process.env.GOOGLE_CLIENT_ID);
+console.log('✅ STRIPE_SECRET_KEY present:', !!process.env.STRIPE_SECRET_KEY);
 
 import express from "express";
 import cors from "cors";
