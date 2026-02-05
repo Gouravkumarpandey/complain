@@ -53,7 +53,7 @@ const validateSignup = (name, email, password) => {
 // Signup with OTP verification
 export const registerUser = async (req, res) => {
   const { name, email, password, role = "user", phoneNumber } = req.body;
-  
+
   console.log("Registration request received:", { name, email, role, phoneNumber: phoneNumber ? '***' : 'not provided' });
 
   try {
@@ -64,7 +64,7 @@ export const registerUser = async (req, res) => {
         message: "Missing required fields: name, email, and password are all required",
       });
     }
-    
+
     const validationErrors = validateSignup(name, email, password);
     if (validationErrors.length > 0) {
       console.log("Validation errors:", validationErrors);
@@ -91,26 +91,26 @@ export const registerUser = async (req, res) => {
     }
 
     console.log(`Attempting to create user with role: ${role}`);
-    
+
     // Special check for admin role to enforce additional security
     if (role === "admin") {
       // For development purposes, allow admin creation
       // In production, you might want to restrict this or require additional verification
       console.log("Creating admin account - special permissions granted for development");
     }
-    
+
     // Generate OTP for verification
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
-    
+
     // Get the appropriate model based on role
     const UserModel = getUserModelByRole(role);
     console.log(`Using model for collection: ${UserModel.collection.name}`);
-    
+
     // Generate unique username
     const username = await UserModel.generateUsername(email, name);
     console.log(`Generated username: ${username}`);
-    
+
     // Create user in the role-specific collection
     const userData = {
       name: name.trim(),
@@ -122,11 +122,11 @@ export const registerUser = async (req, res) => {
       otpExpiry,
       isVerified: false
     };
-    
+
     // Validate and add phone number if provided
     if (phoneNumber && phoneNumber.trim()) {
       const phoneValidation = validateAndFormatPhoneNumber(phoneNumber.trim());
-      
+
       if (phoneValidation.isValid) {
         userData.phoneNumber = phoneValidation.formattedNumber; // Store in E.164 format
         console.log(`Phone number validated and formatted: ${phoneValidation.internationalFormat}`);
@@ -139,7 +139,7 @@ export const registerUser = async (req, res) => {
         });
       }
     }
-    
+
     const user = await UserModel.create(userData);
 
     // Send OTP via email
@@ -209,21 +209,21 @@ export const loginUser = async (req, res) => {
         // Generate new OTP for unverified users
         const otp = generateOTP();
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-        
+
         user.otp = otp;
         user.otpExpiry = otpExpiry;
         await user.save();
-        
+
         // Send new OTP
         await sendOtpEmail(user.email, user.name, otp);
-        
+
         return res.status(401).json({
           message: "Account not verified. A new verification OTP has been sent to your email.",
           requiresVerification: true,
           userId: user._id
         });
       }
-      
+
       console.log("User logged in successfully from collection:", {
         collection: model?.collection?.name || 'unknown',
         id: user._id,
@@ -235,7 +235,7 @@ export const loginUser = async (req, res) => {
       // Generate both access and refresh tokens
       const accessToken = generateToken(user._id);
       const refreshToken = generateRefreshToken(user._id);
-      
+
       res.json({
         success: true,
         user: {
@@ -278,8 +278,8 @@ export const adminLogin = async (req, res) => {
       // Strict admin role check
       if (user.role !== 'admin') {
         console.log(`Non-admin user attempted admin login: ${email}`);
-        return res.status(403).json({ 
-          message: "Access denied. Administrator privileges required." 
+        return res.status(403).json({
+          message: "Access denied. Administrator privileges required."
         });
       }
 
@@ -289,7 +289,7 @@ export const adminLogin = async (req, res) => {
           message: "Admin account not verified. Please contact system administrator.",
         });
       }
-      
+
       console.log("Admin logged in successfully:", {
         collection: model?.collection?.name || 'unknown',
         id: user._id,
@@ -301,7 +301,7 @@ export const adminLogin = async (req, res) => {
       // Generate both access and refresh tokens
       const accessToken = generateToken(user._id);
       const refreshToken = generateRefreshToken(user._id);
-      
+
       res.json({
         success: true,
         user: {
@@ -368,7 +368,7 @@ export const googleLogin = async (req, res) => {
     if (!existingUser) {
       // User doesn't exist - they need to sign up first
       console.log("Google login failed - user not found:", email);
-      return res.status(404).json({ 
+      return res.status(404).json({
         message: "Account not found. Please sign up first to create an account.",
         requiresSignup: true
       });
@@ -393,21 +393,21 @@ export const googleLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Google login error:", error);
-    
+
     // More specific error messages
     if (error.message && error.message.includes('Token used too early')) {
       return res.status(400).json({ message: "Invalid token timing. Please try again." });
     }
-    
+
     if (error.message && error.message.includes('Invalid token signature')) {
       return res.status(400).json({ message: "Invalid Google token. Please try again." });
     }
-    
+
     if (error.message && error.message.includes('Token expired')) {
       return res.status(400).json({ message: "Google token expired. Please try again." });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during Google login",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -461,20 +461,20 @@ export const decodeGoogleToken = async (req, res) => {
     });
   } catch (error) {
     console.error("Google token decode error:", error);
-    
+
     if (error.message && error.message.includes('Token used too early')) {
       return res.status(400).json({ message: "Invalid token timing. Please try again." });
     }
-    
+
     if (error.message && error.message.includes('Invalid token signature')) {
       return res.status(400).json({ message: "Invalid Google token. Please try again." });
     }
-    
+
     if (error.message && error.message.includes('Token expired')) {
       return res.status(400).json({ message: "Google token expired. Please try again." });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during Google token decode",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -503,13 +503,9 @@ export const googleSignupWithRole = async (req, res) => {
         message: "Organization name is required for agent, admin, and analytics roles",
       });
     }
-    
-    // Phone number is required for all Google signups (for notifications)
-    if (!phoneNumber || !phoneNumber.trim()) {
-      return res.status(400).json({
-        message: "Phone number is required for notifications",
-      });
-    }
+
+    // Phone number is optional for Google signups (can be added later in profile)
+    // If not provided, we'll skip WhatsApp notifications until they add it
 
     if (!process.env.GOOGLE_CLIENT_ID) {
       console.error("GOOGLE_CLIENT_ID environment variable is not set");
@@ -540,19 +536,19 @@ export const googleSignupWithRole = async (req, res) => {
 
     // Check if user already exists
     const { user: existingUser } = await findUserByEmail(email);
-    
+
     if (existingUser) {
-      return res.status(409).json({ 
-        message: "User already exists. Please use regular Google login instead." 
+      return res.status(409).json({
+        message: "User already exists. Please use regular Google login instead."
       });
     }
 
     // Create new user with selected role in appropriate collection
     const UserModel = getUserModelByRole(role);
-    
+
     // Generate unique username
     const username = await UserModel.generateUsername(email, name);
-    
+
     const userData = {
       name: name.trim(),
       username: username,
@@ -563,8 +559,10 @@ export const googleSignupWithRole = async (req, res) => {
       isVerified: true, // Google users are pre-verified
     };
 
-    // Add phone number (required for all Google signups)
-    userData.phoneNumber = phoneNumber.trim();
+    // Add phone number if provided
+    if (phoneNumber && phoneNumber.trim()) {
+      userData.phoneNumber = phoneNumber.trim();
+    }
 
     // Add organization if provided
     if (organization) {
@@ -572,7 +570,7 @@ export const googleSignupWithRole = async (req, res) => {
     }
 
     const user = await UserModel.create(userData);
-    
+
     console.log("New Google user created with role:", {
       id: user._id,
       name: user.name,
@@ -580,6 +578,16 @@ export const googleSignupWithRole = async (req, res) => {
       role: user.role,
       organization: user.organization,
     });
+
+    // Send SMS notification if phone number is provided
+    if (user.phoneNumber) {
+      try {
+        await triggerSignupSMS(user);
+        console.log("Signup SMS sent to Google user");
+      } catch (smsError) {
+        console.error("Failed to send signup SMS:", smsError);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -593,15 +601,15 @@ export const googleSignupWithRole = async (req, res) => {
     });
   } catch (error) {
     console.error("Google signup error:", error);
-    
+
     if (error.message && error.message.includes('Token used too early')) {
       return res.status(400).json({ message: "Invalid token timing. Please try again." });
     }
-    
+
     if (error.message && error.message.includes('Invalid token signature')) {
       return res.status(400).json({ message: "Invalid Google token. Please try again." });
     }
-    
+
     if (error.message && error.message.includes('Token expired')) {
       return res.status(400).json({ message: "Google token expired. Please try again." });
     }
@@ -610,7 +618,7 @@ export const googleSignupWithRole = async (req, res) => {
       return res.status(409).json({ message: "User with this email already exists" });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during Google signup",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -634,13 +642,13 @@ export const facebookLogin = async (req, res) => {
     // Step 1: Verify the access token with Facebook
     const appAccessToken = `${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`;
     const debugTokenUrl = `https://graph.facebook.com/debug_token?input_token=${accessToken}&access_token=${appAccessToken}`;
-    
+
     const debugResponse = await fetch(debugTokenUrl);
     const debugData = await debugResponse.json();
 
     if (debugData.error || !debugData.data || !debugData.data.is_valid) {
       console.error('Facebook token validation failed:', debugData.error || 'Token is invalid');
-      return res.status(401).json({ 
+      return res.status(401).json({
         message: "Invalid Facebook access token",
         error: debugData.error?.message || 'Token validation failed'
       });
@@ -648,8 +656,8 @@ export const facebookLogin = async (req, res) => {
 
     // Step 2: Verify the token is for our app
     if (debugData.data.app_id !== process.env.FACEBOOK_APP_ID) {
-      return res.status(401).json({ 
-        message: "Access token is not for this application" 
+      return res.status(401).json({
+        message: "Access token is not for this application"
       });
     }
 
@@ -658,17 +666,17 @@ export const facebookLogin = async (req, res) => {
     const facebookUser = await userResponse.json();
 
     if (facebookUser.error) {
-      return res.status(400).json({ 
-        message: "Failed to get user information from Facebook", 
-        error: facebookUser.error.message 
+      return res.status(400).json({
+        message: "Failed to get user information from Facebook",
+        error: facebookUser.error.message
       });
     }
 
     const { name, email, id } = facebookUser;
 
     if (!email) {
-      return res.status(400).json({ 
-        message: "Email not available from Facebook account. Please ensure email permission is granted." 
+      return res.status(400).json({
+        message: "Email not available from Facebook account. Please ensure email permission is granted."
       });
     }
 
@@ -676,22 +684,15 @@ export const facebookLogin = async (req, res) => {
     let user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
-      // Create user if not exists
-      user = await User.create({
-        name: name,
-        email: email.toLowerCase().trim(),
-        password: Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8), // Strong random password
-        role: "user",
-        isFacebookUser: true,
-        facebookId: id,
-        isVerified: true, // Facebook accounts are pre-verified
-      });
-      
-      console.log("✅ New Facebook user created:", {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        facebookId: id,
+      console.log("Facebook login failed - user not found:", email);
+      return res.status(404).json({
+        message: "Account not found. Please sign up first to create an account.",
+        requiresSignup: true,
+        facebookData: {
+          name,
+          email,
+          id
+        }
       });
     } else {
       // Update Facebook info if user exists
@@ -701,7 +702,7 @@ export const facebookLogin = async (req, res) => {
         user.isVerified = true;
         await user.save();
       }
-      
+
       console.log("✅ Existing Facebook user logged in:", {
         id: user._id,
         name: user.name,
@@ -727,12 +728,12 @@ export const facebookLogin = async (req, res) => {
     console.error("❌ Facebook login error:", error);
 
     if (error.message && error.message.includes('fetch')) {
-      return res.status(500).json({ 
-        message: "Facebook API temporarily unavailable. Please try again." 
+      return res.status(500).json({
+        message: "Facebook API temporarily unavailable. Please try again."
       });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during Facebook login",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -770,9 +771,9 @@ export const decodeGithubCode = async (req, res) => {
     const tokenData = await tokenResponse.json();
 
     if (tokenData.error) {
-      return res.status(400).json({ 
-        message: "GitHub authentication failed", 
-        error: tokenData.error_description 
+      return res.status(400).json({
+        message: "GitHub authentication failed",
+        error: tokenData.error_description
       });
     }
 
@@ -797,21 +798,21 @@ export const decodeGithubCode = async (req, res) => {
 
       const emails = await emailResponse.json();
       const primaryEmail = emails.find(email => email.primary && email.verified);
-      
+
       if (!primaryEmail) {
-        return res.status(400).json({ 
-          message: "No verified email found in GitHub account" 
+        return res.status(400).json({
+          message: "No verified email found in GitHub account"
         });
       }
-      
+
       githubUser.email = primaryEmail.email;
     }
 
     const { name, email, login } = githubUser;
 
     if (!email || !login) {
-      return res.status(400).json({ 
-        message: "Required user information not available from GitHub" 
+      return res.status(400).json({
+        message: "Required user information not available from GitHub"
       });
     }
 
@@ -829,12 +830,12 @@ export const decodeGithubCode = async (req, res) => {
     console.error("GitHub code decode error:", error);
 
     if (error.message && error.message.includes('fetch')) {
-      return res.status(500).json({ 
-        message: "GitHub API temporarily unavailable. Please try again." 
+      return res.status(500).json({
+        message: "GitHub API temporarily unavailable. Please try again."
       });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during GitHub code decode",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -879,9 +880,9 @@ export const githubSignupWithRole = async (req, res) => {
     const tokenData = await tokenResponse.json();
 
     if (tokenData.error) {
-      return res.status(400).json({ 
-        message: "GitHub authentication failed", 
-        error: tokenData.error_description 
+      return res.status(400).json({
+        message: "GitHub authentication failed",
+        error: tokenData.error_description
       });
     }
 
@@ -906,30 +907,30 @@ export const githubSignupWithRole = async (req, res) => {
 
       const emails = await emailResponse.json();
       const primaryEmail = emails.find(email => email.primary && email.verified);
-      
+
       if (!primaryEmail) {
-        return res.status(400).json({ 
-          message: "No verified email found in GitHub account" 
+        return res.status(400).json({
+          message: "No verified email found in GitHub account"
         });
       }
-      
+
       githubUser.email = primaryEmail.email;
     }
 
     const { name, email, login } = githubUser;
 
     if (!email || !login) {
-      return res.status(400).json({ 
-        message: "Required user information not available from GitHub" 
+      return res.status(400).json({
+        message: "Required user information not available from GitHub"
       });
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (existingUser) {
-      return res.status(409).json({ 
-        message: "User already exists. Please use regular GitHub login instead." 
+      return res.status(409).json({
+        message: "User already exists. Please use regular GitHub login instead."
       });
     }
 
@@ -943,7 +944,7 @@ export const githubSignupWithRole = async (req, res) => {
       githubId: githubUser.id,
       githubUsername: login,
     });
-    
+
     console.log("New GitHub user created with role:", {
       id: user._id,
       name: user.name,
@@ -966,8 +967,8 @@ export const githubSignupWithRole = async (req, res) => {
     console.error("GitHub signup error:", error);
 
     if (error.message && error.message.includes('fetch')) {
-      return res.status(500).json({ 
-        message: "GitHub API temporarily unavailable. Please try again." 
+      return res.status(500).json({
+        message: "GitHub API temporarily unavailable. Please try again."
       });
     }
 
@@ -975,7 +976,7 @@ export const githubSignupWithRole = async (req, res) => {
       return res.status(409).json({ message: "User with this email already exists" });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during GitHub signup",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -995,11 +996,11 @@ const callAIService = async (endpoint, data) => {
       },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error(`AI Service error: ${response.statusText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('AI Service call failed:', error);
@@ -1013,8 +1014,8 @@ export const generateComplaintFromChat = async (req, res) => {
     const { userId, chatHistory, userMessage } = req.body;
 
     if (!userId || !chatHistory || !userMessage) {
-      return res.status(400).json({ 
-        message: "User ID, chat history, and user message are required" 
+      return res.status(400).json({
+        message: "User ID, chat history, and user message are required"
       });
     }
 
@@ -1041,15 +1042,15 @@ export const generateComplaintFromChat = async (req, res) => {
     });
 
     // Step 3: Check if this conversation indicates a complaint
-    const isComplaintWorthy = complaintAnalysis.category !== 'general_inquiry' && 
-                             (complaintAnalysis.sentiment === 'negative' || 
-                              complaintAnalysis.priority === 'high' ||
-                              complaintAnalysis.category.includes('complaint'));
+    const isComplaintWorthy = complaintAnalysis.category !== 'general_inquiry' &&
+      (complaintAnalysis.sentiment === 'negative' ||
+        complaintAnalysis.priority === 'high' ||
+        complaintAnalysis.category.includes('complaint'));
 
     if (isComplaintWorthy) {
       // Step 4: Generate structured complaint from chat
       const complaintData = await generateStructuredComplaint(chatHistory, userMessage, complaintAnalysis, user);
-      
+
       return res.json({
         success: true,
         chatbotResponse: chatbotResponse.response,
@@ -1071,7 +1072,7 @@ export const generateComplaintFromChat = async (req, res) => {
 
   } catch (error) {
     console.error("Complaint generation error:", error);
-    
+
     // Fallback response if AI service is down
     return res.json({
       success: true,
@@ -1088,7 +1089,7 @@ const generateStructuredComplaint = async (chatHistory, userMessage, analysis, u
   try {
     // Extract key information from chat
     const fullConversation = `${chatHistory}\nUser: ${userMessage}`;
-    
+
     // Use AI to extract structured data
     const extractedData = await callAIService('/api/extract-complaint-data', {
       conversation: fullConversation,
@@ -1115,7 +1116,7 @@ const generateStructuredComplaint = async (chatHistory, userMessage, analysis, u
     };
   } catch (error) {
     console.error("Error generating structured complaint:", error);
-    
+
     // Fallback structure
     return {
       title: `${analysis.category} - Auto-generated Complaint`,
@@ -1136,8 +1137,8 @@ export const processChatForComplaint = async (req, res) => {
     const { userId, message, sessionId } = req.body;
 
     if (!userId || !message) {
-      return res.status(400).json({ 
-        message: "User ID and message are required" 
+      return res.status(400).json({
+        message: "User ID and message are required"
       });
     }
 
@@ -1164,10 +1165,10 @@ export const processChatForComplaint = async (req, res) => {
     });
 
     // Check if user wants to create a complaint
-    const createComplaint = analysis.intent === 'create_complaint' || 
-                           message.toLowerCase().includes('complaint') ||
-                           message.toLowerCase().includes('issue') ||
-                           analysis.sentiment === 'negative' && analysis.priority === 'high';
+    const createComplaint = analysis.intent === 'create_complaint' ||
+      message.toLowerCase().includes('complaint') ||
+      message.toLowerCase().includes('issue') ||
+      analysis.sentiment === 'negative' && analysis.priority === 'high';
 
     res.json({
       success: true,
@@ -1184,7 +1185,7 @@ export const processChatForComplaint = async (req, res) => {
 
   } catch (error) {
     console.error("Chat processing error:", error);
-    
+
     // Fallback response
     res.json({
       success: true,
@@ -1201,8 +1202,8 @@ export const chatWithAI = async (req, res) => {
     const { userId, message, conversationHistory = [] } = req.body;
 
     if (!userId || !message) {
-      return res.status(400).json({ 
-        message: "User ID and message are required" 
+      return res.status(400).json({
+        message: "User ID and message are required"
       });
     }
 
@@ -1225,7 +1226,7 @@ export const chatWithAI = async (req, res) => {
     };
 
     const result = await deepseekService.chat(message, conversationHistory, systemContext);
-    
+
     if (result.success) {
       return res.json({
         success: true,
@@ -1257,8 +1258,8 @@ export const generateComplaintFromAI = async (req, res) => {
     const { userId, conversationHistory, currentMessage } = req.body;
 
     if (!userId || !conversationHistory) {
-      return res.status(400).json({ 
-        message: "User ID and conversation history are required" 
+      return res.status(400).json({
+        message: "User ID and conversation history are required"
       });
     }
 
@@ -1269,8 +1270,8 @@ export const generateComplaintFromAI = async (req, res) => {
 
     // Use DeepSeek R1
     const deepseekService = (await import('../services/deepseekService.js')).default;
-    
-    const fullConversation = currentMessage 
+
+    const fullConversation = currentMessage
       ? `${conversationHistory}\n\nLatest message: ${currentMessage}`
       : conversationHistory;
 
@@ -1309,7 +1310,7 @@ export const generateComplaintFromAI = async (req, res) => {
 
   } catch (error) {
     console.error("Complaint generation error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Error generating complaint from conversation",
@@ -1321,7 +1322,7 @@ export const generateComplaintFromAI = async (req, res) => {
 // Facebook signup with role selection
 export const facebookSignupWithRole = async (req, res) => {
   try {
-    const { code, role = "user" } = req.body;
+    const { code, role = "user", organization, phoneNumber } = req.body;
 
     if (!code) {
       return res.status(400).json({ message: "Facebook authorization code is required" });
@@ -1346,19 +1347,19 @@ export const facebookSignupWithRole = async (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-  client_id: process.env.FACEBOOK_APP_ID,
-  client_secret: process.env.FACEBOOK_APP_SECRET,
-  redirect_uri: 'http://localhost:5000/auth/facebook/callback',
-  code: code,
+        client_id: process.env.FACEBOOK_APP_ID,
+        client_secret: process.env.FACEBOOK_APP_SECRET,
+        redirect_uri: 'http://localhost:5000/auth/facebook/callback',
+        code: code,
       }),
     });
 
     const tokenData = await tokenResponse.json();
 
     if (tokenData.error) {
-      return res.status(400).json({ 
-        message: "Facebook authentication failed", 
-        error: tokenData.error.message 
+      return res.status(400).json({
+        message: "Facebook authentication failed",
+        error: tokenData.error.message
       });
     }
 
@@ -1367,23 +1368,23 @@ export const facebookSignupWithRole = async (req, res) => {
     const facebookUser = await userResponse.json();
 
     if (facebookUser.error) {
-      return res.status(400).json({ 
-        message: "Failed to get user information from Facebook", 
-        error: facebookUser.error.message 
+      return res.status(400).json({
+        message: "Failed to get user information from Facebook",
+        error: facebookUser.error.message
       });
     }
 
     const { name, email, id } = facebookUser;
 
     if (!email) {
-      return res.status(400).json({ 
-        message: "Email not available from Facebook account" 
+      return res.status(400).json({
+        message: "Email not available from Facebook account"
       });
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (existingUser) {
       // If user exists, update Facebook info and return user data
       if (!existingUser.facebookId) {
@@ -1405,14 +1406,24 @@ export const facebookSignupWithRole = async (req, res) => {
     }
 
     // Create new user with specified role
-    const user = await User.create({
+    const userData = {
       name: name,
       email: email.toLowerCase().trim(),
       password: Math.random().toString(36).slice(-8), // dummy password
       role: role,
       isFacebookUser: true,
       facebookId: id,
-    });
+    };
+
+    if (phoneNumber && phoneNumber.trim()) {
+      userData.phoneNumber = phoneNumber.trim();
+    }
+
+    if (organization) {
+      userData.organization = organization.trim();
+    }
+
+    const user = await User.create(userData);
 
     console.log("New Facebook user created with role:", {
       id: user._id,
@@ -1421,6 +1432,16 @@ export const facebookSignupWithRole = async (req, res) => {
       role: user.role,
       facebookId: id,
     });
+
+    // Send SMS notification if phone number is provided
+    if (user.phoneNumber) {
+      try {
+        await triggerSignupSMS(user);
+        console.log("Signup SMS sent to Facebook user");
+      } catch (smsError) {
+        console.error("Failed to send signup SMS:", smsError);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -1439,7 +1460,7 @@ export const facebookSignupWithRole = async (req, res) => {
       return res.status(409).json({ message: "User with this email already exists" });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Server error during Facebook signup",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -1451,26 +1472,26 @@ export const refreshToken = async (req, res) => {
   try {
     // Get the token from the request
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
-    
+
     try {
       // Verify the token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
+
       // Find the user
       const user = await User.findById(decoded.id).select('-password');
-      
+
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      
+
       // Generate new tokens
       const newToken = generateToken(user._id);
       const newRefreshToken = generateRefreshToken(user._id);
-      
+
       // Return the new tokens
       return res.status(200).json({
         token: newToken,
@@ -1487,29 +1508,29 @@ export const refreshToken = async (req, res) => {
     } catch (tokenError) {
       // If token verification fails, try the refresh token
       const refreshToken = req.body.refreshToken;
-      
+
       if (!refreshToken) {
         return res.status(401).json({ message: 'No refresh token provided' });
       }
-      
+
       try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-        
+
         // Check if it's actually a refresh token
         if (!decoded.tokenType || decoded.tokenType !== 'refresh') {
           return res.status(401).json({ message: 'Invalid refresh token' });
         }
-        
+
         const user = await User.findById(decoded.id).select('-password');
-        
+
         if (!user) {
           return res.status(404).json({ message: 'User not found' });
         }
-        
+
         // Generate new tokens
         const newToken = generateToken(user._id);
         const newRefreshToken = generateRefreshToken(user._id);
-        
+
         // Return the new tokens
         return res.status(200).json({
           token: newToken,
@@ -1632,63 +1653,63 @@ export const resendOTP = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Please provide your email" 
+      return res.status(400).json({
+        success: false,
+        message: "Please provide your email"
       });
     }
-    
+
     // Find the user by email across all collections
     const { user } = await findUserByEmail(email);
     if (!user) {
       // For security reasons, don't reveal that the user doesn't exist
-      return res.json({ 
-        success: true, 
-        message: "If your email is registered, you'll receive a password reset link shortly" 
+      return res.json({
+        success: true,
+        message: "If your email is registered, you'll receive a password reset link shortly"
       });
     }
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    
+
     // Hash the token and store in database
     user.resetPasswordToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
-      
+
     // Set token expiry (30 minutes)
     user.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
-    
+
     await user.save();
-    
+
     try {
       // Send email with reset token
       await sendPasswordResetEmail(user.email, user.name, resetToken);
-      
-      res.json({ 
-        success: true, 
-        message: "Password reset link sent to your email" 
+
+      res.json({
+        success: true,
+        message: "Password reset link sent to your email"
       });
     } catch (emailError) {
       console.error("Failed to send password reset email:", emailError);
-      
+
       // Remove reset token from database if email fails
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save();
-      
-      return res.status(500).json({ 
-        success: false, 
-        message: "Failed to send reset email. Please try again later." 
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send reset email. Please try again later."
       });
     }
   } catch (error) {
     console.error("Forgot password error:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Server error. Please try again later."
     });
   }
@@ -1698,61 +1719,61 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
-    
+
     if (!token || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Please provide reset token and new password" 
+      return res.status(400).json({
+        success: false,
+        message: "Please provide reset token and new password"
       });
     }
-    
+
     // Hash the token to compare with stored hash
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
       .digest('hex');
-      
+
     // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
-    
+
     if (!user) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid or expired reset token. Please request a new one." 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token. Please request a new one."
       });
     }
-    
+
     // Validate password
     if (password.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Password must be at least 6 characters long" 
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long"
       });
     }
-    
+
     // Update password
     user.password = password;
-    
+
     // Clear reset token fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    
+
     await user.save();
-    
+
     console.log("Password reset successful for user:", user.email);
-    
-    res.json({ 
-      success: true, 
-      message: "Password reset successful. Please login with your new password." 
+
+    res.json({
+      success: true,
+      message: "Password reset successful. Please login with your new password."
     });
   } catch (error) {
     console.error("Reset password error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error. Please try again later." 
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later."
     });
   }
 };
@@ -1761,42 +1782,42 @@ export const resetPassword = async (req, res) => {
 export const verifyResetToken = async (req, res) => {
   try {
     const { token } = req.params;
-    
+
     if (!token) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Reset token is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Reset token is required"
       });
     }
-    
+
     // Hash the token to compare with stored hash
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
       .digest('hex');
-      
+
     // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
-    
+
     if (!user) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid or expired reset token" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token"
       });
     }
-    
-    res.json({ 
-      success: true, 
-      message: "Token is valid" 
+
+    res.json({
+      success: true,
+      message: "Token is valid"
     });
   } catch (error) {
     console.error("Verify reset token error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error. Please try again later." 
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later."
     });
   }
 };

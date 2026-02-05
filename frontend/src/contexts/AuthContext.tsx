@@ -21,18 +21,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Tracking the last validation time to prevent excessive API calls
   const [lastValidationTime, setLastValidationTime] = useState<number>(0);
-  
+
   // Validate session with the backend to check if token is valid and server is the same
   const validateSession = useCallback(async (): Promise<boolean> => {
     try {
       const token = localStorage.getItem("token");
-      
+
       // No token means no session
       if (!token) {
         console.log("No token found, session invalid");
         return false;
       }
-      
+
       // Check token validity
       if (!tokenService.validateToken(token)) {
         console.log("Token invalid or expired");
@@ -40,16 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         return false;
       }
-      
+
       // Throttle validate-session calls to prevent resource exhaustion
       const now = Date.now();
       const MIN_INTERVAL = 5000; // 5 seconds minimum between validation calls
-      
+
       if (now - lastValidationTime < MIN_INTERVAL) {
         console.log("Skipping session validation - throttled to prevent resource exhaustion");
         return true; // Assume valid if we recently validated
       }
-      
+
       // Update last validation time
       setLastValidationTime(now);
 
@@ -60,9 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await api.get(`/auth/validate-session${cacheBuster}`, {
           timeout: 5000, // 5 second timeout
         });
-        
+
         const data = response.data;
-        
+
         // Check if server has restarted by comparing session IDs
         if (serverSessionId && data.sessionId !== serverSessionId) {
           console.log("Server has restarted, forcing re-login");
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           return false;
         }
-        
+
         // Store the server session ID for future comparisons
         if (data.sessionId) {
           setServerSessionId(data.sessionId);
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("Network error during session validation, using client-side validation:", error);
         return true;
       }
-      
+
       // Make sure user state is set if we have a valid token but no user object
       if (!user) {
         const storedUserStr = localStorage.getItem("user");
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      
+
       return true;
     } catch (error) {
       console.error("Session validation error:", error);
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const token = localStorage.getItem("token");
       const savedUser = localStorage.getItem("user");
-      
+
       if (token && savedUser) {
         try {
           // Basic token validation before making API call
@@ -130,10 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
             return;
           }
-          
+
           const userData = JSON.parse(savedUser);
           setUser(userData);
-          
+
           // Validate session with backend
           await validateSession();
         } catch (error) {
@@ -142,31 +142,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
         }
       }
-      
+
       setIsLoading(false);
     };
-    
+
     initializeAuth();
-    
+
     // Set up periodic validation check (every 5 minutes)
     const intervalId = setInterval(() => {
       validateSession();
     }, 5 * 60 * 1000); // Check every 5 minutes
-    
+
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
-  // Only run this effect once on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only run this effect once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isAuthenticated = !!user;
-  
+
   // Added state for OTP verification flow
   const [pendingVerification, setPendingVerification] = useState<{
     email: string;
     userId: string | null;
   } | null>(null);
-  
+
   // Check if OTP verification is pending
   const isVerificationPending = !!pendingVerification;
 
@@ -175,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await api.post('/auth/login', { email, password });
       const data = response.data;
-      
+
       // If the user is not verified and needs OTP verification
       if (data.requiresVerification) {
         // Set pending verification state
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return false; // Don't proceed with login yet
       }
-      
+
       const userData: User = {
         id: data.user.id,
         firstName: data.user.firstName || data.user.name.split(" ")[0],
@@ -216,12 +216,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<boolean> => {
     try {
       console.log("Registering user with:", { name, email, role, phoneNumber: phoneNumber ? '***' : 'not provided' });
-      
+
       const payload: Record<string, string> = { name, email, password, role };
       if (phoneNumber) {
         payload.phoneNumber = phoneNumber;
       }
-      
+
       const response = await api.post('/auth/signup', payload);
       const data = response.data;
       // Check if registration failed (no user or token returned)
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await api.post('/auth/google', { token });
       const data = response.data;
-      
+
       const userData: User = {
         id: data.user.id,
         firstName: data.user.name.split(" ")[0],
@@ -309,7 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const response = await api.post('/auth/google-signup', body);
       const data = response.data;
-      
+
       const userData: User = {
         id: data.user.id,
         firstName: data.user.name.split(" ")[0],
@@ -345,10 +345,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Facebook signup with role
   const facebookSignupWithRole = async (
     code: string,
-    role: "user" | "agent" | "admin" | "analytics"
+    role: "user" | "agent" | "admin" | "analytics",
+    organization?: string,
+    phoneNumber?: string
   ): Promise<boolean> => {
     try {
-      const response = await api.post('/auth/facebook-signup', { code, role });
+      const body: { code: string; role: string; organization?: string; phoneNumber?: string } = { code, role };
+      if (organization) {
+        body.organization = organization;
+      }
+      if (phoneNumber) {
+        body.phoneNumber = phoneNumber;
+      }
+
+      const response = await api.post('/auth/facebook-signup', body);
       const data = response.data;
       const userData: User = {
         id: data.user.id,
@@ -402,13 +412,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
     setUser(null);
   };
-  
+
   // Verify OTP for email verification
   const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
     try {
       const response = await api.post('/auth/verify-otp', { email, otp });
       const data = response.data;
-      
+
       console.log("OTP verification response:", data);
 
       // Ensure we have all required user data
@@ -425,13 +435,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.user.email,
         role: data.user.role || "user", // Default to user if role is missing
       };
-      
+
       console.log("Setting user data after OTP verification:", userData);
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
-      
+
       // Clear the pending verification state
       setPendingVerification(null);
 

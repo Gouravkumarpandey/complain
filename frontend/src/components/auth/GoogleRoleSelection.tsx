@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Shield, UserCheck, BarChart3, ArrowRight, Building2, ArrowLeft, Phone } from 'lucide-react';
+import { User, Shield, UserCheck, BarChart3, ArrowRight, Building2, ArrowLeft, Phone, CheckCircle2 } from 'lucide-react';
 
 interface GoogleRoleSelectionProps {
   onRoleSelected: (role: 'user' | 'agent' | 'analytics' | 'admin', organization?: string, phoneNumber?: string) => void;
@@ -13,7 +13,7 @@ interface GoogleRoleSelectionProps {
 export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: GoogleRoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<'user' | 'agent' | 'analytics' | 'admin'>('user');
   const [organization, setOrganization] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('+91 ');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +31,7 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
       title: 'Support Agent',
       description: 'Handle and resolve customer complaints',
       icon: UserCheck,
-      color: 'green',
+      color: 'emerald',
       requiresOrg: true,
     },
     {
@@ -39,7 +39,7 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
       title: 'Administrator',
       description: 'Manage teams and system settings',
       icon: Shield,
-      color: 'purple',
+      color: 'violet',
       requiresOrg: true,
     },
     {
@@ -47,14 +47,22 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
       title: 'Analytics Manager',
       description: 'View reports and analyze data',
       icon: BarChart3,
-      color: 'orange',
+      color: 'amber',
       requiresOrg: true,
     },
   ];
 
   const selectedRoleData = roles.find(r => r.id === selectedRole);
   const requiresOrganization = selectedRoleData?.requiresOrg || false;
-  const requiresPhoneNumber = true; // All Google signups need phone number for notifications
+
+  const validateIndianPhone = (phone: string) => {
+    // Remove spaces, dashes, plus sign
+    const cleanPhone = phone.replace(/[\s\-\+]/g, '');
+    // Check if it matches Indian format (starts with 91 followed by 10 digits, or just 10 digits starting with 6-9)
+    if (cleanPhone.length < 10) return false;
+    const last10 = cleanPhone.slice(-10);
+    return /^[6-9]\d{9}$/.test(last10);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,150 +73,158 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
       setError('Organization name is required for this role');
       return;
     }
-    
+
     // Validate phone number (required for all roles)
     if (!phoneNumber.trim()) {
       setError('Phone number is required for notifications');
       return;
     }
 
+    if (!validateIndianPhone(phoneNumber)) {
+      setError('Please enter a valid Indian phone number (+91)');
+      return;
+    }
+
     setLoading(true);
     try {
       await onRoleSelected(
-        selectedRole, 
-        requiresOrganization ? organization.trim() : undefined, 
-        phoneNumber.trim() // Always include phone number
+        selectedRole,
+        requiresOrganization ? organization.trim() : undefined,
+        phoneNumber.trim()
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const getColorClasses = (color: string, isSelected: boolean) => {
-    const colors = {
-      blue: isSelected 
-        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500' 
-        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50',
-      green: isSelected 
-        ? 'border-green-500 bg-green-50 ring-2 ring-green-500' 
-        : 'border-gray-200 hover:border-green-300 hover:bg-green-50',
-      purple: isSelected 
-        ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-500' 
-        : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50',
-      orange: isSelected 
-        ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-500' 
-        : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50',
+  const getStyleClasses = (color: string, isSelected: boolean) => {
+    const base = "relative p-4 rounded-xl border-2 transition-all duration-300 text-left group overflow-hidden";
+
+    if (!isSelected) {
+      return `${base} border-gray-100 bg-white hover:border-blue-100 hover:shadow-md`;
+    }
+
+    const styles = {
+      blue: 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500 shadow-lg shadow-blue-500/10',
+      emerald: 'border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500 shadow-lg shadow-emerald-500/10',
+      violet: 'border-violet-500 bg-violet-50/50 ring-1 ring-violet-500 shadow-lg shadow-violet-500/10',
+      amber: 'border-amber-500 bg-amber-50/50 ring-1 ring-amber-500 shadow-lg shadow-amber-500/10',
     };
-    return colors[color as keyof typeof colors] || colors.blue;
+    return `${base} ${styles[color as keyof typeof styles] || styles.blue}`;
   };
 
   const getIconColor = (color: string) => {
     const colors = {
       blue: 'text-blue-600',
-      green: 'text-green-600',
-      purple: 'text-purple-600',
-      orange: 'text-orange-600',
+      emerald: 'text-emerald-600',
+      violet: 'text-violet-600',
+      amber: 'text-amber-600',
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-gray-50 flex font-sans">
       {/* Left Side - Image and branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full"></div>
-          <div className="absolute bottom-32 right-20 w-24 h-24 bg-blue-300 rounded-full"></div>
-          <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-blue-400 rounded-full"></div>
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] relative overflow-hidden flex-col justify-between p-12">
+        {/* Background Gradients */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]"></div>
         </div>
-        
-        {/* Back button in left panel */}
-        <button
-          type="button"
-          onClick={onCancel}
-          className="absolute top-8 left-8 text-white hover:text-blue-200 transition-all duration-200 flex items-center gap-2 font-medium text-lg z-20"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Sign Up
-        </button>
-        
-        <div className="relative z-10 flex flex-col justify-center px-12 py-20">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Join <span className="text-[#77BEF0]">QuickFix</span>
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col h-full">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-white/70 hover:text-white transition-colors duration-200 flex items-center gap-2 font-medium text-sm w-fit"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Sign Up
+          </button>
+
+          <div className="mt-auto mb-20">
+            <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+              Complete Your <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Profile Setup</span>
             </h1>
-            <p className="text-xl text-blue-100">
-              Choose your role to get started with intelligent customer service automation
+            <p className="text-xl text-gray-400 max-w-md leading-relaxed">
+              Choose your role to customize your QuickFix experience. We'll set up your dashboard instantly.
             </p>
           </div>
-          
-          {/* Role Selection Image */}
-          <div className="flex justify-center">
-            <div className="relative">
-              <img
-                src="/Signup.webp"
-                alt="QuickFix Role Selection"
-                className="w-full max-w-lg h-auto rounded-lg shadow-lg"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent rounded-lg"></div>
-            </div>
+
+          {/* Steps/Indicators */}
+          <div className="flex gap-2">
+            <div className="h-1 w-8 bg-blue-500 rounded-full"></div>
+            <div className="h-1 w-8 bg-gray-700 rounded-full"></div>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Role Selection Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-16 py-12 relative">
-        <div className="max-w-md w-full mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Complete Your Profile
-            </h2>
-            <p className="text-gray-600 mb-2">
-              Welcome, <span className="font-semibold text-blue-600">{userInfo.name}</span>
-            </p>
-            <p className="text-sm text-gray-500">
-              {userInfo.email}
-            </p>
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 overflow-y-auto bg-white/50 backdrop-blur-3xl">
+        <div className="max-w-[480px] w-full">
+          {/* Header for Mobile */}
+          <div className="lg:hidden mb-8">
+            <button
+              onClick={onCancel}
+              className="text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2 text-sm font-medium mb-6"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Almost there!</h1>
+            <p className="text-gray-500">Let's finish setting up your account.</p>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-              <span className="text-red-700 text-sm">{error}</span>
+          <div className="flex items-center gap-4 mb-8 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-600">
+              {userInfo.name.charAt(0).toUpperCase()}
             </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Role Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Account Type *
+              <p className="font-semibold text-gray-900">{userInfo.name}</p>
+              <p className="text-sm text-gray-500">{userInfo.email}</p>
+            </div>
+            <CheckCircle2 className="w-5 h-5 text-blue-500 ml-auto" />
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role Selection */}
+            <div className="space-y-4">
+              <label className="block text-sm font-semibold text-gray-900">
+                Select Account Type
               </label>
               <div className="grid grid-cols-1 gap-3">
                 {roles.map((role) => {
                   const Icon = role.icon;
                   const isSelected = selectedRole === role.id;
-                  
+
                   return (
                     <button
                       key={role.id}
                       type="button"
                       onClick={() => setSelectedRole(role.id)}
-                      className={`p-4 border-2 rounded-lg transition-all duration-200 text-left ${getColorClasses(role.color, isSelected)}`}
+                      className={getStyleClasses(role.color, isSelected)}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-white' : 'bg-gray-50'}`}>
+                      <div className="flex items-start gap-4">
+                        <div className={`p-2.5 rounded-xl transition-colors duration-300 ${isSelected ? 'bg-white shadow-sm' : 'bg-gray-50 group-hover:bg-blue-50'}`}>
                           <Icon className={`w-5 h-5 ${getIconColor(role.color)}`} />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 text-sm">
+                          <h3 className={`font-semibold text-sm transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                             {role.title}
                           </h3>
-                          <p className="text-xs text-gray-600 mt-0.5">
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                             {role.description}
                           </p>
                         </div>
+                        {isSelected && (
+                          <div className={`w-4 h-4 rounded-full border-[3px] mt-1 ${role.color === 'blue' ? 'border-blue-500' :
+                              role.color === 'emerald' ? 'border-emerald-500' :
+                                role.color === 'violet' ? 'border-violet-500' : 'border-amber-500'
+                            }`}></div>
+                        )}
                       </div>
                     </button>
                   );
@@ -216,61 +232,71 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
               </div>
             </div>
 
-            {/* Organization Field (conditional) */}
-            {requiresOrganization && (
-              <div className="animate-fadeIn">
-                <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization Name *
+            <div className="space-y-4 animate-fadeIn">
+              {/* Organization Field */}
+              {requiresOrganization && (
+                <div className="group">
+                  <label htmlFor="organization" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Organization
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Building2 className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                    </div>
+                    <input
+                      id="organization"
+                      type="text"
+                      value={organization}
+                      onChange={(e) => setOrganization(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 sm:text-sm"
+                      placeholder="Company or Organization Name"
+                      required={requiresOrganization}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Phone Number Field */}
+              <div className="group">
+                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-900 mb-2">
+                  Phone Number <span className="text-gray-400 font-normal">(WhatsApp Enabled)</span>
                 </label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  </div>
                   <input
-                    id="organization"
-                    type="text"
-                    value={organization}
-                    onChange={(e) => setOrganization(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your organization name"
-                    required={requiresOrganization}
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 sm:text-sm"
+                    placeholder="+91 98765 43210"
+                    required
                   />
                 </div>
+                <p className="mt-1.5 text-xs text-gray-500">We require a valid Indian phone number (+91) for account verification.</p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50/50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fadeIn">
+                <Shield className="w-4 h-4 shrink-0" />
+                {error}
               </div>
             )}
-
-            {/* Phone Number Field (required for all roles) */}
-            <div className="animate-fadeIn">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number (WhatsApp) *
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="phoneNumber"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="e.g., +1 555 638 2998"
-                  required
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">We'll send notifications and updates via WhatsApp</p>
-            </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/30 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:shadow-none transition-all duration-200 hover:-translate-y-0.5"
             >
               {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Processing...
-                </>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Continue
-                  <ArrowRight className="w-5 h-5" />
+                  Complete Registration
+                  <ArrowRight className="ml-2 -mr-1 h-4 w-4" />
                 </>
               )}
             </button>

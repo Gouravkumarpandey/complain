@@ -45,7 +45,9 @@ export interface AuthContextType {
   loginWithFacebook: (code: string, isSignup?: boolean) => Promise<boolean>;
   facebookSignupWithRole: (
     code: string,
-    role: "user" | "agent" | "admin" | "analytics"
+    role: "user" | "agent" | "admin" | "analytics",
+    organization?: string,
+    phoneNumber?: string
   ) => Promise<boolean>;
   validateSession: () => Promise<boolean>;
   // OTP verification related props
