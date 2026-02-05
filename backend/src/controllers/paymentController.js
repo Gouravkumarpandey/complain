@@ -30,7 +30,9 @@ export const createCheckoutSession = async (req, res) => {
     // Check if Stripe is configured
     if (!stripe) {
       return res.status(503).json({ 
-        message: 'Payment service is not configured. Please contact support.' 
+        success: false,
+        message: 'Payment processing is temporarily unavailable. Please try again later or contact support.',
+        code: 'PAYMENT_SERVICE_UNAVAILABLE'
       });
     }
 

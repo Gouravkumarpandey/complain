@@ -109,12 +109,7 @@ export function LoginForm() {
         }
       }
     } catch (err) {
-      console.error('Google authentication error:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Google authentication failed. Please try again.');
-      }
+      handleGoogleError(err);
     }
   };
 
@@ -410,12 +405,15 @@ export function LoginForm() {
                     onError={() => {
                       console.error('Google Login Failed');
                       
-                      // Check if it's an origin-related error - always show the current origin
+                      // Check if it's an origin-related error
                       const currentOrigin = window.location.origin;
+                      console.log('Current origin:', currentOrigin);
                       
-                      // Always show the origin information as it's likely an origin-related issue
-                      setError(`Google authentication failed. Your current origin (${currentOrigin}) may not be authorized in Google Cloud Console. Check console for setup instructions.`);
-                      setupGoogleAuth(); // Show detailed setup guide in console
+                      // Show user-friendly error message
+                      setError('Google Sign-In is temporarily unavailable. Please use email/password login or try again later.');
+                      
+                      // Show detailed setup guide in console for developers
+                      setupGoogleAuth();
                     }}
                     size="large"
                     width="100%"
