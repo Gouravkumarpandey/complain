@@ -474,7 +474,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
     
     // Use dedicated socket URL from environment variables, or fallback to API URL
-    const baseURL = import.meta.env.VITE_SOCKET_SERVER_URL || 'http://localhost:5001';
+    const baseURL = import.meta.env.VITE_SOCKET_SERVER_URL || 'http://localhost:3001';
     
     console.log('🔌 Socket connecting to:', baseURL);
       

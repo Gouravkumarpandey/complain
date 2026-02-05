@@ -11,6 +11,7 @@ import { useComplaints } from '../../contexts/ComplaintContext';
 import { apiService } from '../../services/apiService';
 import { agentService } from '../../services/agentService';
 import { NotificationCenter } from '../notifications/NotificationCenter';
+import { CompactLoadingSkeleton } from '../common/SkeletonLoader';
 import { 
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -1362,10 +1363,7 @@ export const AdminDashboard = () => {
                     {isLoadingUsers ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-                            <p className="text-gray-500">Loading users...</p>
-                          </div>
+                          <CompactLoadingSkeleton />
                         </td>
                       </tr>
                     ) : users.length === 0 ? (
@@ -1545,10 +1543,7 @@ export const AdminDashboard = () => {
                     {isLoadingAgents ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-                            <p className="text-gray-500">Loading agents...</p>
-                          </div>
+                          <CompactLoadingSkeleton />
                         </td>
                       </tr>
                     ) : agents.length === 0 ? (

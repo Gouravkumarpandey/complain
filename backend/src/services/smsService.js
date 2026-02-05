@@ -9,12 +9,19 @@ const appName = process.env.APP_NAME || 'QuickFix';
 
 let twilioClient = null;
 
-// Initialize Twilio client if credentials are available
-if (accountSid && authToken) {
-  twilioClient = twilio(accountSid, authToken);
-  console.log('✅ Twilio SMS service initialized');
+// Initialize Twilio client if credentials are available and valid
+if (accountSid && authToken && accountSid.startsWith('AC') && twilioPhoneNumber) {
+  try {
+    twilioClient = twilio(accountSid, authToken);
+    console.log('✅ Twilio SMS service initialized');
+  } catch (error) {
+    console.warn('⚠️  Twilio initialization error:', error.message);
+  }
 } else {
-  console.warn('⚠️  Twilio credentials not found. SMS service will be disabled.');
+  console.warn('⚠️  Twilio credentials not found or invalid. SMS service will be disabled.');
+  if (accountSid) {
+    console.warn('   - Account SID must start with "AC"');
+  }
 }
 
 /**

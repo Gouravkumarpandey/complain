@@ -6,14 +6,6 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables first, before any other imports
-import dotenv from "dotenv";
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 // Only load .env file in development - Render uses environment variables directly
 if (process.env.NODE_ENV !== 'production') {
   const envPath = join(__dirname, '../.env');

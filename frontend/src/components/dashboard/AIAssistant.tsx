@@ -3,6 +3,7 @@ import { Bot, Send, X, Loader2 } from 'lucide-react';
 import { VoiceInput } from '../complaints/agent/VoiceInput';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import api from '../../utils/api';
 
 interface Message {
   id: string;
@@ -70,21 +71,14 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
 
     try {
       // Send message to DeepSeek R1 via backend
-      const result = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/chat-ai`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          userId: user?.id,
-          message: inputMessage,
-          conversationHistory: conversationHistory,
-          conversationState: conversationState
-        })
+      const result = await api.post('/auth/chat-ai', {
+        userId: user?.id,
+        message: inputMessage,
+        conversationHistory: conversationHistory,
+        conversationState: conversationState
       });
 
-      const response = await result.json();
+      const response = result.data;
 
       if (response.success) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

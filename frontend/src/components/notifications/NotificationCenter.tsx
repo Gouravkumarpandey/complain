@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Bell, CheckCheck, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, Clock, MessageSquare } from 'lucide-react';
 import apiService from '../../services/apiService';
+import { CompactLoadingSkeleton } from '../common/SkeletonLoader';
 
 interface Notification {
   _id: string;
@@ -33,13 +34,13 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     try {
       const response = await apiService.getNotifications();
       if (response.data) {
-        let notifs = response.data.notifications || [];
+        let notifs = (response.data as any)?.notifications || [];
         // Filter on client side if needed
         if (filter === 'unread') {
           notifs = notifs.filter((n: Notification) => !n.isRead);
         }
         setNotifications(notifs);
-        setUnreadCount(response.data.unreadCount || 0);
+        setUnreadCount((response.data as any)?.unreadCount || 0);
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -59,7 +60,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     try {
       const response = await apiService.markNotificationAsRead(id);
       if (response.data) {
-        setUnreadCount(response.data.unreadCount || 0);
+        setUnreadCount((response.data as any)?.unreadCount || 0);
         setNotifications(prev =>
           prev.map(n => (n._id === id ? { ...n, isRead: true } : n))
         );
@@ -83,7 +84,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     try {
       const response = await apiService.deleteNotification(id);
       if (response.data) {
-        setUnreadCount(response.data.unreadCount || 0);
+        setUnreadCount((response.data as any)?.unreadCount || 0);
         setNotifications(prev => prev.filter(n => n._id !== id));
       }
     } catch (error) {
@@ -232,9 +233,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
         {/* Notifications List */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
-            </div>
+            <CompactLoadingSkeleton />
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 px-6">
               <Bell className="w-16 h-16 mb-4 text-gray-300" />

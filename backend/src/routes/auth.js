@@ -2,6 +2,7 @@ import express from "express";
 import { 
   registerUser, 
   loginUser, 
+  adminLogin,
   googleLogin, 
   decodeGoogleToken, 
   googleSignupWithRole,
@@ -26,6 +27,7 @@ const router = express.Router();
 // Normal auth
 router.post("/signup", registerUser);
 router.post("/login", loginUser);
+router.post("/admin-login", adminLogin);
 router.post("/refresh", refreshToken);
 
 // OTP verification

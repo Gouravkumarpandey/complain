@@ -10,6 +10,8 @@ import { OTPVerification } from './OTPVerification';
 import { GoogleRoleSelection } from './GoogleRoleSelection';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
 import { FacebookLogin } from './FacebookLogin';
+import { AxiosError } from 'axios';
+import api from '../../utils/api';
 
 export function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,7 +35,7 @@ export function LoginForm() {
     email: '',
     password: '',
     phoneNumber: '',
-    role: 'user' as 'user' | 'agent' | 'admin' | 'analytics',
+    role: 'user' as 'user' | 'agent' | 'analytics',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -109,12 +111,13 @@ export function LoginForm() {
         }
       }
     } catch (err) {
-      handleGoogleError(err);
+      console.error('Google auth error:', err);
+      setError('Google authentication failed. Please try again.');
     }
   };
 
   // Handle role selection completion
-  const handleRoleSelected = async (role: 'user' | 'agent' | 'admin' | 'analytics', organization?: string, phoneNumber?: string) => {
+  const handleRoleSelected = async (role: 'user' | 'agent' | 'analytics' | 'admin', organization?: string, phoneNumber?: string) => {
     if (!pendingGoogleAuth) return;
 
     try {
@@ -167,20 +170,14 @@ export function LoginForm() {
     try {
       console.log('Facebook authentication successful, sending to backend...');
       
-      const apiResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/auth/facebook`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          accessToken: response.auth.accessToken,
-          isSignup: !isLogin
-        }),
+      const apiResponse = await api.post('/auth/facebook', {
+        accessToken: response.auth.accessToken,
+        isSignup: !isLogin
       });
 
-      const data = await apiResponse.json();
+      const data = apiResponse.data;
 
-      if (apiResponse.ok && data.token) {
+      if (data.token) {
         // Store authentication data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -190,9 +187,10 @@ export function LoginForm() {
       } else {
         setError(data.message || 'Facebook authentication failed');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Facebook auth error:', err);
-      setError('Failed to authenticate with Facebook. Please try again.');
+      const errorMessage = (err as AxiosError<{ message?: string }>).response?.data?.message || 'Failed to authenticate with Facebook. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -538,12 +536,11 @@ export function LoginForm() {
                     <select
                       id="role"
                       value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'agent' | 'admin' | 'analytics' })}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'agent' | 'analytics' })}
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
                     >
                       <option value="user">Customer / User</option>
                       <option value="agent">Support Agent</option>
-                      <option value="admin">Administrator</option>
                       <option value="analytics">Analytics Manager</option>
                     </select>
                   </div>

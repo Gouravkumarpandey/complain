@@ -81,7 +81,7 @@ class AIService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/response`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/ai/response`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

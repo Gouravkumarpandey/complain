@@ -279,7 +279,6 @@ export function HomePage() {
                 autoPlay
                 loop
                 muted
-                poster="/poster.png"
               >
                 <source
                   src="https://dam.freshworks.com/m/3f4f0cf65ec45bed/original/AI-Agent_X2-50.webm"

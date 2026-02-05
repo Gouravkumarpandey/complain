@@ -14,6 +14,7 @@ import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints, Complaint } from '../../contexts/ComplaintContext';
 import subscriptionService from '../../services/subscriptionService';
+import { DashboardSkeleton, CardSkeleton } from '../common/SkeletonLoader';
 import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -754,10 +755,7 @@ export function UserDashboard() {
 
         {/* Dashboard View - Core Complaint Features */}
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[60vh]">
-            <img src="/loading.gif" alt="Loading..." className="w-80 h-80 object-contain" />
-            <p className="text-gray-500 font-medium -mt-4">Loading your data...</p>
-          </div>
+          <DashboardSkeleton />
         ) : (
           <>
             {activeView === 'dashboard' && (
@@ -975,10 +973,7 @@ export function UserDashboard() {
                       </div>
                       <div className="p-5">
                         {loading ? (
-                          <div className="text-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-800 border-t-transparent mx-auto"></div>
-                            <p className="text-gray-500 mt-3 text-sm">Loading tickets...</p>
-                          </div>
+                          <CardSkeleton count={3} />
                         ) : filteredComplaints.length === 0 ? (
                           <div className="text-center py-12 text-gray-500">
                             <Inbox className="w-12 h-12 mx-auto mb-3 text-gray-300" />

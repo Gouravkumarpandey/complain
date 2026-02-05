@@ -19,10 +19,10 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 // Get API base URL from environment variables
-// In production, this should be: https://srv-d5kb4pili9vc73farna0.onrender.com
+// In production, this should be: https://srv-d5kb4pili9vc73farna0.onrender.com/api
 
-// In development: http://localhost:5001/api
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// In development: http://localhost:3001/api
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 console.log('✅ API configured with base URL:', API_BASE_URL);
 

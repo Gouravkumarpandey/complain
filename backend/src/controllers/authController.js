@@ -8,7 +8,18 @@ import deepseekService from "../services/deepseekService.js";
 import { validateAndFormatPhoneNumber } from "../utils/phoneValidation.js";
 import { triggerSignupSMS } from "../services/smsTriggers.js";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// Initialize Twilio - will be done lazily if needed
+let client;
+
+const getGoogleClient = () => {
+  if (!client) {
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.warn('⚠️ GOOGLE_CLIENT_ID is not set. Google Auth will fail.');
+    }
+    client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
+  return client;
+};
 
 // Generate JWT
 const generateToken = (id) => {
@@ -248,6 +259,74 @@ export const loginUser = async (req, res) => {
   }
 };
 
+// Admin login with restricted access
+export const adminLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Please provide email and password" });
+    }
+
+    // Find user across all collections
+    const { user, model } = await findUserByEmail(email);
+
+    // Verify user exists, password matches, and role is admin
+    if (user && (await user.matchPassword(password))) {
+      // Strict admin role check
+      if (user.role !== 'admin') {
+        console.log(`Non-admin user attempted admin login: ${email}`);
+        return res.status(403).json({ 
+          message: "Access denied. Administrator privileges required." 
+        });
+      }
+
+      // Check if admin user is verified
+      if (!user.isVerified && !user.isGoogleUser && !user.isFacebookUser) {
+        return res.status(401).json({
+          message: "Admin account not verified. Please contact system administrator.",
+        });
+      }
+      
+      console.log("Admin logged in successfully:", {
+        collection: model?.collection?.name || 'unknown',
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      });
+
+      // Generate both access and refresh tokens
+      const accessToken = generateToken(user._id);
+      const refreshToken = generateRefreshToken(user._id);
+      
+      res.json({
+        success: true,
+        user: {
+          id: user._id,
+          name: user.name || `${user.firstName} ${user.lastName}`,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
+        token: accessToken,
+        refreshToken: refreshToken,
+      });
+    } else {
+      // Log failed admin login attempts for security
+      console.log(`Failed admin login attempt for email: ${email}`);
+      res.status(401).json({ message: "Invalid administrator credentials" });
+    }
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({ message: "Server error during admin authentication" });
+  }
+};
+
 // Google Login
 export const googleLogin = async (req, res) => {
   try {
@@ -263,7 +342,8 @@ export const googleLogin = async (req, res) => {
     }
 
     // Verify token
-    const ticket = await client.verifyIdToken({
+    const googleClient = getGoogleClient();
+    const ticket = await googleClient.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
@@ -349,7 +429,8 @@ export const decodeGoogleToken = async (req, res) => {
     }
 
     // Verify token
-    const ticket = await client.verifyIdToken({
+    const googleClient = getGoogleClient();
+    const ticket = await googleClient.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
@@ -423,10 +504,10 @@ export const googleSignupWithRole = async (req, res) => {
       });
     }
     
-    // Phone number is required only for 'user' role (for WhatsApp notifications)
-    if (role === "user" && (!phoneNumber || !phoneNumber.trim())) {
+    // Phone number is required for all Google signups (for notifications)
+    if (!phoneNumber || !phoneNumber.trim()) {
       return res.status(400).json({
-        message: "Phone number is required for WhatsApp notifications",
+        message: "Phone number is required for notifications",
       });
     }
 
@@ -436,7 +517,8 @@ export const googleSignupWithRole = async (req, res) => {
     }
 
     // Verify token
-    const ticket = await client.verifyIdToken({
+    const googleClient = getGoogleClient();
+    const ticket = await googleClient.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
@@ -481,10 +563,8 @@ export const googleSignupWithRole = async (req, res) => {
       isVerified: true, // Google users are pre-verified
     };
 
-    // Add phone number if provided (required for user role)
-    if (phoneNumber && phoneNumber.trim()) {
-      userData.phoneNumber = phoneNumber.trim();
-    }
+    // Add phone number (required for all Google signups)
+    userData.phoneNumber = phoneNumber.trim();
 
     // Add organization if provided
     if (organization) {

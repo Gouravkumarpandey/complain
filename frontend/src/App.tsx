@@ -2,6 +2,7 @@ import React from 'react';
 // i18n removed
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { PageLoadingSkeleton, DashboardSkeleton } from './components/common/SkeletonLoader';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ComplaintProvider } from './contexts/ComplaintContext';
@@ -16,6 +17,7 @@ import { UserDashboard } from './components/dashboard/UserDashboard';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
 import { AgentDashboard } from './components/dashboard/AgentDashboard';
 import { AnalyticsReportsDashboard } from './components/dashboard/AnalyticsReportsDashboard';
+import { AdminLogin } from './components/auth/AdminLogin';
 import { ChatBot } from './components/chatbot/ChatBot';
 import { useAuth } from './hooks/useAuth';
 import { Notifications } from './components/notifications/Notifications';
@@ -87,10 +89,7 @@ function DashboardRoute() {
       {activeUser?.role === 'user' && <UserDashboard />}
       {activeUser?.role === 'analytics' && <AnalyticsReportsDashboard />}
       {!activeUser?.role && (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-          <img src="/loading.gif" alt="Loading..." className="w-80 h-80 object-contain" />
-          <div className="text-xl font-semibold text-slate-800 -mt-8">Initializing your dashboard...</div>
-        </div>
+        <DashboardSkeleton />
       )}
       <ChatBot />
     </div>
@@ -102,11 +101,7 @@ function AppContent() {
 
   // Show loading state when auth is initializing
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <img src="/loading.gif" alt="Loading..." className="w-80 h-80 object-contain" />
-      </div>
-    );
+    return <PageLoadingSkeleton message="Initializing your session..." />;
   }
 
   return (
@@ -136,6 +131,18 @@ function AppContent() {
       <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
+      
+      {/* Admin Route - Direct access only */}
+      <Route 
+        path="/admin" 
+        element={
+          isAuthenticated ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <AdminLogin />
+          )
+        } 
+      />
 
       {/* Pricing and Payment Routes */}
       <Route path="/pricing" element={<PricingPlans />} />
