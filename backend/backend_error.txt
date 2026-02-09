@@ -160,3 +160,88 @@ Socket connection stats: {
   authenticatedConnections: 0,
   connectionsByRole: {}
 }
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
