@@ -452,6 +452,7 @@ export function LoginForm() {
                       <ArrowRight className="w-4 h-4 text-gray-400 rotate-90" />
                     </div>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1 ml-1">Admin login is available on a separate page</p>
                 </div>
               )}
 

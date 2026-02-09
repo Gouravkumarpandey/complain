@@ -35,14 +35,6 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
       requiresOrg: true,
     },
     {
-      id: 'admin' as const,
-      title: 'Administrator',
-      description: 'Manage teams and system settings',
-      icon: Shield,
-      color: 'violet',
-      requiresOrg: true,
-    },
-    {
       id: 'analytics' as const,
       title: 'Analytics Manager',
       description: 'View reports and analyze data',
@@ -221,8 +213,8 @@ export function GoogleRoleSelection({ onRoleSelected, onCancel, userInfo }: Goog
                         </div>
                         {isSelected && (
                           <div className={`w-4 h-4 rounded-full border-[3px] mt-1 ${role.color === 'blue' ? 'border-blue-500' :
-                              role.color === 'emerald' ? 'border-emerald-500' :
-                                role.color === 'violet' ? 'border-violet-500' : 'border-amber-500'
+                            role.color === 'emerald' ? 'border-emerald-500' :
+                              role.color === 'violet' ? 'border-violet-500' : 'border-amber-500'
                             }`}></div>
                         )}
                       </div>

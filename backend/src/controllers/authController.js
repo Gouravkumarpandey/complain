@@ -120,11 +120,19 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Validate role
-    if (role && !["user", "admin", "agent", "analytics"].includes(role)) {
+    // Validate role - BLOCK admin role from regular signup
+    if (role && !["user", "agent", "analytics"].includes(role)) {
       console.log("Invalid role:", role);
       return res.status(400).json({
-        message: "Invalid role. Must be 'user', 'admin', 'agent', or 'analytics'",
+        message: "Invalid role. Must be 'user', 'agent', or 'analytics'",
+      });
+    }
+
+    // Explicitly block admin role signup
+    if (role === "admin") {
+      console.log(`Blocked admin signup attempt for email: ${email}`);
+      return res.status(403).json({
+        message: "Admin accounts cannot be created through signup. Please use the admin login page.",
       });
     }
 
@@ -137,13 +145,6 @@ export const registerUser = async (req, res) => {
     }
 
     console.log(`Attempting to create user with role: ${role}`);
-
-    // Special check for admin role to enforce additional security
-    if (role === "admin") {
-      // For development purposes, allow admin creation
-      // In production, you might want to restrict this or require additional verification
-      console.log("Creating admin account - special permissions granted for development");
-    }
 
     // Generate OTP for verification
     const otp = generateOTP();
@@ -305,7 +306,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// Admin login with restricted access
+// Admin login with fixed credentials (hardcoded for security)
 export const adminLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -316,57 +317,58 @@ export const adminLogin = async (req, res) => {
         .json({ message: "Please provide email and password" });
     }
 
-    // Find user across all collections
-    const { user, model } = await findUserByEmail(email);
+    // Hardcoded admin credentials - ONLY this email can login as admin
+    const ADMIN_EMAIL = "pandeygourav2002@gmail.com";
+    const ADMIN_PASSWORD = "Gourav#710";
+    const ADMIN_NAME = "Gourav Pandey";
 
-    // Verify user exists, password matches, and role is admin
-    if (user && (await user.matchPassword(password))) {
-      // Strict admin role check
-      if (user.role !== 'admin') {
-        console.log(`Non-admin user attempted admin login: ${email}`);
-        return res.status(403).json({
-          message: "Access denied. Administrator privileges required."
-        });
-      }
-
-      // Check if admin user is verified
-      if (!user.isVerified && !user.isGoogleUser && !user.isFacebookUser) {
-        return res.status(401).json({
-          message: "Admin account not verified. Please contact system administrator.",
-        });
-      }
-
-      console.log("Admin logged in successfully:", {
-        collection: model?.collection?.name || 'unknown',
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      });
-
-      // Generate both access and refresh tokens
-      const accessToken = generateToken(user._id);
-      const refreshToken = generateRefreshToken(user._id);
-
-      res.json({
-        success: true,
-        user: {
-          id: user._id,
-          name: user.name || `${user.firstName} ${user.lastName}`,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: user.role,
-        },
-        token: accessToken,
-        refreshToken: refreshToken,
-      });
-    } else {
-      // Log failed admin login attempts for security
+    // Verify credentials match the hardcoded admin account
+    if (email.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
       console.log(`Failed admin login attempt for email: ${email}`);
-      res.status(401).json({ message: "Invalid administrator credentials" });
+      return res.status(401).json({
+        message: "Invalid administrator credentials"
+      });
     }
+
+    console.log("Admin logged in successfully with hardcoded credentials");
+
+    // Find or create the admin user in database
+    let adminUser = await User.findOne({ email: ADMIN_EMAIL.toLowerCase() });
+
+    if (!adminUser) {
+      // Create admin user if doesn't exist
+      console.log("Creating admin user in database...");
+      const username = await User.generateUsername(ADMIN_EMAIL, ADMIN_NAME);
+
+      adminUser = await User.create({
+        name: ADMIN_NAME,
+        username: username,
+        email: ADMIN_EMAIL.toLowerCase(),
+        password: ADMIN_PASSWORD,
+        role: 'admin',
+        isVerified: true,
+        isAdmin: true
+      });
+
+      console.log("Admin user created successfully");
+    }
+
+    // Generate both access and refresh tokens
+    const accessToken = generateToken(adminUser._id);
+    const refreshToken = generateRefreshToken(adminUser._id);
+
+    res.json({
+      success: true,
+      user: {
+        id: adminUser._id,
+        name: adminUser.name,
+        username: adminUser.username,
+        email: adminUser.email,
+        role: 'admin',
+      },
+      token: accessToken,
+      refreshToken: refreshToken,
+    });
   } catch (error) {
     console.error("Admin login error:", error);
     res.status(500).json({ message: "Server error during admin authentication" });
@@ -528,17 +530,25 @@ export const googleSignupWithRole = async (req, res) => {
       return res.status(400).json({ message: "Google token is required" });
     }
 
-    // Validate role
-    if (!["user", "admin", "agent", "analytics"].includes(role)) {
+    // Validate role - BLOCK admin from OAuth signup
+    if (!["user", "agent", "analytics"].includes(role)) {
       return res.status(400).json({
-        message: "Invalid role. Must be 'user', 'admin', 'agent', or 'analytics'",
+        message: "Invalid role. Must be 'user', 'agent', or 'analytics'",
+      });
+    }
+
+    // Explicitly block admin role
+    if (role === "admin") {
+      console.log(`Blocked admin Google signup attempt`);
+      return res.status(403).json({
+        message: "Admin accounts cannot be created through Google signup.",
       });
     }
 
     // Validate organization for non-user roles
     if (role !== "user" && !organization) {
       return res.status(400).json({
-        message: "Organization name is required for agent, admin, and analytics roles",
+        message: "Organization name is required for agent and analytics roles",
       });
     }
 
