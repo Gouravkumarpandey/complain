@@ -47,7 +47,7 @@ export function LoginForm() {
   const validateIndianPhone = (phone: string) => {
     // Basic Indian phone validation
     // Allow +91 or just 10 digits
-    const clean = phone.replace(/[\s\-\+]/g, '');
+    const clean = phone.replace(/[\s\-+]/g, '');
     if (clean.length < 10) return false;
     const last10 = clean.slice(-10);
     return /^[6-9]\d{9}$/.test(last10);
@@ -107,11 +107,11 @@ export function LoginForm() {
             redirectToDashboard();
             return;
           }
-        } catch (loginError: any) {
+        } catch (loginError: unknown) {
           console.log('Google login failed:', loginError);
 
           // Check if "Account not found"
-          if (loginError.message && loginError.message.includes('Account not found')) {
+          if (loginError instanceof Error && loginError.message.includes('Account not found')) {
             console.log('User not found. Initiating signup flow...');
 
             // Decode token to get info
@@ -125,7 +125,7 @@ export function LoginForm() {
               setError('Failed to process Google Account details. Please try again.');
             }
           } else {
-            setError(loginError.message || 'Google authentication failed.');
+            setError(loginError instanceof Error ? loginError.message : 'Google authentication failed.');
           }
         }
       }
@@ -160,8 +160,8 @@ export function LoginForm() {
         setError('Failed to create account with selected role.');
         setShowRoleSelection(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'Signup failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Signup failed');
       setShowRoleSelection(false);
     } finally {
       setLoading(false);
@@ -195,7 +195,7 @@ export function LoginForm() {
       }
     } catch (err: unknown) {
       console.error('Facebook auth error:', err);
-      const errorResponse = (err as AxiosError<{ message?: string; requiresSignup?: boolean; facebookData?: any }>).response?.data;
+      const errorResponse = (err as AxiosError<{ message?: string; requiresSignup?: boolean; facebookData?: { name: string; email: string } }>).response?.data;
 
       if (errorResponse?.requiresSignup && errorResponse.facebookData) {
         console.log('Facebook user not found. Initiating signup flow...');
@@ -441,7 +441,7 @@ export function LoginForm() {
                     <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                     <select
                       value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'agent' | 'analytics' })}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none cursor-pointer"
                     >
                       <option value="user">Customer / User</option>
