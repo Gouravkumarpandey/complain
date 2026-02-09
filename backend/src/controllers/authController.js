@@ -21,6 +21,52 @@ const getGoogleClient = () => {
   return client;
 };
 
+// Verify Google Token (ID Token or Access Token)
+const verifyGoogleToken = async (token) => {
+  try {
+    // 1. Try to verify as ID Token
+    const googleClient = getGoogleClient();
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) throw new Error("Invalid ID Token payload");
+
+    return {
+      name: payload.name,
+      email: payload.email,
+      email_verified: payload.email_verified,
+      picture: payload.picture,
+      googleId: payload.sub
+    };
+  } catch (idTokenError) {
+    // 2. If ID Token fails, try as Access Token (UserInfo API)
+    try {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        // If both fail, throw the original error or a generic one
+        throw idTokenError;
+      }
+
+      const data = await response.json();
+      return {
+        name: data.name,
+        email: data.email,
+        email_verified: data.email_verified,
+        picture: data.picture,
+        googleId: data.sub
+      };
+    } catch (accessTokenError) {
+      throw idTokenError; // Throw the original error
+    }
+  }
+};
+
 // Generate JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -341,15 +387,11 @@ export const googleLogin = async (req, res) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    // Verify token
-    const googleClient = getGoogleClient();
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
+    // Verify token (ID Token or Access Token)
+    let payload;
+    try {
+      payload = await verifyGoogleToken(token);
+    } catch (err) {
       return res.status(400).json({ message: "Invalid Google token" });
     }
 
@@ -428,15 +470,11 @@ export const decodeGoogleToken = async (req, res) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    // Verify token
-    const googleClient = getGoogleClient();
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
+    // Verify token (ID Token or Access Token)
+    let payload;
+    try {
+      payload = await verifyGoogleToken(token);
+    } catch (err) {
       return res.status(400).json({ message: "Invalid Google token" });
     }
 
@@ -512,15 +550,11 @@ export const googleSignupWithRole = async (req, res) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    // Verify token
-    const googleClient = getGoogleClient();
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
+    // Verify token (ID Token or Access Token)
+    let payload;
+    try {
+      payload = await verifyGoogleToken(token);
+    } catch (err) {
       return res.status(400).json({ message: "Invalid Google token" });
     }
 

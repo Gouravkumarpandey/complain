@@ -123,24 +123,24 @@ export const cspMiddleware = (req, res, next) => {
     .map(([key, values]) => {
       // Convert camelCase to kebab-case
       const directive = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-      
+
       // Handle special directives without values
       if (Array.isArray(values) && values.length === 0) {
         return directive;
       }
-      
+
       // Handle array values
       if (Array.isArray(values)) {
         return `${directive} ${values.join(' ')}`;
       }
-      
+
       return `${directive} ${values}`;
     })
     .join('; ');
 
   // Set CSP header
   res.setHeader('Content-Security-Policy', cspString);
-  
+
   // Additional security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -158,7 +158,7 @@ export const cspMiddleware = (req, res, next) => {
 export const getHelmetCspConfig = (isDevelopment = false) => {
   return {
     crossOriginEmbedderPolicy: false, // Required for some third-party integrations
-    crossOriginOpenerPolicy: false, // Disable COOP to allow OAuth popups
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow OAuth popups
     contentSecurityPolicy: {
       useDefaults: false,
       directives: getCspDirectives(isDevelopment),
@@ -182,7 +182,7 @@ export const getHelmetCspConfig = (isDevelopment = false) => {
  */
 export const cspReportHandler = (req, res) => {
   const report = req.body;
-  
+
   console.error('CSP Violation Report:', {
     time: new Date().toISOString(),
     documentUri: report['document-uri'],
@@ -190,7 +190,7 @@ export const cspReportHandler = (req, res) => {
     blockedUri: report['blocked-uri'],
     originalPolicy: report['original-policy'],
   });
-  
+
   res.status(204).end();
 };
 

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff, Phone } from 'lucide-react';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { CustomGoogleLogin } from './CustomGoogleLogin';
 import validateGoogleConfig from '../../services/googleAuthDebug';
 // @ts-expect-error - Missing type declarations for this JS module
 import setupGoogleAuth from '../../utils/googleAuthSetup';
@@ -90,17 +91,17 @@ export function LoginForm() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (token: string) => {
     try {
-      if (credentialResponse.credential) {
-        console.log('Google credential received...');
+      if (token) {
+        console.log('Google token received...');
 
         logout();
         setError('');
 
         console.log('Attempting Google login...');
         try {
-          const success = await googleLogin(credentialResponse.credential);
+          const success = await googleLogin(token);
           if (success) {
             console.log('Google authentication successful, redirecting to dashboard...');
             redirectToDashboard();
@@ -114,10 +115,10 @@ export function LoginForm() {
             console.log('User not found. Initiating signup flow...');
 
             // Decode token to get info
-            const info = await decodeGoogleToken(credentialResponse.credential);
+            const info = await decodeGoogleToken(token);
             if (info) {
               setGoogleUserInfo(info);
-              setPendingGoogleToken(credentialResponse.credential);
+              setPendingGoogleToken(token);
               setAuthSource('google');
               setShowRoleSelection(true);
             } else {
@@ -336,19 +337,12 @@ export function LoginForm() {
             {/* Social Auth */}
             <div className="space-y-4 mb-6">
               {/* Google */}
-              <div className="w-full">
-                <div className="w-full flex justify-center [&>div]:w-full">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setError('Google Sign-In Failed')}
-                    width="100%"
-                    theme="outline"
-                    size="large"
-                    shape="rectangular"
-                    text={isLogin ? "signin_with" : "signup_with"}
-                  />
-                </div>
-              </div>
+              <CustomGoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onFailure={() => setError('Google Sign-In Failed')}
+                buttonText={isLogin ? "Sign in with Google" : "Sign up with Google"}
+                isLoading={loading}
+              />
 
               {/* Facebook */}
               <FacebookLogin

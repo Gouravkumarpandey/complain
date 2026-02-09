@@ -94,17 +94,17 @@ const io = new Server(server, {
     origin: function (origin, callback) {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-      
+
       // Allow localhost on any port for development
       if (origin && origin.match(/^http:\/\/localhost:\d+$/)) {
         return callback(null, true);
       }
-      
+
       // Allow Vercel frontend domains (production)
       if (origin && origin.match(/^https:\/\/.*\.vercel\.app$/)) {
         return callback(null, true);
       }
-      
+
       // Allow your specific origins
       const allowedOrigins = [
         'http://localhost:3000',
@@ -120,11 +120,11 @@ const io = new Server(server, {
         'https://complain-git-main-gouravs-projects-95bc4c63.vercel.app',
         'https://complain-mcfunqw1d-gouravs-projects-95bc4c63.vercel.app'
       ];
-      
+
       if (allowedOrigins.indexOf(origin) !== -1) {
         return callback(null, true);
       }
-      
+
       return callback(null, false);
     },
     credentials: true,
@@ -141,19 +141,19 @@ io.use(async (socket, next) => {
   try {
     const socketId = socket.id;
     console.log('Socket connection attempt:', socketId);
-    
+
     // Rate limiting
     const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
     const rateLimitKey = `${clientIp}:${Date.now()}`;
     const recentAttempts = Array.from(connectedSockets.values())
       .filter(s => s.ip === clientIp && s.lastAttempt > Date.now() - 60000)
       .length;
-    
+
     if (recentAttempts > 10) {
       console.warn('Rate limit exceeded for IP:', clientIp);
       return next(new Error('Too many connection attempts. Please try again later.'));
     }
-    
+
     // Track connection attempt
     connectedSockets.set(socketId, {
       ip: clientIp,
@@ -176,12 +176,12 @@ io.use(async (socket, next) => {
       // Log token format to help with debugging
       const tokenPreview = `${token.substring(0, 10)}...${token.substring(token.length - 5)}`;
       console.log(`Processing token: ${tokenPreview} for socket ${socketId}`);
-      
+
       // Verify the token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
       console.log('Token decoded successfully for socket:', socketId);
       console.log('Token payload:', { id: decoded.id, userId: decoded.userId, role: decoded.role });
-      
+
       // Extract userId from different possible fields
       const userId = decoded.id || decoded.userId || decoded.sub;
       if (!userId) {
@@ -190,31 +190,31 @@ io.use(async (socket, next) => {
         socket.emit('connection_error', { message: 'Invalid token payload - missing user ID' });
         return next(new Error("Authentication failed: Invalid token payload - missing user ID"));
       }
-      
+
       // Check for duplicate connections from same user
       const existingConnection = Array.from(connectedSockets.entries())
         .find(([_, data]) => data.userId === userId && data.authenticated);
-      
+
       if (existingConnection) {
         console.warn(`User ${userId} already has an active connection:`, existingConnection[0]);
         // Optional: Force disconnect the old connection
         io.sockets.sockets.get(existingConnection[0])?.disconnect(true);
       }
-      
+
       // Look up the user in the database with timeout
       const userPromise = User.findById(userId).select('-password');
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Database lookup timeout')), 5000)
       );
-      
+
       const user = await Promise.race([userPromise, timeoutPromise]);
-      
+
       if (!user) {
         connectedSockets.delete(socketId);
         console.error('Socket auth failed: User not found', userId, socketId);
         return next(new Error("Authentication failed: User not found"));
       }
-      
+
       // Update socket tracking
       connectedSockets.set(socketId, {
         ip: clientIp,
@@ -225,23 +225,23 @@ io.use(async (socket, next) => {
         connectTime: Date.now(),
         userName: user.name
       });
-      
+
       console.log('Socket authenticated successfully:', {
         socketId,
         userId: user._id,
         name: user.name,
         role: user.role
       });
-      
+
       // Attach user to socket for later use
       socket.user = user;
-      
+
       // Setup disconnect handler
       socket.on('disconnect', (reason) => {
         console.log(`Socket ${socketId} disconnected:`, reason);
         connectedSockets.delete(socketId);
       });
-      
+
       next();
     } catch (err) {
       connectedSockets.delete(socketId);
@@ -250,7 +250,7 @@ io.use(async (socket, next) => {
         error: err.message,
         stack: err.stack
       });
-      
+
       // Return appropriate error based on type
       if (err.name === 'TokenExpiredError') {
         return next(new Error('Authentication failed: Token expired'));
@@ -278,7 +278,7 @@ const SOCKET_MAX_IDLE_TIME = 3600000; // 1 hour
 setInterval(() => {
   const now = Date.now();
   let cleaned = 0;
-  
+
   connectedSockets.forEach((data, socketId) => {
     // Check for idle sockets
     if (now - data.lastAttempt > SOCKET_MAX_IDLE_TIME) {
@@ -291,11 +291,11 @@ setInterval(() => {
       cleaned++;
     }
   });
-  
+
   if (cleaned > 0) {
     console.log(`Cleaned up ${cleaned} idle socket connections`);
   }
-  
+
   // Log connection statistics
   const stats = {
     totalConnections: connectedSockets.size,
@@ -307,7 +307,7 @@ setInterval(() => {
       return acc;
     }, {})
   };
-  
+
   console.log('Socket connection stats:', stats);
 }, SOCKET_CLEANUP_INTERVAL);
 
@@ -340,54 +340,14 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 app.use(helmet(getHelmetCspConfig(isDevelopment)));
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    console.log('Request origin:', origin);
-    
-    // Allow localhost on any port for development
-    if (origin && origin.match(/^http:\/\/localhost:\d+$/)) {
-      console.log('Allowing localhost origin:', origin);
-      return callback(null, true);
-    }
-    
-    // Allow Vercel frontend domains (production)
-    if (origin && origin.match(/^https:\/\/.*\.vercel\.app$/)) {
-      console.log('Allowing Vercel origin:', origin);
-      return callback(null, true);
-    }
-    
-    // Allow your specific origins
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:4173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:5174',
-      'http://127.0.0.1:4173',
-      // Production Vercel URLs
-      'https://complain-beta.vercel.app',
-      'https://complain-git-main-gouravs-projects-95bc4c63.vercel.app',
-      'https://complain-git-development-gouravs-projects-95bc4c63.vercel.app',
-      'https://complain-mcfunqw1d-gouravs-projects-95bc4c63.vercel.app',
-      // Production custom domain
-      'https://www.innovexlabs.me',
-      'https://innovexlabs.me',
-      'http://www.innovexlabs.me',
-      'http://innovexlabs.me'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('Allowing origin from allowedOrigins list:', origin);
-      return callback(null, true);
-    }
-    
-    console.log('Rejecting origin:', origin);
-    return callback(new Error('Not allowed by CORS'));
-  },
+  origin: [
+    "https://quickfix.innovexlabs.me",
+    "https://innovexlabs.me",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:5001",
+    "https://complain-beta.vercel.app"
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
@@ -538,7 +498,7 @@ app.use((err, req, res, next) => {
       code: 'INVALID_JSON'
     });
   }
-  
+
   // Handle validation errors
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -551,7 +511,7 @@ app.use((err, req, res, next) => {
       code: 'VALIDATION_ERROR'
     });
   }
-  
+
   // Handle MongoDB related errors
   if (err.name === 'MongoError' || err.name === 'MongoServerError') {
     if (err.code === 11000) {
@@ -586,8 +546,8 @@ app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const errorResponse = {
     success: false,
-    message: process.env.NODE_ENV === 'production' ? 
-      'An internal server error occurred' : 
+    message: process.env.NODE_ENV === 'production' ?
+      'An internal server error occurred' :
       err.message || 'Something went wrong!',
     code: err.code || 'INTERNAL_ERROR'
   };
