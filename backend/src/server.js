@@ -33,6 +33,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
@@ -144,7 +145,6 @@ io.use(async (socket, next) => {
 
     // Rate limiting
     const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
-    const rateLimitKey = `${clientIp}:${Date.now()}`;
     const recentAttempts = Array.from(connectedSockets.values())
       .filter(s => s.ip === clientIp && s.lastAttempt > Date.now() - 60000)
       .length;
@@ -163,9 +163,24 @@ io.use(async (socket, next) => {
       connectTime: null
     });
 
-    // Token validation
-    const token = socket.handshake.auth?.token;
-    if (!token) {
+    // Token validation - Check auth object first, then fall back to cookies
+    let socketAuthToken = socket.handshake.auth?.token;
+
+    // If no token in auth object, check cookies
+    if (!socketAuthToken && socket.handshake.headers.cookie) {
+      try {
+        const cookies = socket.handshake.headers.cookie.split(';').reduce((acc, cookie) => {
+          const [name, value] = cookie.trim().split('=');
+          acc[name] = value;
+          return acc;
+        }, {});
+        socketAuthToken = cookies.token;
+      } catch (err) {
+        console.warn('Failed to parse cookies from socket handshake');
+      }
+    }
+
+    if (!socketAuthToken) {
       connectedSockets.delete(socketId);
       console.error('Socket auth failed: Missing token', socketId);
       socket.emit('connection_error', { message: 'Missing authentication token' });
@@ -174,11 +189,11 @@ io.use(async (socket, next) => {
 
     try {
       // Log token format to help with debugging
-      const tokenPreview = `${token.substring(0, 10)}...${token.substring(token.length - 5)}`;
+      const tokenPreview = `${socketAuthToken.substring(0, 10)}...${socketAuthToken.substring(socketAuthToken.length - 5)}`;
       console.log(`Processing token: ${tokenPreview} for socket ${socketId}`);
 
       // Verify the token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
+      const decoded = jwt.verify(socketAuthToken, process.env.JWT_SECRET || 'default-secret-key');
       console.log('Token decoded successfully for socket:', socketId);
       console.log('Token payload:', { id: decoded.id, userId: decoded.userId, role: decoded.role });
 
@@ -364,6 +379,7 @@ app.use(cors({
 }));
 
 app.use(morgan("combined"));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -398,20 +414,8 @@ import smsRoutes from "./routes/sms.js";
 // import cacheRoutes from "./routes/cache.js";
 
 
-// Root route for health check
 app.get("/", (req, res) => {
   res.status(200).send("Backend is running ✅");
-});
-
-// Health check endpoint that works even when DB is down
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date(),
-    serverSessionId: global.SERVER_SESSION_ID,
-    dbConnected: global.DB_CONNECTED,
-    environment: process.env.NODE_ENV
-  });
 });
 
 app.use("/api/auth", authRoutes);

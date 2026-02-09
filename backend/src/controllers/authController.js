@@ -77,6 +77,17 @@ const generateRefreshToken = (id) => {
   return jwt.sign({ id, tokenType: 'refresh' }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
+// Set token as a secure cookie
+const setTokenCookie = (res, token) => {
+  const cookieOptions = {
+    httpOnly: true, // Prevents client-side JS from accessing the cookie
+    secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
+    sameSite: "strict", // Protects against CSRF
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days (matches JWT expiration)
+  };
+  res.cookie("token", token, cookieOptions);
+};
+
 // Simple validation helper
 const validateSignup = (name, email, password) => {
   const errors = [];
@@ -283,6 +294,9 @@ export const loginUser = async (req, res) => {
       const accessToken = generateToken(user._id);
       const refreshToken = generateRefreshToken(user._id);
 
+      // Set token as a cookie
+      setTokenCookie(res, accessToken);
+
       res.json({
         success: true,
         user: {
@@ -304,6 +318,16 @@ export const loginUser = async (req, res) => {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error during login" });
   }
+};
+
+// Logout
+export const logoutUser = async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
 // Admin login with fixed credentials (hardcoded for security)
@@ -356,6 +380,8 @@ export const adminLogin = async (req, res) => {
     // Generate both access and refresh tokens
     const accessToken = generateToken(adminUser._id);
     const refreshToken = generateRefreshToken(adminUser._id);
+
+    setTokenCookie(res, accessToken);
 
     res.json({
       success: true,
@@ -425,6 +451,9 @@ export const googleLogin = async (req, res) => {
       email: user.email,
     });
 
+    const accessToken = generateToken(user._id);
+    setTokenCookie(res, accessToken);
+
     res.json({
       success: true,
       user: {
@@ -433,7 +462,7 @@ export const googleLogin = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id),
+      token: accessToken,
     });
   } catch (error) {
     console.error("Google login error:", error);
@@ -633,6 +662,9 @@ export const googleSignupWithRole = async (req, res) => {
       }
     }
 
+    const accessToken = generateToken(user._id);
+    setTokenCookie(res, accessToken);
+
     res.status(201).json({
       success: true,
       user: {
@@ -641,7 +673,7 @@ export const googleSignupWithRole = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id),
+      token: accessToken,
     });
   } catch (error) {
     console.error("Google signup error:", error);
@@ -1007,6 +1039,9 @@ export const githubSignupWithRole = async (req, res) => {
       }
     }
 
+    const token = generateToken(user._id);
+    setTokenCookie(res, token);
+
     res.status(201).json({
       success: true,
       user: {
@@ -1015,7 +1050,7 @@ export const githubSignupWithRole = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id),
+      token: token,
     });
   } catch (error) {
     console.error("GitHub signup error:", error);
@@ -1497,6 +1532,9 @@ export const facebookSignupWithRole = async (req, res) => {
       }
     }
 
+    const token = generateToken(user._id);
+    setTokenCookie(res, token);
+
     res.status(201).json({
       success: true,
       user: {
@@ -1505,7 +1543,7 @@ export const facebookSignupWithRole = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id),
+      token: token,
     });
   } catch (error) {
     console.error("Facebook signup error:", error);
@@ -1585,6 +1623,8 @@ export const refreshToken = async (req, res) => {
         const newToken = generateToken(user._id);
         const newRefreshToken = generateRefreshToken(user._id);
 
+        setTokenCookie(res, newToken);
+
         // Return the new tokens
         return res.status(200).json({
           token: newToken,
@@ -1643,6 +1683,8 @@ export const verifyOTP = async (req, res) => {
     // Generate tokens after verification
     const accessToken = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    setTokenCookie(res, accessToken);
 
     res.json({
       success: true,

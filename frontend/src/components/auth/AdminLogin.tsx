@@ -4,6 +4,8 @@ import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff, ArrowLeft } from 'luc
 import api from '../../utils/api';
 import { AxiosError } from 'axios';
 
+import { useAuth } from '../../hooks/useAuth';
+
 export function AdminLogin() {
   const [formData, setFormData] = useState({
     email: '',
@@ -13,6 +15,7 @@ export function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { adminLogin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,23 +23,17 @@ export function AdminLogin() {
     setError('');
 
     try {
-      const response = await api.post('/auth/admin-login', formData);
-      const data = response.data;
+      const success = await adminLogin(formData.email, formData.password);
 
-      if (data.token) {
-        // Store authentication data
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
+      if (success) {
         console.log('Admin authentication successful, redirecting to dashboard...');
         navigate('/dashboard');
       } else {
-        setError(data.message || 'Invalid admin credentials');
+        setError('Invalid admin credentials');
       }
     } catch (err: unknown) {
       console.error('Admin login error:', err);
-      const errorMessage = (err as AxiosError<{ message?: string }>).response?.data?.message || 'Connection error. Please try again.';
-      setError(errorMessage);
+      setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,7 +49,7 @@ export function AdminLogin() {
           <div className="absolute bottom-32 right-20 w-24 h-24 bg-blue-300 rounded-full"></div>
           <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-blue-400 rounded-full"></div>
         </div>
-        
+
         {/* Back button in left panel */}
         <Link
           to="/"
@@ -61,7 +58,7 @@ export function AdminLogin() {
           <ArrowLeft className="w-5 h-5" />
           Back to Home
         </Link>
-        
+
         <div className="relative z-10 flex flex-col justify-center px-12 py-20">
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-white mb-4">
@@ -71,7 +68,7 @@ export function AdminLogin() {
               Secure access to the QuickFix administration dashboard
             </p>
           </div>
-          
+
           {/* Admin Image */}
           <div className="flex justify-center">
             <div className="relative">
@@ -172,8 +169,8 @@ export function AdminLogin() {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200 text-sm"
             >
               ← Back to Main Site

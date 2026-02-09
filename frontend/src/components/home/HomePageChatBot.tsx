@@ -28,7 +28,7 @@ const quickReplies: QuickReply[] = [
   },
   {
     text: "What are the pricing plans?",
-    response: "We offer three plans:\n\n🎁 **Free Plan** - $0/month\n• Up to 5 complaints/month\n• Basic tracking\n• Email notifications\n\n⚡ **Pro Plan** - $4.99/month\n• Unlimited complaints\n• AI-powered diagnosis\n• Priority support (24h)\n• Analytics dashboard\n\n👑 **Premium Plan** - $9.99/month\n• Everything in Pro\n• Team management (10 users)\n• Advanced analytics\n• Custom branding\n• Dedicated account manager"
+    response: "We offer three plans:\n\n🎁 **Free Plan** - ₹0/month\n• Up to 5 complaints/month\n• Basic tracking\n• Email notifications\n\n⚡ **Pro Plan** - ₹499/month\n• Unlimited complaints\n• AI-powered diagnosis\n• Priority support (24h)\n• Analytics dashboard\n\n👑 **Premium Plan** - ₹999/month\n• Everything in Pro\n• Team management (10 users)\n• Advanced analytics\n• Custom branding\n• Dedicated account manager"
   },
   {
     text: "What features do you offer?",
@@ -71,7 +71,7 @@ export function HomePageChatBot() {
     const lowerMessage = userMessage.toLowerCase();
 
     // Check for exact quick reply match first
-    const quickReply = quickReplies.find(qr => 
+    const quickReply = quickReplies.find(qr =>
       qr.text.toLowerCase() === lowerMessage
     );
     if (quickReply) return quickReply.response;
@@ -79,7 +79,7 @@ export function HomePageChatBot() {
     // Use Gemini AI for intelligent responses
     try {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-      
+
       const systemContext = `You are a helpful AI assistant for QuickFix, an AI-powered complaint management system. 
 
 ABOUT QUICKFIX:
@@ -97,20 +97,20 @@ KEY FEATURES:
 - Mobile-responsive design with upcoming native apps
 
 PRICING PLANS:
-1. Free Plan - $0/month
+1. Free Plan - ₹0/month
    - Up to 5 complaints/month
    - Basic tracking
    - Email notifications
    - Standard response time (48-72h)
 
-2. Pro Plan - $4.99/month
+2. Pro Plan - ₹499/month
    - Unlimited complaints
    - AI-powered diagnosis
    - Priority support (24h response)
    - Analytics dashboard
    - Live chat support
 
-3. Premium Plan - $9.99/month
+3. Premium Plan - ₹999/month
    - Everything in Pro
    - Team management (10 users)
    - Advanced analytics
@@ -144,32 +144,32 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       return text || "I'm here to help! Could you please rephrase your question about QuickFix?";
     } catch (error) {
       console.error('Gemini API error:', error);
-      
+
       // Fallback to pattern matching if API fails
       if (lowerMessage.includes('what is') || lowerMessage.includes('about quickfix')) {
         return quickReplies[0].response;
       }
-      
+
       if (lowerMessage.includes('how') && (lowerMessage.includes('work') || lowerMessage.includes('use'))) {
         return quickReplies[1].response;
       }
-      
+
       if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('plan')) {
         return quickReplies[2].response;
       }
-      
+
       if (lowerMessage.includes('feature')) {
         return quickReplies[3].response;
       }
-      
+
       if (lowerMessage.includes('trial') || lowerMessage.includes('free')) {
         return quickReplies[4].response;
       }
-      
+
       if (lowerMessage.includes('start') || lowerMessage.includes('sign up') || lowerMessage.includes('register')) {
         return quickReplies[5].response;
       }
@@ -226,7 +226,7 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
           aria-label="Open chat"
         >
           <MessageCircle className="w-7 h-7 text-white" />
-          
+
           {/* Tooltip */}
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
             Have questions? Chat with us!
@@ -266,16 +266,14 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    message.sender === 'user'
-                      ? 'bg-orange-500 text-white rounded-br-none'
-                      : 'bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-100'
-                  }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.sender === 'user'
+                    ? 'bg-orange-500 text-white rounded-br-none'
+                    : 'bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-100'
+                    }`}
                 >
                   <p className="text-sm whitespace-pre-line leading-relaxed">{message.text}</p>
-                  <p className={`text-xs mt-1 ${
-                    message.sender === 'user' ? 'text-orange-100' : 'text-gray-400'
-                  }`}>
+                  <p className={`text-xs mt-1 ${message.sender === 'user' ? 'text-orange-100' : 'text-gray-400'
+                    }`}>
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>

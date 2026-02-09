@@ -1523,7 +1523,7 @@ export function UserDashboard() {
                                       </div>
                                     </div>
                                     <div className="text-right">
-                                      <p className="text-2xl font-bold text-gray-900">$4.99</p>
+                                      <p className="text-2xl font-bold text-gray-900">₹499</p>
                                       <p className="text-sm text-gray-600">/month</p>
                                     </div>
                                   </div>
@@ -1578,7 +1578,7 @@ export function UserDashboard() {
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-2xl font-bold text-gray-900">$9.99</p>
+                                    <p className="text-2xl font-bold text-gray-900">₹999</p>
                                     <p className="text-sm text-gray-600">/month</p>
                                   </div>
                                 </div>

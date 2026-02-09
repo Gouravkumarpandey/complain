@@ -25,6 +25,7 @@ import { useNotificationPermission } from './hooks/useSocket';
 import { PricingPlans } from './components/subscription/PricingPlans';
 import { PaymentSuccess } from './components/subscription/PaymentSuccess';
 import { PaymentCancel } from './components/subscription/PaymentCancel';
+import { CookieConsent } from './components/common/CookieConsent';
 // import { LanguageSwitchInstructions } from './components/common/LanguageSwitchInstructions'; (removed)
 
 // Protected Route Component
@@ -105,77 +106,80 @@ function AppContent() {
   }
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route
-        path="/"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <HomePage />
-          )
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <LoginForm />
-          )
-        }
-      />
+    <>
+      <Routes>
+        {/* Public Routes */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <HomePage />
+            )
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <LoginForm />
+            )
+          }
+        />
 
-      <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
-      
-      {/* Admin Route - Direct access only */}
-      <Route 
-        path="/admin" 
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <AdminLogin />
-          )
-        } 
-      />
+        <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-      {/* Pricing and Payment Routes */}
-      <Route path="/pricing" element={<PricingPlans />} />
-      <Route
-        path="/payment/success"
-        element={
-          <ProtectedRoute>
-            <PaymentSuccess />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/payment/cancel"
-        element={
-          <ProtectedRoute>
-            <PaymentCancel />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin Route - Direct access only */}
+        <Route
+          path="/admin"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AdminLogin />
+            )
+          }
+        />
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardRoute />
-          </ProtectedRoute>
-        }
-      />
+        {/* Pricing and Payment Routes */}
+        <Route path="/pricing" element={<PricingPlans />} />
+        <Route
+          path="/payment/success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/cancel"
+          element={
+            <ProtectedRoute>
+              <PaymentCancel />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardRoute />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <CookieConsent />
+    </>
   );
 }
 

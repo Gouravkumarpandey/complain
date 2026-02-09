@@ -1,10 +1,11 @@
 import express from "express";
-import { 
-  registerUser, 
-  loginUser, 
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
   adminLogin,
-  googleLogin, 
-  decodeGoogleToken, 
+  googleLogin,
+  decodeGoogleToken,
   googleSignupWithRole,
   facebookLogin,
   facebookSignupWithRole,
@@ -27,6 +28,7 @@ const router = express.Router();
 // Normal auth
 router.post("/signup", registerUser);
 router.post("/login", loginUser);
+router.post("/logout", logoutUser);
 router.post("/admin-login", adminLogin);
 router.post("/refresh", refreshToken);
 
@@ -44,8 +46,8 @@ router.get("/validate-session", authenticate, validateSession);
 
 // Google OAuth routes
 router.get("/google", (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: "Google Auth route working ✅",
     availableRoutes: {
       login: "POST /api/auth/google",

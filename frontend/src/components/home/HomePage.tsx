@@ -905,6 +905,12 @@ export function HomePage() {
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Terms of Service</a>
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Cookie Policy</a>
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Accessibility</a>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('openCookieSettings'))}
+                  className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+                >
+                  Manage Privacy Preferences
+                </button>
               </div>
 
               {/* Copyright */}

@@ -1,0 +1,162 @@
+﻿node : ΓÜá∩╕Å  
+DEEPSEEK_API_KEY not set. 
+DeepSeek features will use 
+fallback responses.
+At line:1 char:1
++ node src/server.js 2>&1 | 
+Out-File -FilePath 
+backend_error.txt -Encod ...
++ ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (ΓÜá∩╕  
+  Å  DEEPSEE...back respo   
+ nses.:String) [], Remot    
+eException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+Γ£à Twilio SMS service initialized
+Γ£à Stripe payment service initialized
+Γ£à .env file loaded from: C:\Personal Project\QuickFix - AI Powered Complaint System\complain\backend\.env
+Node environment: development
+Server session ID: session-1770662508290-3hi9bo1b8
+Γ£à DEEPSEEK_API_KEY present: true
+Γ£à MONGODB_URI present: true
+Γ£à JWT_SECRET present: true
+Γ£à GOOGLE_CLIENT_ID present: true
+Γ£à STRIPE_SECRET_KEY present: true
+=== QuickFix Complaint Management System ===
+Starting server with Socket.IO real-time updates
+Node environment: development
+Server session ID: session-1770662508290-p3dpcpb4
+≡ƒöì Environment check:
+  - NODE_ENV: development
+  - MONGODB_URI present: true
+  - MONGO_URI present: false
+≡ƒöù Attempting to connect to MongoDB...
+≡ƒôì URI format check: VALID
+Socket handlers initialized successfully
+Γ¥î Uncaught Exception: 
+Error: listen EADDRINUSE: 
+address already in use 
+:::5001
+    at 
+Server.setupListenHandle 
+[as _listen2] 
+(node:net:1940:16)
+    at listenInCluster 
+(node:net:1997:12)
+    at Server.listen 
+(node:net:2102:7)
+    at file:///C:/Personal%2
+0Project/QuickFix%20-%20AI%2
+0Powered%20Complaint%20Syste
+m/complain/backend/src/serve
+r.js:438:8
+    at ModuleJob.run (node:i
+nternal/modules/esm/module_j
+ob:413:25)
+    at async onImport.traceP
+romise.__proto__ (node:inter
+nal/modules/esm/loader:654:2
+6)
+    at async asyncRunEntryPo
+intWithESMLoader (node:inter
+nal/modules/run_main:101:5) 
+{
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5001
+}
+Γ¥î Stack: Error: listen 
+EADDRINUSE: address already 
+in use :::5001
+    at 
+Server.setupListenHandle 
+[as _listen2] 
+(node:net:1940:16)
+    at listenInCluster 
+(node:net:1997:12)
+    at Server.listen 
+(node:net:2102:7)
+    at file:///C:/Personal%2
+0Project/QuickFix%20-%20AI%2
+0Powered%20Complaint%20Syste
+m/complain/backend/src/serve
+r.js:438:8
+    at ModuleJob.run (node:i
+nternal/modules/esm/module_j
+ob:413:25)
+    at async onImport.traceP
+romise.__proto__ (node:inter
+nal/modules/esm/loader:654:2
+6)
+    at async asyncRunEntryPo
+intWithESMLoader (node:inter
+nal/modules/run_main:101:5)
+Γ£à MongoDB Connected...
+≡ƒôè Database: complaintsdb
+≡ƒôï Available collections in 'complaintsdb': [
+  'analytics',
+  'smslogs',
+  'admin',
+  'complaints',
+  'notifications',
+  'account',
+  'users',
+  'organizations',
+  'agent'
+]
+≡ƒöì Required collections for multi-dashboard system: users, admin, agent, analytics, complaints, notifications, account, organizations
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}
+Socket connection stats: {
+  totalConnections: 0,
+  authenticatedConnections: 0,
+  connectionsByRole: {}
+}

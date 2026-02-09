@@ -29,7 +29,7 @@ export const createCheckoutSession = async (req, res) => {
   try {
     // Check if Stripe is configured
     if (!stripe) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         success: false,
         message: 'Payment processing is temporarily unavailable. Please try again later or contact support.',
         code: 'PAYMENT_SERVICE_UNAVAILABLE'
@@ -50,10 +50,10 @@ export const createCheckoutSession = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Define plan prices (in cents for USD)
+    // Define plan prices (in paise for INR)
     const planPrices = {
-      Pro: 499, // $4.99
-      Premium: 999 // $9.99
+      Pro: 49900, // ₹499
+      Premium: 99900 // ₹999
     };
 
     const amount = planPrices[planType];
@@ -64,7 +64,7 @@ export const createCheckoutSession = async (req, res) => {
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'inr',
             product_data: {
               name: `${planType} Plan`,
               description: `QuickFix ${planType} subscription for 30 days`,
@@ -94,9 +94,9 @@ export const createCheckoutSession = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating Stripe checkout session:', error);
-    res.status(500).json({ 
-      message: 'Error creating payment session', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error creating payment session',
+      error: error.message
     });
   }
 };
@@ -108,9 +108,9 @@ export const verifyPayment = async (req, res) => {
   try {
     // Check if Stripe is configured
     if (!stripe) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         success: false,
-        message: 'Payment service is not configured. Please contact support.' 
+        message: 'Payment service is not configured. Please contact support.'
       });
     }
 
@@ -126,9 +126,9 @@ export const verifyPayment = async (req, res) => {
 
     // Verify the session belongs to this user
     if (session.client_reference_id !== userId.toString()) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: 'Payment verification failed - user mismatch' 
+        message: 'Payment verification failed - user mismatch'
       });
     }
 
@@ -154,12 +154,12 @@ export const verifyPayment = async (req, res) => {
 
     user.planType = planType;
     user.planExpiresAt = expiryDate;
-    
+
     // Add payment record
     user.paymentHistory.push({
       orderId: session.id,
       paymentId: session.payment_intent,
-      amount: session.amount_total / 100, // Convert from cents to dollars
+      amount: session.amount_total / 100, // Convert from paise to INR
       currency: session.currency,
       status: 'success',
       planType,
@@ -182,9 +182,9 @@ export const verifyPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Error verifying payment:', error);
-    res.status(500).json({ 
-      message: 'Error verifying payment', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error verifying payment',
+      error: error.message
     });
   }
 };
@@ -207,9 +207,9 @@ export const getPaymentHistory = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching payment history:', error);
-    res.status(500).json({ 
-      message: 'Error fetching payment history', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching payment history',
+      error: error.message
     });
   }
 };
@@ -221,9 +221,9 @@ export const getPaymentHistory = async (req, res) => {
 export const webhookHandler = async (req, res) => {
   // Check if Stripe is configured
   if (!stripe) {
-    return res.status(503).json({ 
+    return res.status(503).json({
       success: false,
-      message: 'Payment service is not configured.' 
+      message: 'Payment service is not configured.'
     });
   }
 
@@ -246,20 +246,20 @@ export const webhookHandler = async (req, res) => {
       case 'checkout.session.completed':
         const session = event.data.object;
         console.log('Payment succeeded:', session.id);
-        
+
         // Update user plan if not already updated
         if (session.payment_status === 'paid') {
           const userId = session.client_reference_id;
           const planType = session.metadata.planType;
-          
+
           const user = await User.findById(userId);
           if (user && user.planType !== planType) {
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
-            
+
             user.planType = planType;
             user.planExpiresAt = expiryDate;
-            
+
             user.paymentHistory.push({
               orderId: session.id,
               paymentId: session.payment_intent,
@@ -269,7 +269,7 @@ export const webhookHandler = async (req, res) => {
               planType,
               createdAt: new Date()
             });
-            
+
             await user.save();
             console.log('User plan updated via webhook:', userId);
           }
@@ -293,9 +293,9 @@ export const webhookHandler = async (req, res) => {
     res.json({ received: true });
   } catch (error) {
     console.error('Error handling webhook:', error);
-    res.status(500).json({ 
-      message: 'Error processing webhook', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error processing webhook',
+      error: error.message
     });
   }
 };
@@ -307,8 +307,8 @@ export const refundPayment = async (req, res) => {
   try {
     // Check if Stripe is configured
     if (!stripe) {
-      return res.status(503).json({ 
-        message: 'Payment service is not configured. Please contact support.' 
+      return res.status(503).json({
+        message: 'Payment service is not configured. Please contact support.'
       });
     }
 
@@ -341,9 +341,9 @@ export const refundPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Error processing refund:', error);
-    res.status(500).json({ 
-      message: 'Error processing refund', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error processing refund',
+      error: error.message
     });
   }
 };
@@ -358,8 +358,8 @@ export const getAllPayments = async (req, res) => {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
-    const users = await User.find({ 
-      paymentHistory: { $exists: true, $ne: [] } 
+    const users = await User.find({
+      paymentHistory: { $exists: true, $ne: [] }
     }).select('name email paymentHistory planType');
 
     // Flatten all payment records
@@ -385,9 +385,9 @@ export const getAllPayments = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching all payments:', error);
-    res.status(500).json({ 
-      message: 'Error fetching payments', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching payments',
+      error: error.message
     });
   }
 };

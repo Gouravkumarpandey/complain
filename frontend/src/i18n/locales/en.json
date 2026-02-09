@@ -35,5 +35,24 @@
         "heroTitleNormal": "The agentic AI solution for modern",
         "heroTitleHighlight": "customer service",
         "heroSubtitle": "With QuickFix AI, agents and human agents work as one, resolving issues fast."
+    },
+    "cookies": {
+        "title": "Manage privacy preferences",
+        "description": "We at QuickFix use cookies and similar technologies to store and/or access information on your device to enhance your experience with our AI-powered complaint management system. This allows us to personalize your dashboard, securely process your complaints, and improve our AI's accuracy and response times. To learn more, view our Cookie Policy and Privacy Policy. By clicking 'Accept all,' you consent to the processing of your data by QuickFix to facilitate efficient resolution of your concerns. You can always withdraw your consent or update your preferences via the 'Manage Privacy Preferences' link in our website footer.",
+        "acceptAll": "Accept all",
+        "rejectAll": "Reject all",
+        "manage": "Manage preferences",
+        "settingsTitle": "Privacy Settings",
+        "settingsSubtitle": "Select which cookies you're willing to accept.",
+        "strictlyNecessary": "Strictly Necessary",
+        "functional": "Functional Cookies",
+        "analytics": "Analytics Cookies",
+        "marketing": "Marketing Cookies",
+        "functionalDesc": "Enhanced features and personalization.",
+        "analyticsDesc": "Help us improve by tracking site usage.",
+        "marketingDesc": "Relevant ads and social sharing.",
+        "required": "REQUIRED",
+        "goBack": "Go back",
+        "save": "Save preferences"
     }
 }

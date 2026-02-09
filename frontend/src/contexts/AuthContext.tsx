@@ -206,6 +206,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Admin Login
+  const adminLogin = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await api.post('/auth/admin-login', { email, password });
+      const data = response.data;
+
+      const userData: User = {
+        id: data.user.id,
+        firstName: data.user.firstName || data.user.name.split(" ")[0],
+        lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+      };
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+
+      return true;
+    } catch (error) {
+      console.error("Admin login error:", error);
+      return false;
+    }
+  };
+
   // Register
   const register = async (
     name: string,
@@ -407,10 +433,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Logout
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setUser(null);
+    }
   };
 
   // Verify OTP for email verification
@@ -475,6 +507,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isLoading,
         login,
+        adminLogin,
         logout,
         register,
         googleLogin,

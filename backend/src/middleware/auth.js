@@ -4,19 +4,19 @@ import { User, findUserById } from '../models/User.js';
 // Authenticate middleware
 const authenticate = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
       return res.status(401).json({ error: 'Access denied. No token provided.' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
-    
+
     // The token might use either 'userId' or 'id' field based on how it was generated
     const userId = decoded.userId || decoded.id;
     if (!userId) {
       return res.status(401).json({ error: 'Invalid token format.' });
     }
-    
+
     // Search for user across all role-specific collections
     const { user } = await findUserById(userId);
 
@@ -54,10 +54,10 @@ const authorize = (...roles) => {
 // Optional authentication middleware
 const optionalAuth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
-      
+
       // Search for user across all role-specific collections
       const { user } = await findUserById(decoded.userId || decoded.id);
 

@@ -119,7 +119,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
       id: 'COMP-002',
       userId: 'user-1',
       title: 'Billing discrepancy in last month invoice',
-      description: 'I was charged twice for my monthly subscription. The amount $29.99 appears twice in my billing statement.',
+      description: 'I was charged twice for my monthly subscription. The amount ₹499 appears twice in my billing statement.',
       category: 'Billing',
       priority: 'Medium',
       status: 'Resolved',
@@ -142,7 +142,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
         {
           id: 'update-5',
           complaintId: 'COMP-002',
-          message: 'I have reviewed your billing and confirmed the duplicate charge. A refund of $29.99 has been processed.',
+          message: 'I have reviewed your billing and confirmed the duplicate charge. A refund of ₹499 has been processed.',
           author: 'Sarah Johnson',
           timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
           type: 'comment',
@@ -210,7 +210,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
           // Extract AI assignment info from updates if present
           const assignmentUpdate = c.updates?.find((u: { updateType?: string }) => u.updateType === 'assignment');
           const aiAssignmentInfo = assignmentUpdate?.metadata;
-          
+
           return {
             id: c._id || c.id,
             complaintId: c.complaintId,
@@ -225,7 +225,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
             assignedAgentName: c.assignedTo?.name,
             assignedAgentEmail: c.assignedTo?.email,
             assignedTeam: c.assignedTeam,
-            slaTarget: c.sla?.resolutionTime?.target 
+            slaTarget: c.sla?.resolutionTime?.target
               ? new Date(Date.now() + c.sla.resolutionTime.target * 60 * 60 * 1000)
               : new Date(Date.now() + 48 * 60 * 60 * 1000),
             isEscalated: Boolean(c.escalation?.escalatedBy),
@@ -250,7 +250,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
             })) : []
           };
         });
-        
+
         setComplaints(prev => {
           // Merge with existing complaints, preferring backend data
           const existingIds = new Set(mappedComplaints.map(c => c.id));
@@ -364,20 +364,20 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
           if (prev.some(c => c.id === mapped.id)) return prev;
           return [...prev, mapped];
         });
-  // Notify socket layer so other roles/tabs receive 'new_complaint'
-  try { notifyNewComplaint(mapped.id); } catch { /* optional: socket not connected */ }
+        // Notify socket layer so other roles/tabs receive 'new_complaint'
+        try { notifyNewComplaint(mapped.id); } catch { /* optional: socket not connected */ }
         return mapped;
       }
     } catch (err: unknown) {
       console.warn('API createComplaint failed', err);
-      
+
       // Check if it's an AI validation error
       const error = err as { response?: { status?: number; data?: { aiAnalysis?: unknown; message?: string } }; message?: string };
       if (error.response?.status === 400 && error.response?.data?.aiAnalysis) {
         const errorData = error.response.data;
         throw new Error(errorData.message || 'Your complaint appears to contain invalid or meaningless content. Please provide a genuine description of your issue.');
       }
-      
+
       // For other errors, re-throw with message
       throw new Error(error.response?.data?.message || error.message || 'Failed to create complaint');
     }
@@ -435,7 +435,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
     const handler = (evt: Event) => {
       const e = evt as CustomEvent;
       const incoming = e.detail || {};
-  const mapped: Complaint = {
+      const mapped: Complaint = {
         id: incoming._id || incoming.id || Math.random().toString(36).slice(2),
         userId: incoming.userId || incoming.user?._id || incoming.user || 'unknown',
         title: incoming.title || 'New Complaint',
@@ -451,8 +451,8 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
         escalationReason: incoming.escalationReason,
         createdAt: incoming.createdAt ? new Date(incoming.createdAt) : new Date(),
         updatedAt: incoming.updatedAt ? new Date(incoming.updatedAt) : new Date(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updates: Array.isArray(incoming.updates) ? incoming.updates.map((u: any) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        updates: Array.isArray(incoming.updates) ? incoming.updates.map((u: any) => ({
           id: u._id || u.id || Math.random().toString(36).slice(2),
           complaintId: (u.complaintId?._id) || u.complaintId || (incoming._id || incoming.id),
           message: u.message || '',
@@ -593,9 +593,9 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
 
   const getSlaBreaches = (): Complaint[] => {
     const now = new Date();
-    return complaints.filter(complaint => 
-      complaint.status !== 'Resolved' && 
-      complaint.status !== 'Closed' && 
+    return complaints.filter(complaint =>
+      complaint.status !== 'Resolved' &&
+      complaint.status !== 'Closed' &&
       now > complaint.slaTarget
     );
   };
