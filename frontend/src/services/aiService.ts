@@ -34,7 +34,7 @@ class AIService {
 
   private localClassification(text: string): AIAnalysis {
     const lowercaseText = text.toLowerCase();
-    
+
     // Category classification
     let category: AIAnalysis['category'] = 'General';
     let maxScore = 0;
@@ -81,7 +81,8 @@ class AIService {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/ai/response`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const response = await fetch(`${apiBaseUrl}/ai/response`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

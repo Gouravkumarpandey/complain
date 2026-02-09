@@ -335,6 +335,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// Explicitly set COOP/COEP headers to support Google Sign-In
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
+  next();
+});
+
 // Apply production-ready CSP configuration
 const isDevelopment = process.env.NODE_ENV !== 'production';
 app.use(helmet(getHelmetCspConfig(isDevelopment)));
@@ -346,7 +353,9 @@ app.use(cors({
     "http://localhost:5173",
     "http://localhost:3000",
     "http://localhost:5001",
-    "https://complain-beta.vercel.app"
+    "https://complain-beta.vercel.app",
+    // Add any Vercel preview deployments
+    /^https:\/\/complain-.*\.vercel\.app$/
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],

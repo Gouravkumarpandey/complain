@@ -7,12 +7,12 @@ import React, {
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../hooks/useAuth';
 import { useTokenValidation } from '../hooks/useTokenValidation';
-import { 
-  SocketContext, 
-  NotificationType, 
+import {
+  SocketContext,
+  NotificationType,
   OnlineUser,
   ComplaintUpdate,
-  SocketContextType 
+  SocketContextType
 } from './SocketContextStore';
 
 // -------------------- Provider Component --------------------
@@ -51,18 +51,18 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         console.log('⚠️ Socket disconnected:', reason);
         setIsConnected(false);
       });
-      
+
       newSocket.on('connection_success', (data) => {
         console.log('🔐 Socket authenticated successfully:', data);
         setIsConnected(true);
       });
-      
+
       newSocket.on('connection_error', (error) => {
         console.error('⛔ Socket authentication failed:', error);
         setIsConnected(false);
         // Disconnect and try again with fresh token
         newSocket.disconnect();
-        
+
         // Try to refresh token and reconnect
         setTimeout(() => {
           refreshToken(); // Use refreshToken directly instead
@@ -116,7 +116,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       newSocket.on('new_complaint', (complaint) => {
         console.log('New complaint received via socket:', complaint);
         window.dispatchEvent(new CustomEvent('newComplaint', { detail: complaint }));
-        
+
         // Show browser notification
         if (Notification.permission === 'granted') {
           new Notification('New Complaint Filed', {
@@ -125,12 +125,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           });
         }
       });
-      
+
       // Listen for complaint status updates (multiple event names for compatibility)
       newSocket.on('complaint_status_update', (data) => {
         console.log('Complaint status updated via socket:', data);
         window.dispatchEvent(new CustomEvent('complaintStatusUpdate', { detail: data }));
-        
+
         // Show browser notification
         if (Notification.permission === 'granted') {
           new Notification('Complaint Status Updated', {
@@ -139,12 +139,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           });
         }
       });
-      
+
       // Listen for complaintUpdated event (main event from backend)
       newSocket.on('complaintUpdated', (data) => {
         console.log('✅ complaintUpdated socket event received:', data);
         window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
-        
+
         // Show browser notification for resolved complaints
         if (data.complaint?.status === 'Resolved' && Notification.permission === 'granted') {
           new Notification('Complaint Resolved! 🎉', {
@@ -153,7 +153,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           });
         }
       });
-      
+
       newSocket.on('complaint_status_updated', (data) => {
         console.log('📬 complaint_status_updated event received:', data);
         window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
@@ -161,24 +161,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       newSocket.on('complaint_assigned', (data) => {
         console.log('Complaint assigned via socket:', data);
         window.dispatchEvent(new CustomEvent('complaintAssigned', { detail: data }));
-        
+
         // Show browser notification
         if (Notification.permission === 'granted') {
-          const title = user?.role === 'agent' ? 
-            'New Complaint Assigned' : 
+          const title = user?.role === 'agent' ?
+            'New Complaint Assigned' :
             'Agent Assigned to Your Complaint';
-            
+
           const body = user?.role === 'agent' ?
             `Complaint "${data.complaint?.title || 'New complaint'}" has been assigned to you` :
             `Agent ${data.agentName} has been assigned to your complaint`;
-            
+
           new Notification(title, {
             body,
             icon: '/logo.svg',
           });
         }
       });
-      
+
       newSocket.on('complaint_status_updated', (data) => {
         window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
       });
@@ -186,7 +186,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       newSocket.on('dashboard_stats_update', (data) => {
         window.dispatchEvent(new CustomEvent('dashboardStatsUpdate', { detail: data }));
       });
-      
+
       newSocket.on('agent_status_update', (agents) => {
         window.dispatchEvent(new CustomEvent('agentStatusUpdate', { detail: { agents } }));
       });
@@ -214,12 +214,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       // -------------------- Error Handling --------------------
       newSocket.on('error', (error: { message: string }) => {
         console.error('Socket error:', error);
-        
+
         // Maintain a counter of errors in localStorage to prevent infinite loops
         const errorCount = parseInt(localStorage.getItem('socketErrorCount') || '0', 10);
         const errorTime = parseInt(localStorage.getItem('socketErrorTime') || '0', 10);
         const now = Date.now();
-        
+
         // Reset error count if last error was more than 1 minute ago
         if (now - errorTime > 60000) {
           localStorage.setItem('socketErrorCount', '1');
@@ -228,14 +228,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           // Increment error count
           localStorage.setItem('socketErrorCount', (errorCount + 1).toString());
           localStorage.setItem('socketErrorTime', now.toString());
-          
+
           // If too many errors in a short time, back off reconnection attempts
           if (errorCount > 5) {
             console.warn(`Too many socket errors (${errorCount}). Backing off for 30 seconds...`);
             return; // Don't attempt to reconnect immediately
           }
         }
-        
+
         // Handle "New login" message specifically to prevent reconnection loops
         if (error.message === 'New login detected from another device') {
           console.log('New login detected - this is normal if you have multiple tabs open');
@@ -244,33 +244,33 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           // Don't take any action, the server is handling the duplicate login
           return;
         }
-        
+
         // Handle connection failures
         if (error.message?.includes('failed') || error.message?.includes('refused')) {
           console.error('Socket connection failure. Will attempt again later.');
           // Track the failure time to avoid rapid reconnection attempts
           localStorage.setItem('socketConnectionFailure', Date.now().toString());
         }
-        
+
         // Handle all authentication-related errors
-        if (error.message === 'Invalid user' || 
-            error.message === 'Authentication failed' || 
-            error.message === 'Token expired' || 
-            error.message === 'Invalid token payload') {
-              
+        if (error.message === 'Invalid user' ||
+          error.message === 'Authentication failed' ||
+          error.message === 'Token expired' ||
+          error.message === 'Invalid token payload') {
+
           // Force disconnect the socket immediately
           console.log('Authentication error detected. Disconnecting socket...');
           newSocket.disconnect();
-          
+
           // Wait a bit before trying to refresh token to prevent rapid attempts
           setTimeout(() => {
             console.log('Attempting token refresh...');
-            
+
             // Try direct token refresh instead of checkTokenExpiration
             refreshToken()
               .then((isValid: boolean) => {
                 console.log('Token refresh attempt result:', isValid ? 'success' : 'failed');
-                
+
                 if (isValid) {
                   console.log('Token refreshed successfully, will reconnect on next lifecycle');
                   // Reset error count since we successfully refreshed
@@ -307,38 +307,38 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   );
 
   // -------------------- Socket Actions --------------------
-  
+
   // Join a complaint room to receive real-time updates about a specific complaint
   const joinComplaintRoom = useCallback((complaintId: string) => {
     if (!socket || !isConnected) return;
     console.log(`Joining complaint room: ${complaintId}`);
     socket.emit('join_complaint', { complaintId });
   }, [socket, isConnected]);
-  
+
   // Leave a complaint room
   const leaveComplaintRoom = useCallback((complaintId: string) => {
     if (!socket || !isConnected) return;
     console.log(`Leaving complaint room: ${complaintId}`);
     socket.emit('leave_complaint', { complaintId });
   }, [socket, isConnected]);
-  
+
   // Send a message in a complaint thread
   const sendMessage = useCallback((complaintId: string, message: string, isInternal: boolean = false) => {
     if (!socket || !isConnected) return;
     console.log(`Sending message to complaint ${complaintId}:`, message);
-    socket.emit('send_message', { 
-      complaintId, 
+    socket.emit('send_message', {
+      complaintId,
       message,
       isInternal
     });
   }, [socket, isConnected]);
-  
+
   // Update a complaint (status, priority, etc.)
   const updateComplaint = useCallback((complaintId: string, updates: ComplaintUpdate, note?: string) => {
     if (!socket || !isConnected) return;
-    
+
     console.log(`Updating complaint ${complaintId}:`, updates);
-    
+
     // Handle status updates specially for tracking history
     if (updates.status) {
       socket.emit('update_complaint_status', {
@@ -347,7 +347,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         note
       });
     }
-    
+
     // Handle other updates
     if (updates.priority || updates.category) {
       socket.emit('update_complaint_details', {
@@ -355,7 +355,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         updates
       });
     }
-    
+
     // Handle assignment
     if (updates.assignedTo) {
       socket.emit('assign_complaint', {
@@ -364,23 +364,23 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       });
     }
   }, [socket, isConnected]);
-  
+
   // Mark notifications as read
   const markNotificationsRead = useCallback((notificationIds: string[]) => {
     if (!socket || !isConnected || !notificationIds.length) return;
-    
+
     socket.emit('mark_notifications_read', { notificationIds });
-    
+
     // Update local state optimistically
-    setNotifications(prev => 
-      prev.map(notification => 
-        notificationIds.includes(notification._id) 
+    setNotifications(prev =>
+      prev.map(notification =>
+        notificationIds.includes(notification._id)
           ? { ...notification, isRead: true }
           : notification
       )
     );
   }, [socket, isConnected]);
-  
+
   // Notify about a new complaint being created (after API call)
   const notifyNewComplaint = useCallback((complaintId: string) => {
     if (!socket || !isConnected) return;
@@ -391,7 +391,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const connectSocket = useCallback(
     (token: string) => {
       console.log('Initializing socket connection with token');
-      
+
       // Decode token to verify its structure and extract userId
       let userId = null;
       try {
@@ -399,14 +399,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
           console.log('Token payload:', JSON.stringify(payload));
-          
+
           // Extract user ID from token - backend expects 'id' as the key
           userId = payload.id || payload.userId || payload.sub;
-          
+
           // Check for critical fields
           if (!userId) {
             console.warn('Warning: Token payload missing user ID field');
-            
+
             // Last resort: look for any field that looks like a MongoDB ObjectId
             for (const key in payload) {
               if (typeof payload[key] === 'string' && /^[0-9a-fA-F]{24}$/.test(payload[key])) {
@@ -418,12 +418,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           } else {
             console.log(`Found user ID in token: ${userId}`);
           }
-          
+
           // Check token expiration
           if (payload.exp) {
             const expiresIn = payload.exp * 1000 - Date.now();
             console.log(`Token expires in: ${Math.round(expiresIn / 1000)} seconds`);
-            
+
             if (expiresIn < 0) {
               console.error('Token is already expired!');
               return null; // Don't even try to connect with expired token
@@ -433,7 +433,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       } catch (e) {
         console.error('Failed to decode token:', e);
       }
-      
+
       // Get user from local storage as fallback for userId
       const userStr = localStorage.getItem('user');
       let userObj = null;
@@ -446,52 +446,52 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           console.error('Failed to parse user from localStorage:', e);
         }
       }
-      
+
       // Verify token one more time before connecting
       if (!token) {
         console.error('Cannot connect socket: No authentication token available');
         return null;
       }
-      
+
       // First validate token to avoid connection attempts with invalid tokens
-    try {
-      // Simple client-side check for token validity
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        console.error('Token validation failed, not connecting socket');
+      try {
+        // Simple client-side check for token validity
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          console.error('Token validation failed, not connecting socket');
+          return null;
+        }
+
+        // Check if token is expired
+        const payload = JSON.parse(atob(tokenParts[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.error('Token validation failed (expired), not connecting socket');
+          return null;
+        }
+      } catch (error) {
+        console.error('Token validation failed, not connecting socket:', error);
         return null;
       }
-      
-      // Check if token is expired
-      const payload = JSON.parse(atob(tokenParts[1]));
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        console.error('Token validation failed (expired), not connecting socket');
-        return null;
-      }
-    } catch (error) {
-      console.error('Token validation failed, not connecting socket:', error);
-      return null;
-    }
-    
-    // Use dedicated socket URL from environment variables, or fallback to API URL
-    const baseURL = import.meta.env.VITE_SOCKET_SERVER_URL || 'http://localhost:3001';
-    
-    console.log('🔌 Socket connecting to:', baseURL);
-      
-    const socketOptions = {
-      auth: {
-        token // Simplified to just include the token
-      },
-      transports: ['websocket', 'polling'], 
-      reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 1000,
-      timeout: 10000,
-      forceNew: true
-    };
-      
+
+      // Use dedicated socket URL from environment variables, or fallback to API URL
+      const baseURL = import.meta.env.VITE_SOCKET_SERVER_URL || 'http://localhost:5001';
+
+      console.log('🔌 Socket connecting to:', baseURL);
+
+      const socketOptions = {
+        auth: {
+          token // Simplified to just include the token
+        },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+        forceNew: true
+      };
+
       console.log('Initializing socket with options:', socketOptions);
-      
+
       try {
         const socket = io(baseURL, socketOptions);
         setupSocketListeners(socket);
@@ -515,7 +515,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   useEffect(() => {
     // Track if component is still mounted for async operations
     let isMounted = true;
-    
+
     // If no user, disconnect and clean up
     if (!user) {
       if (socket) {
@@ -532,16 +532,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       console.log('Socket already connected, not creating a new one');
       return () => { isMounted = false; };
     }
-    
+
     // Enforce a minimum time between connection attempts to prevent rapid reconnections
     const now = Date.now();
     const MIN_RECONNECT_INTERVAL = 10000; // 10 seconds between attempts
-    
+
     if (now - lastConnectionAttempt < MIN_RECONNECT_INTERVAL) {
-      console.log(`Throttling socket connection - last attempt was ${Math.round((now - lastConnectionAttempt)/1000)}s ago`);
+      console.log(`Throttling socket connection - last attempt was ${Math.round((now - lastConnectionAttempt) / 1000)}s ago`);
       return () => { isMounted = false; };
     }
-    
+
     // Limit total number of connection attempts to prevent infinite loops
     const MAX_ATTEMPTS = 3;
     if (connectionAttemptCount >= MAX_ATTEMPTS) {
@@ -555,15 +555,15 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       socket.disconnect();
       setSocket(null);
     }
-    
+
     // Initialize socket connection process
     const initializeSocket = async () => {
       // Track this attempt
       setLastConnectionAttempt(now);
       setConnectionAttemptCount(prev => prev + 1);
-      
+
       console.log(`Socket connection attempt ${connectionAttemptCount + 1}/${MAX_ATTEMPTS}`);
-      
+
       try {
         // First validate the token without calling the API
         const token = localStorage.getItem('token');
@@ -571,7 +571,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           console.error('No token available, not connecting socket');
           return;
         }
-        
+
         // Simple client-side token validation to avoid unnecessary API calls
         try {
           const tokenParts = token.split('.');
@@ -579,7 +579,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             console.error('Invalid token format, not connecting socket');
             return;
           }
-          
+
           const payload = JSON.parse(atob(tokenParts[1]));
           if (payload.exp && payload.exp * 1000 < Date.now()) {
             console.error('Token expired, not connecting socket');
@@ -589,7 +589,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           console.error('Token validation failed, not connecting socket:', error);
           return;
         }
-        
+
         // Create the socket connection with delay to prevent rapid reconnects
         setTimeout(() => {
           if (isMounted) {
@@ -609,8 +609,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     return () => {
       isMounted = false;
     };
-  // Carefully control when this effect runs to prevent infinite loops
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Carefully control when this effect runs to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // -------------------- Helper Functions --------------------
