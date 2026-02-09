@@ -997,6 +997,16 @@ export const githubSignupWithRole = async (req, res) => {
       githubUsername: login,
     });
 
+    // Send SMS notification if phone number is provided
+    if (user.phoneNumber) {
+      try {
+        await triggerSignupSMS(user);
+        console.log("Signup SMS sent to GitHub user");
+      } catch (smsError) {
+        console.error("Failed to send signup SMS:", smsError);
+      }
+    }
+
     res.status(201).json({
       success: true,
       user: {
