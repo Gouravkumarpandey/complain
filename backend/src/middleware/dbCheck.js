@@ -14,6 +14,25 @@ const dbConnectionCheck = async (req, res, next) => {
   if (!req.path.startsWith('/api') || req.path === '/api/health') {
     return next();
   }
+
+  // Skip DB check for auth routes that should work during cold starts
+  // These routes handle their own DB errors gracefully
+  const skipDbCheckRoutes = [
+    '/api/auth/logout',
+    '/api/auth/google',
+    '/api/auth/google-decode',
+    '/api/auth/google-signup',
+    '/api/auth/facebook',
+    '/api/auth/facebook-signup',
+    '/api/auth/login',
+    '/api/auth/signup',
+    '/api/auth/admin-login',
+    '/api/auth/refresh'
+  ];
+  
+  if (skipDbCheckRoutes.some(route => req.path === route)) {
+    return next();
+  }
   
   const now = Date.now();
   

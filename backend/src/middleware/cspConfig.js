@@ -158,7 +158,7 @@ export const cspMiddleware = (req, res, next) => {
 export const getHelmetCspConfig = (isDevelopment = false) => {
   return {
     crossOriginEmbedderPolicy: false, // Required for some third-party integrations
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow OAuth popups
+    crossOriginOpenerPolicy: false, // Disabled - set manually after helmet for Google Sign-In compatibility
     contentSecurityPolicy: {
       useDefaults: false,
       directives: getCspDirectives(isDevelopment),

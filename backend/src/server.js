@@ -350,18 +350,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Explicitly set COOP/COEP headers to support Google Sign-In
-app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-  res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
-  next();
-});
-
-// Apply production-ready CSP configuration
-const isDevelopment = process.env.NODE_ENV !== 'production';
-app.use(helmet(getHelmetCspConfig(isDevelopment)));
-
-app.use(cors({
+// CORS must be applied FIRST so all responses (including errors) have CORS headers
+const corsOptions = {
   origin: [
     "https://quickfix.innovexlabs.me",
     "https://innovexlabs.me",
@@ -376,7 +366,22 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Authorization']
-}));
+};
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
+// Apply production-ready CSP configuration (Helmet handles COOP/COEP)
+const isDevelopment = process.env.NODE_ENV !== 'production';
+app.use(helmet(getHelmetCspConfig(isDevelopment)));
+
+// Set COOP/COEP headers AFTER helmet to override for Google Sign-In compatibility
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+  res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
+  next();
+});
 
 app.use(morgan("combined"));
 app.use(cookieParser());
