@@ -21,11 +21,11 @@ interface QuickReply {
 const quickReplies: QuickReply[] = [
   {
     text: "What is QuickFix?",
-    response: "QuickFix is an AI-powered complaint management system that helps businesses efficiently manage and resolve customer complaints. We use artificial intelligence to automatically categorize, prioritize, and suggest solutions for incoming complaints, making the support process faster and more efficient."
+    response: "QuickFix is an enterprise-grade AI-powered complaint management system that leverages artificial intelligence to enhance customer support operations. We provide real-time complaint tracking, intelligent ticket assignment, automated responses, sentiment analysis, and multi-channel communication."
   },
   {
     text: "How does it work?",
-    response: "It's simple! 1️⃣ Customers submit complaints through our platform. 2️⃣ Our AI analyzes and categorizes each complaint. 3️⃣ Complaints are automatically assigned to the right team. 4️⃣ Real-time tracking keeps everyone informed. 5️⃣ Get insights with powerful analytics. Our intelligent system reduces response time by up to 70%!"
+    response: "It's simple! 1️⃣ Customers submit complaints through our platform. 2️⃣ Our AI analyzes, categorizes, and performs sentiment analysis. 3️⃣ Complaints are automatically assigned to available agents via AWS SNS/SQS. 4️⃣ Real-time tracking with Socket.IO keeps everyone informed. 5️⃣ Get insights with powerful analytics and reports!"
   },
   {
     text: "What are the pricing plans?",
@@ -33,11 +33,11 @@ const quickReplies: QuickReply[] = [
   },
   {
     text: "What features do you offer?",
-    response: "Key features include:\n\n🤖 **AI-Powered Analysis** - Automatic complaint categorization and sentiment analysis\n\n📊 **Real-time Dashboard** - Monitor all complaints in one place\n\n🔔 **Smart Notifications** - Get instant alerts via email, SMS, or push notifications\n\n👥 **Team Collaboration** - Assign and track complaints across your team\n\n📈 **Analytics & Reports** - Gain insights with detailed analytics\n\n🔒 **Secure & Compliant** - Enterprise-grade security\n\n🌐 **Multi-language Support** - Serve customers in their language"
+    response: "Key features include:\n\n🤖 **AI Capabilities** - Automated classification, sentiment analysis, smart reply generation, text summarization\n\n📊 **Real-time Dashboard** - Monitor all complaints with WebSocket updates\n\n🔔 **Multi-Channel Notifications** - Email, SMS, WhatsApp, and in-app alerts\n\n👥 **Team Collaboration** - Intelligent ticket assignment and agent management\n\n📈 **Analytics & Reports** - Detailed insights and performance metrics\n\n🔒 **Enterprise Security** - JWT authentication, role-based access, encryption"
   },
   {
-    text: "Is there a free trial?",
-    response: "Yes! You can start with our **Free Plan** immediately - no credit card required. This gives you access to basic features and up to 5 complaints per month. When you're ready to unlock more power, you can upgrade to Pro or Premium at any time. We also offer a 14-day money-back guarantee on paid plans!"
+    text: "What technologies do you use?",
+    response: "QuickFix is built with modern tech:\n\nFrontend: React 18, TypeScript, Material-UI, Tailwind CSS, Socket.IO\n\nBackend: Node.js, Express, MongoDB, Redis, AWS SNS/SQS\n\nAI Service: Python FastAPI, Transformers, PyTorch, Google Gemini\n\nIntegrations: Stripe payments, Twilio SMS, WhatsApp API, OAuth (Google/Facebook)"
   },
   {
     text: "How do I get started?",
@@ -50,7 +50,7 @@ export function HomePageChatBot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "👋 Hi! I'm the QuickFix Assistant. I'm here to help you learn about our AI-powered complaint management system. What would you like to know?",
+      text: "👋 Hi! I'm the QuickFix Assistant. I can answer questions about our AI-powered complaint management system and search the web for any additional information you need. What would you like to know?",
       sender: 'bot',
       timestamp: new Date()
     }
@@ -85,27 +85,68 @@ export function HomePageChatBot() {
     );
     if (quickReply) return quickReply.response;
 
-    // Use Gemini AI for intelligent responses
+    // Use Gemini AI with Google Search grounding for intelligent responses
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash-exp',
+        tools: [{ googleSearch: {} }] // Enable Google Search grounding
+      });
 
-      const systemContext = `You are a helpful AI assistant for QuickFix, an AI-powered complaint management system. 
+      const systemContext = `You are a helpful AI assistant for QuickFix, an enterprise-grade AI-powered complaint management system.
 
-ABOUT QUICKFIX:
-QuickFix is a cutting-edge complaint management platform that uses artificial intelligence to help businesses efficiently manage and resolve customer complaints.
+COMPREHENSIVE PROJECT INFORMATION:
 
-KEY FEATURES:
-- AI-powered automatic complaint categorization and sentiment analysis
-- Real-time dashboard for monitoring all complaints
-- Smart notifications (email, SMS, push)
-- Team collaboration and assignment system
-- Advanced analytics and reporting
-- Multi-language support
-- Enterprise-grade security (GDPR compliant)
-- API and integrations (Slack, Jira, Zendesk)
-- Mobile-responsive design with upcoming native apps
+🎯 OVERVIEW:
+QuickFix is an enterprise-grade complaint management system that leverages artificial intelligence to enhance customer support operations. The platform provides real-time complaint tracking, intelligent ticket assignment, automated responses, sentiment analysis, and multi-channel communication. It is designed for scalability, security, and operational efficiency.
 
-PRICING PLANS:
+🏗️ SYSTEM ARCHITECTURE:
+- Microservices architecture with event-driven design
+- Frontend: React 18.3.1 + TypeScript + Vite + Material-UI + Tailwind CSS
+- Backend API: Node.js 18+ + Express.js 4.18.2 + Socket.IO 4.8.1
+- Database: MongoDB (Mongoose 7.5.0) + Redis 5.10.0 (caching)
+- AI Service: Python FastAPI + Transformers + PyTorch + Sentence Transformers
+- Event Processing: AWS SNS/SQS for asynchronous ticket assignment
+- Authentication: JWT 9.0.2 + Passport.js 0.7.0 (OAuth - Google/Facebook)
+- Payments: Stripe 17.5.0 integration
+- Notifications: Nodemailer 7.0.12, Twilio SMS, WhatsApp Business API
+- Real-time: Socket.IO for bidirectional WebSocket communication
+
+✨ KEY FEATURES:
+
+For Users:
+- Submit complaints through user-friendly interface
+- Real-time complaint status tracking
+- Live chat support via integrated chatbot
+- Multi-channel notifications (email, SMS, WhatsApp, in-app)
+- Feedback system with ratings
+- Personal dashboard with complaint history
+
+For Agents:
+- Manage and resolve assigned complaints
+- AI-generated reply suggestions
+- Performance metrics and analytics
+- Real-time communication with users
+- Automatic ticket assignment based on availability
+- Comprehensive analytics dashboard
+
+For Administrators:
+- User, agent, and role management
+- System analytics and performance monitoring
+- Configuration and settings management
+- Detailed report generation
+- Subscription and billing management (Stripe)
+
+🤖 AI CAPABILITIES:
+- Automated complaint classification (product, billing, technical, etc.)
+- Sentiment analysis for urgency detection (angry, neutral, happy)
+- AI-powered response suggestions using Google Gemini and DeepSeek
+- Text summarization for complaint summaries
+- Semantic search and similarity matching with embeddings
+- Dialogflow and Rasa chatbot integration
+- Multi-language support with automatic detection
+
+💰 PRICING PLANS:
+
 1. Free Plan - ₹0/month
    - Up to 5 complaints/month
    - Basic tracking
@@ -114,47 +155,127 @@ PRICING PLANS:
 
 2. Pro Plan - ₹499/month
    - Unlimited complaints
-   - AI-powered diagnosis
+   - AI-powered diagnosis and classification
    - Priority support (24h response)
    - Analytics dashboard
    - Live chat support
+   - SMS notifications
 
 3. Premium Plan - ₹999/month
    - Everything in Pro
-   - Team management (10 users)
-   - Advanced analytics
+   - Team management (up to 10 users)
+   - Advanced analytics and custom reports
    - Custom branding
    - Dedicated account manager
    - Video call support
-   - API access
+   - Full API access
+   - WhatsApp integration
 
-HOW IT WORKS:
-1. Customers submit complaints through the platform
-2. AI automatically categorizes and analyzes sentiment
-3. System assigns to appropriate team members
-4. Real-time tracking and updates
-5. Detailed analytics for continuous improvement
+🔄 EVENT-DRIVEN WORKFLOW:
 
-SECURITY: Enterprise-grade encryption, GDPR compliant, regular security audits
+Ticket Creation Flow:
+1. User submits complaint via frontend
+2. Backend API saves to MongoDB
+3. Publishes "ticket.created" event to AWS SNS
+4. SNS forwards to SQS Queue
+5. Worker polls SQS and finds available agent
+6. Assigns ticket and marks agent as BUSY
+7. Sends real-time notification via Socket.IO
 
-GETTING STARTED: Sign up free at the website - no credit card required for Free plan
+Ticket Resolution Flow:
+1. Agent marks complaint as resolved
+2. API updates MongoDB
+3. Publishes "ticket.resolved" event to SNS
+4. Worker marks agent as FREE
+5. Auto-assigns next pending ticket if available
+6. Sends notifications to user and agent
 
-FORMATTING RULES:
-- Do NOT use asterisks (*) for bold, italic, or any formatting
-- Do NOT use markdown symbols like **, *, _, or ***
-- Use plain text only with simple punctuation
+🔒 SECURITY FEATURES:
+- JWT-based authentication with token expiration
+- Role-based access control (User, Agent, Admin)
+- Bcrypt password hashing with salt
+- API rate limiting to prevent abuse
+- Helmet.js for security headers (CSP, XSS protection)
+- CORS configuration
+- Input validation with Joi schemas
+- MongoDB injection prevention via Mongoose ORM
+- GDPR compliant data handling
+- Regular security audits
+
+🛠️ TECHNOLOGY STACK:
+
+Frontend:
+- React 18.3.1, TypeScript, Vite
+- Material-UI 7.3.4, Tailwind CSS
+- React Router 7.9.1, Axios 1.12.2
+- Socket.IO Client 4.8.1
+- Recharts 3.4.1 (data visualization)
+- Lucide React 0.344.0 (icons)
+
+Backend:
+- Node.js 18+, Express.js 4.18.2
+- MongoDB, Mongoose 7.5.0
+- Redis 5.10.0, Socket.IO 4.8.1
+- JWT 9.0.2, Passport.js 0.7.0
+- Stripe 17.5.0, Nodemailer 7.0.12
+- AWS SDK 3.971.0 (SNS/SQS)
+
+AI/ML:
+- FastAPI 0.68.0+, Uvicorn 0.15.0+
+- Transformers 4.30.0+, PyTorch 2.0.0+
+- Sentence Transformers 2.2.2+
+- Google Generative AI (Gemini)
+- DeepSeek LLM integration
+
+DevOps:
+- Docker, Docker Compose
+- AWS SNS/SQS
+- Vercel (frontend deployment)
+- GitHub (version control)
+
+📊 ANALYTICS & REPORTING:
+- Real-time performance metrics
+- Complaint resolution time tracking
+- Agent performance statistics
+- Customer satisfaction ratings
+- Sentiment analysis trends
+- Category-wise complaint distribution
+- Custom report generation
+
+🌐 INTEGRATIONS:
+- OAuth: Google, Facebook login
+- Payment: Stripe for subscriptions
+- Communication: Twilio SMS, WhatsApp Business API
+- Email: Nodemailer with SMTP
+- Future: Slack, Jira, Zendesk integrations
+
+🚀 GETTING STARTED:
+1. Click "Get Started Free" button
+2. Register with email or OAuth (Google/Facebook)
+3. Email verification with OTP
+4. Access dashboard immediately
+5. Start submitting complaints
+6. No credit card required for Free plan
+7. 14-day money-back guarantee on paid plans
+
+IMPORTANT INSTRUCTIONS:
+- Answer questions about QuickFix comprehensively using the above information
+- If the user asks about something not covered in QuickFix details, use Google Search to find accurate information
+- For technical questions, architecture details, or specific features, refer to the detailed information above
+- Keep responses conversational, friendly, and helpful
+- Use plain text formatting (no asterisks or markdown)
 - Use emojis sparingly for visual appeal
-- Keep responses conversational and natural
+- If you use Google Search, clearly indicate that you're providing web search results
 
-Your role is to answer questions about QuickFix in a friendly, helpful manner. Keep responses concise but informative.`;
+Your role is to be an expert assistant on QuickFix and help users with any questions they have, using Google Search when needed for topics beyond QuickFix.`;
 
-      const prompt = `${systemContext}\n\nUser Question: ${userMessage}\n\nProvide a helpful, concise response about QuickFix using plain text only (no asterisks or markdown formatting):`;
+      const prompt = `${systemContext}\n\nUser Question: ${userMessage}\n\nProvide a helpful, comprehensive response. If the question is about QuickFix, use the detailed information provided above. If it's about something else or requires current information, use Google Search to provide accurate results. Use plain text only (no asterisks or markdown formatting):`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
-      return text || "I'm here to help! Could you please rephrase your question about QuickFix?";
+      return text || "I'm here to help! Could you please rephrase your question?";
     } catch (error) {
       console.error('Gemini API error:', error);
 
@@ -435,8 +556,8 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
                 <button
                   onClick={toggleVoiceInput}
                   className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${isListening
-                      ? 'text-red-500 bg-red-50 animate-pulse'
-                      : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'
+                    ? 'text-red-500 bg-red-50 animate-pulse'
+                    : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'
                     }`}
                   title={isListening ? "Stop listening" : "Voice input"}
                 >
@@ -448,8 +569,8 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
               <button
                 onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
                 className={`p-2.5 rounded-xl transition-colors ${isSpeechEnabled
-                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
-                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                   }`}
                 title={isSpeechEnabled ? "Voice responses ON" : "Voice responses OFF"}
               >

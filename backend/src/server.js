@@ -352,7 +352,7 @@ app.use((req, res, next) => {
 
 // Explicitly set COOP/COEP headers to support Google Sign-In
 app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
   res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
   next();
 });
