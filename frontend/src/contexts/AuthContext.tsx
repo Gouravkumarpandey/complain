@@ -29,13 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // No token means no session
       if (!token) {
-        console.log("No token found, session invalid");
         return false;
       }
 
       // Check token validity
       if (!tokenService.validateToken(token)) {
-        console.log("Token invalid or expired");
         tokenService.clearAuthData();
         setUser(null);
         return false;
@@ -46,7 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const MIN_INTERVAL = 5000; // 5 seconds minimum between validation calls
 
       if (now - lastValidationTime < MIN_INTERVAL) {
-        console.log("Skipping session validation - throttled to prevent resource exhaustion");
         return true; // Assume valid if we recently validated
       }
 
@@ -65,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Check if server has restarted by comparing session IDs
         if (serverSessionId && data.sessionId !== serverSessionId) {
-          console.log("Server has restarted, forcing re-login");
           tokenService.clearAuthData();
           setUser(null);
           return false;
@@ -82,13 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAxiosError(error) &&
           (error.response?.status === 401 || error.response?.status === 403)
         ) {
-          console.log("Session validation failed: unauthorized");
           tokenService.clearAuthData();
           setUser(null);
           return false;
         }
         // For other errors (network, timeout, 404), continue with client-side validation
-        console.warn("Network error during session validation, using client-side validation:", error);
         return true;
       }
 
@@ -98,17 +92,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedUserStr) {
           try {
             const storedUser = JSON.parse(storedUserStr);
-            console.log("Restoring user from localStorage during session validation:", storedUser);
             setUser(storedUser);
-          } catch (err) {
-            console.error("Error parsing stored user data:", err);
+          } catch {
+            // Error parsing stored user data
           }
         }
       }
 
       return true;
-    } catch (error) {
-      console.error("Session validation error:", error);
+    } catch {
       return false;
     }
   }, [serverSessionId, user, lastValidationTime]);
@@ -124,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           // Basic token validation before making API call
           if (!tokenService.validateToken(token)) {
-            console.log("Token validation failed on load");
             tokenService.clearAuthData();
             setUser(null);
             setIsLoading(false);
@@ -136,8 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Validate session with backend
           await validateSession();
-        } catch (error) {
-          console.error("Error during auth initialization:", error);
+        } catch {
           tokenService.clearAuthData();
           setUser(null);
         }
@@ -172,64 +162,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login
   const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      const data = response.data;
+    const response = await api.post('/auth/login', { email, password });
+    const data = response.data;
 
-      // If the user is not verified and needs OTP verification
-      if (data.requiresVerification) {
-        // Set pending verification state
-        setPendingVerification({
-          email,
-          userId: data.userId || null,
-        });
-        return false; // Don't proceed with login yet
-      }
-
-      const userData: User = {
-        id: data.user.id,
-        firstName: data.user.firstName || data.user.name.split(" ")[0],
-        lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-      };
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-
-      return true;
-    } catch (error) {
-      console.error("Login error:", error);
-      return false;
+    // If the user is not verified and needs OTP verification
+    if (data.requiresVerification) {
+      // Set pending verification state
+      setPendingVerification({
+        email,
+        userId: data.userId || null,
+      });
+      return false; // Don't proceed with login yet
     }
+
+    const userData: User = {
+      id: data.user.id,
+      firstName: data.user.firstName || data.user.name.split(" ")[0],
+      lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+
+    return true;
   };
 
   // Admin Login
   const adminLogin = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const response = await api.post('/auth/admin-login', { email, password });
-      const data = response.data;
+    const response = await api.post('/auth/admin-login', { email, password });
+    const data = response.data;
 
-      const userData: User = {
-        id: data.user.id,
-        firstName: data.user.firstName || data.user.name.split(" ")[0],
-        lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-      };
+    const userData: User = {
+      id: data.user.id,
+      firstName: data.user.firstName || data.user.name.split(" ")[0],
+      lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
 
-      return true;
-    } catch (error) {
-      console.error("Admin login error:", error);
-      return false;
-    }
+    return true;
   };
 
   // Register
@@ -240,46 +220,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: "user" | "agent" | "admin" | "analytics" = "user",
     phoneNumber?: string
   ): Promise<boolean> => {
-    try {
-      console.log("Registering user with:", { name, email, role, phoneNumber: phoneNumber ? '***' : 'not provided' });
-
-      const payload: Record<string, string> = { name, email, password, role };
-      if (phoneNumber) {
-        payload.phoneNumber = phoneNumber;
-      }
-
-      const response = await api.post('/auth/signup', payload);
-      const data = response.data;
-      // Check if registration failed (no user or token returned)
-      if (!data.user || !data.token) {
-        console.error("Registration failed:", data);
-        throw new Error(data.message || "Registration failed");
-      }
-      // Check if verification is required
-      if (data.requiresVerification) {
-        // Set the pending verification state
-        setPendingVerification({
-          email,
-          userId: data.user?.id || null,
-        });
-        return false; // Return false to indicate registration is pending verification
-      }
-      const userData: User = {
-        id: data.user.id,
-        firstName: data.user.firstName || data.user.name.split(" ")[0],
-        lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-      };
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-      return true;
-    } catch (error) {
-      console.error("Registration error:", error);
-      return false;
+    const payload: Record<string, string> = { name, email, password, role };
+    if (phoneNumber) {
+      payload.phoneNumber = phoneNumber;
     }
+
+    const response = await api.post('/auth/signup', payload);
+    const data = response.data;
+    
+    // Check if verification is required
+    if (data.requiresVerification) {
+      // Set the pending verification state
+      setPendingVerification({
+        email,
+        userId: data.user?.id || data.user?._id || null,
+      });
+      return false; // Return false to indicate registration is pending verification
+    }
+
+    // If we reached here, verification was not required (or already done)
+    // Check if registration failed (no user or token returned)
+    if (!data.user || !data.token) {
+      throw new Error(data.message || "Registration failed. Invalid response from server.");
+    }
+    
+    const userData: User = {
+      id: data.user.id,
+      firstName: data.user.firstName || data.user.name.split(" ")[0],
+      lastName: data.user.lastName || data.user.name.split(" ").slice(1).join(" ") || "",
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+    return true;
   };
 
   // Google login
@@ -303,7 +279,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return true;
     } catch (error) {
-      console.error("Google login error:", error);
       // Handle specific error cases
       // Add a type for error.response?.data to avoid TS error
       if (
@@ -324,36 +299,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     organization?: string,
     phoneNumber?: string
   ): Promise<boolean> => {
-    try {
-      const body: { token: string; role: string; organization?: string; phoneNumber?: string } = { token, role };
-      if (organization) {
-        body.organization = organization;
-      }
-      if (phoneNumber) {
-        body.phoneNumber = phoneNumber;
-      }
-
-      const response = await api.post('/auth/google-signup', body);
-      const data = response.data;
-
-      const userData: User = {
-        id: data.user.id,
-        firstName: data.user.name.split(" ")[0],
-        lastName: data.user.name.split(" ").slice(1).join(" ") || "",
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-      };
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-
-      return true;
-    } catch (error) {
-      console.error("Google signup error:", error);
-      return false;
+    const body: { token: string; role: string; organization?: string; phoneNumber?: string } = { token, role };
+    if (organization) {
+      body.organization = organization;
     }
+    if (phoneNumber) {
+      body.phoneNumber = phoneNumber;
+    }
+
+    const response = await api.post('/auth/google-signup', body);
+    const data = response.data;
+
+    const userData: User = {
+      id: data.user.id,
+      firstName: data.user.name.split(" ")[0],
+      lastName: data.user.name.split(" ").slice(1).join(" ") || "",
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+
+    return true;
   };
 
   // Decode Google token
@@ -362,8 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await api.post('/auth/google-decode', { token });
       const data = response.data;
       return { name: data.name, email: data.email };
-    } catch (error) {
-      console.error("Google token decode error:", error);
+    } catch {
       return null;
     }
   };
@@ -375,69 +344,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     organization?: string,
     phoneNumber?: string
   ): Promise<boolean> => {
-    try {
-      const body: { code: string; role: string; organization?: string; phoneNumber?: string } = { code, role };
-      if (organization) {
-        body.organization = organization;
-      }
-      if (phoneNumber) {
-        body.phoneNumber = phoneNumber;
-      }
-
-      const response = await api.post('/auth/facebook-signup', body);
-      const data = response.data;
-      const userData: User = {
-        id: data.user.id,
-        firstName: data.user.name.split(" ")[0],
-        lastName: data.user.name.split(" ").slice(1).join(" ") || "",
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-      };
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-
-      return true;
-    } catch (error) {
-      console.error("Facebook signup error:", error);
-      return false;
+    const body: { code: string; role: string; organization?: string; phoneNumber?: string } = { code, role };
+    if (organization) {
+      body.organization = organization;
     }
+    if (phoneNumber) {
+      body.phoneNumber = phoneNumber;
+    }
+
+    const response = await api.post('/auth/facebook-signup', body);
+    const data = response.data;
+    const userData: User = {
+      id: data.user.id,
+      firstName: data.user.name.split(" ")[0],
+      lastName: data.user.name.split(" ").slice(1).join(" ") || "",
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+
+    return true;
   };
 
   // Facebook login
   const loginWithFacebook = async (code: string, isSignup: boolean = false): Promise<boolean> => {
-    try {
-      const endpoint = isSignup ? "/auth/facebook-signup" : "/auth/facebook";
-      const response = await api.post(endpoint, { code });
-      const data = response.data;
-      const userData: User = {
-        id: data.user.id,
-        firstName: data.user.name.split(" ")[0],
-        lastName: data.user.name.split(" ").slice(1).join(" ") || "",
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-      };
+    const endpoint = isSignup ? "/auth/facebook-signup" : "/auth/facebook";
+    const response = await api.post(endpoint, { code });
+    const data = response.data;
+    const userData: User = {
+      id: data.user.id,
+      firstName: data.user.name.split(" ")[0],
+      lastName: data.user.name.split(" ").slice(1).join(" ") || "",
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
 
-      return true;
-    } catch (error) {
-      console.error("Facebook login error:", error);
-      return false;
-    }
+    return true;
   };
 
   // Logout
   const logout = async () => {
     try {
       await api.post('/auth/logout');
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch {
+      // Ignore logout error
     } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
@@ -451,11 +410,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await api.post('/auth/verify-otp', { email, otp });
       const data = response.data;
 
-      console.log("OTP verification response:", data);
-
       // Ensure we have all required user data
       if (!data.user || !data.token) {
-        console.error("Invalid user data or token in OTP verification response");
         return false;
       }
 
@@ -468,8 +424,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.user.role || "user", // Default to user if role is missing
       };
 
-      console.log("Setting user data after OTP verification:", userData);
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
@@ -478,21 +432,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingVerification(null);
 
       return true;
-    } catch (error) {
-      console.error("OTP verification error:", error);
+    } catch {
       return false;
     }
   };
 
   // Resend OTP
   const resendOTP = async (email: string): Promise<boolean> => {
-    try {
-      await api.post('/auth/resend-otp', { email });
-      return true;
-    } catch (error) {
-      console.error("Resend OTP error:", error);
-      return false;
-    }
+    await api.post('/auth/resend-otp', { email });
+    return true;
   };
 
   // Cancel verification flow

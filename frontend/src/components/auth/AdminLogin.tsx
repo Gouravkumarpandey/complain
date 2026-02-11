@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import api from '../../utils/api';
-import { AxiosError } from 'axios';
-
 import { useAuth } from '../../hooks/useAuth';
 
 export function AdminLogin() {
@@ -26,13 +23,11 @@ export function AdminLogin() {
       const success = await adminLogin(formData.email, formData.password);
 
       if (success) {
-        console.log('Admin authentication successful, redirecting to dashboard...');
         navigate('/dashboard');
       } else {
         setError('Invalid admin credentials');
       }
-    } catch (err: unknown) {
-      console.error('Admin login error:', err);
+    } catch {
       setError('Connection error. Please try again.');
     } finally {
       setLoading(false);

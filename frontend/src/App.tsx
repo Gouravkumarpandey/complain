@@ -39,10 +39,6 @@ function DashboardRoute() {
   const { user } = useAuth();
   useNotificationPermission();
 
-  // Log user data for debugging
-  console.log("DashboardRoute - Current user:", user);
-  console.log("DashboardRoute - User role:", user?.role);
-
   // If user data isn't available, check localStorage as fallback
   const [fallbackUser, setFallbackUser] = React.useState(null);
   const [hasAttemptedRecovery, setHasAttemptedRecovery] = React.useState(false);
@@ -56,7 +52,6 @@ function DashboardRoute() {
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          console.log("No user in context, using fallback from localStorage:", parsedUser);
           setFallbackUser(parsedUser);
 
           // Track that we've attempted recovery
@@ -65,15 +60,14 @@ function DashboardRoute() {
           // Force reload once to properly initialize auth context if needed
           // But only if we haven't tried before in this session
           if (!sessionStorage.getItem('dashboard_loaded')) {
-            console.log("First dashboard load, forcing refresh to initialize auth context");
             sessionStorage.setItem('dashboard_loaded', 'true');
             // Use a small timeout to prevent immediate reload loops
             setTimeout(() => {
               window.location.reload();
             }, 1000);
           }
-        } catch (error) {
-          console.error("Error parsing user from localStorage:", error);
+        } catch {
+          // Error parsing user from localStorage
         }
       }
     }

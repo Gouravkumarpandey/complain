@@ -258,8 +258,8 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
           return [...mappedComplaints, ...localOnly];
         });
       }
-    } catch (error) {
-      console.error('Failed to fetch complaints from backend:', error);
+    } catch {
+      // Failed to fetch complaints from backend
     } finally {
       setLoading(false);
     }
@@ -286,7 +286,6 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
       };
 
       if (!complaint) {
-        console.warn('autoAssignComplaint: complaint is undefined or null', { complaint });
         return '';
       }
 
@@ -294,24 +293,20 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
       const categoryAgents = agents[category as keyof typeof agents];
 
       if (!categoryAgents) {
-        console.warn('autoAssignComplaint: no agents found for category', { category });
         return '';
       }
 
       if (!Array.isArray(categoryAgents)) {
-        console.warn('autoAssignComplaint: categoryAgents is not an array', { categoryAgents });
         return '';
       }
 
       if (categoryAgents.length === 0) {
-        console.info('autoAssignComplaint: no available agents for category', { category });
         return '';
       }
 
       const randomIndex = Math.floor(Math.random() * categoryAgents.length);
       return categoryAgents[randomIndex];
-    } catch (err) {
-      console.error('autoAssignComplaint: unexpected error', err, { complaint });
+    } catch {
       return '';
     }
   };
@@ -369,8 +364,7 @@ export function ComplaintProvider({ children }: { children: ReactNode }) {
         return mapped;
       }
     } catch (err: unknown) {
-      console.warn('API createComplaint failed', err);
-
+      // API createComplaint failed
       // Check if it's an AI validation error
       const error = err as { response?: { status?: number; data?: { aiAnalysis?: unknown; message?: string } }; message?: string };
       if (error.response?.status === 400 && error.response?.data?.aiAnalysis) {

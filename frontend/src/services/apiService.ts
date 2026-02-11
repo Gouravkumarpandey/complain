@@ -2,10 +2,6 @@
 import api, { getErrorMessage } from '../utils/api';
 import type { Agent } from './agentService';
 
-if (import.meta.env.DEV) {
-  console.log('✅ API Service initialized with shared Axios instance');
-}
-
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -58,8 +54,7 @@ class ApiService {
         body: { email }
       });
       return result;
-    } catch (error) {
-      console.error("Failed to process forgot password request:", error);
+    } catch {
       return { error: "Failed to send password reset request. Please try again later." };
     }
   }
@@ -76,8 +71,7 @@ class ApiService {
         };
       }
       return result;
-    } catch (error) {
-      console.error("Failed to reset password:", error);
+    } catch {
       return { 
         error: "Failed to reset password. Please try again or request a new reset link.",
         networkError: true
@@ -94,8 +88,7 @@ class ApiService {
         };
       }
       return result;
-    } catch (error) {
-      console.error("Failed to verify reset token:", error);
+    } catch {
       return { 
         error: "Failed to verify reset token. It might be invalid or expired.",
         networkError: true

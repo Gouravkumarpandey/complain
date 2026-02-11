@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Check, ArrowRight, ArrowLeft, RefreshCw, ShieldCheck, Lock } from 'lucide-react';
+import api, { getErrorMessage } from '../../utils/api';
 
 interface OTPVerificationProps {
   email: string;
   onVerifySuccess: () => void;
   onBack: () => void;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificationProps) {
   const [otp, setOtp] = useState('');
@@ -48,22 +47,8 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Failed to verify OTP. Please try again.');
-        return;
-      }
-
-      if (import.meta.env.DEV) {
-        console.log('OTP verification successful, server response:', data);
-      }
+      const response = await api.post('/auth/verify-otp', { email, otp });
+      const data = response.data;
       
       // Ensure we have user data and role
       if (!data.user || !data.token) {
@@ -77,17 +62,8 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
       
       setSuccess(true);
       
-      // Get user role from the response data to determine which dashboard to go to
-      const userRole = data.user?.role || 'user';
-      if (import.meta.env.DEV) {
-        console.log('User role from OTP verification:', userRole);
-      }
-      
       // Small delay to show success message before proceeding
       setTimeout(() => {
-        // Call the success handler first
-        onVerifySuccess();
-        
         try {
           // Ensure we clear any stale session data before redirecting
           sessionStorage.removeItem('dashboard_loaded');
@@ -95,18 +71,16 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
           // Set a flag to indicate we're coming from OTP verification
           sessionStorage.setItem('from_otp_verification', 'true');
           
-          console.log('OTP verification successful, redirecting to dashboard');
+          // Call the success handler which handles the final redirect
+          onVerifySuccess();
+        } catch {
+          // Fallback direct navigation if onVerifySuccess fails
           window.location.href = '/dashboard';
-        } catch (error) {
-          console.error('Error during dashboard redirect:', error);
-          // Fallback direct navigation as last resort
-          window.location.replace('/dashboard');
         }
       }, 1500);
       
     } catch (error) {
-      console.error('OTP verification error:', error);
-      setError('An error occurred during verification. Please try again.');
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -119,18 +93,7 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
     setError('');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Failed to resend OTP. Please try again.');
-        return;
-      }
+      await api.post('/auth/resend-otp', { email });
 
       setResendSuccess(true);
       
@@ -140,8 +103,7 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
       }, 5000);
       
     } catch (error) {
-      console.error('Resend OTP error:', error);
-      setError('An error occurred while resending the OTP. Please try again.');
+      setError(getErrorMessage(error));
     } finally {
       setResendLoading(false);
     }

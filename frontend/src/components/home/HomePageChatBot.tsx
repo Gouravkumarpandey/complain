@@ -67,7 +67,6 @@ export function HomePageChatBot() {
 
   // Text-to-speech states
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -233,10 +232,6 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
     utterance.rate = 0.9;
     utterance.pitch = 1;
     utterance.volume = 1;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
   };

@@ -48,13 +48,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const sendEmailNotification = (title: string, message: string) => {
     // Simulate email notification
     addNotification('email', `📧 ${title}`, message, 'email');
-    console.log(`EMAIL SENT: ${title} - ${message}`);
   };
 
   const sendSmsNotification = (title: string, message: string) => {
     // Simulate SMS notification
     addNotification('sms', `📱 ${title}`, message, 'sms');
-    console.log(`SMS SENT: ${title} - ${message}`);
   };
 
   const markAsRead = (id: string) => {

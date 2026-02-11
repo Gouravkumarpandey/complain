@@ -1,27 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff, Phone } from 'lucide-react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { CustomGoogleLogin } from './CustomGoogleLogin';
-import validateGoogleConfig from '../../services/googleAuthDebug';
 import { OTPVerification } from './OTPVerification';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
 import { FacebookLogin } from './FacebookLogin';
 import { AxiosError } from 'axios';
-import api from '../../utils/api';
+import api, { getErrorMessage } from '../../utils/api';
 import { GoogleRoleSelection } from './GoogleRoleSelection';
 
 export function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-
-  // Debug Google Sign-In configuration on component mount
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      validateGoogleConfig();
-    }
-  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -67,24 +59,17 @@ export function LoginForm() {
     }
 
     try {
-      console.log(`Submitting form with role: ${formData.role}`);
-
       const success = isLogin
         ? await login(formData.email, formData.password)
         : await register(formData.name, formData.email, formData.password, formData.role, formData.phoneNumber);
 
-      if (!success) {
-        setError(isLogin ? 'Invalid email or password' : `Registration failed. Please check if your email is already registered.`);
-      } else {
+      if (success) {
         redirectToDashboard();
       }
+      // If success is false, it means requiresVerification is true (both login/register return false in that case)
+      // The context state pendingVerification will be set, triggering a re-render to the OTP screen.
     } catch (err) {
-      console.error('Auth error:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -93,26 +78,18 @@ export function LoginForm() {
   const handleGoogleSuccess = async (token: string) => {
     try {
       if (token) {
-        console.log('Google token received...');
-
         logout();
         setError('');
 
-        console.log('Attempting Google login...');
         try {
           const success = await googleLogin(token);
           if (success) {
-            console.log('Google authentication successful, redirecting to dashboard...');
             redirectToDashboard();
             return;
           }
         } catch (loginError: unknown) {
-          console.log('Google login failed:', loginError);
-
           // Check if "Account not found"
           if (loginError instanceof Error && loginError.message.includes('Account not found')) {
-            console.log('User not found. Initiating signup flow...');
-
             // Decode token to get info
             const info = await decodeGoogleToken(token);
             if (info) {
@@ -124,13 +101,12 @@ export function LoginForm() {
               setError('Failed to process Google Account details. Please try again.');
             }
           } else {
-            setError(loginError instanceof Error ? loginError.message : 'Google authentication failed.');
+            setError(getErrorMessage(loginError));
           }
         }
       }
     } catch (err) {
-      console.error('Google auth error:', err);
-      setError('Google authentication failed. Please try again.');
+      setError(getErrorMessage(err));
       setLoading(false);
     }
   };
@@ -155,12 +131,12 @@ export function LoginForm() {
 
       if (success) {
         redirectToDashboard();
-      } else {
+      } else if (!pendingVerification) {
         setError('Failed to create account with selected role.');
         setShowRoleSelection(false);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(getErrorMessage(err));
       setShowRoleSelection(false);
     } finally {
       setLoading(false);
@@ -176,8 +152,6 @@ export function LoginForm() {
     setError('');
 
     try {
-      console.log('Facebook authentication successful, sending to backend...');
-
       const apiResponse = await api.post('/auth/facebook', {
         accessToken: response.auth.accessToken,
         isSignup: !isLogin
@@ -193,28 +167,27 @@ export function LoginForm() {
         setError(data.message || 'Facebook authentication failed');
       }
     } catch (err: unknown) {
-      console.error('Facebook auth error:', err);
-      const errorResponse = (err as AxiosError<{ message?: string; requiresSignup?: boolean; facebookData?: { name: string; email: string } }>).response?.data;
-
-      if (errorResponse?.requiresSignup && errorResponse.facebookData) {
-        console.log('Facebook user not found. Initiating signup flow...');
-        setGoogleUserInfo({
-          name: errorResponse.facebookData.name,
-          email: errorResponse.facebookData.email
-        });
-        setPendingFacebookCode(response.auth.accessToken); // We use access token as code
-        setAuthSource('facebook');
-        setShowRoleSelection(true);
-      } else {
-        setError(errorResponse?.message || 'Failed to authenticate with Facebook.');
+      if ((err as AxiosError)?.response?.status === 400) {
+        const errorResponse = (err as AxiosError<{ message?: string; requiresSignup?: boolean; facebookData?: { name: string; email: string } }>).response?.data;
+        if (errorResponse?.requiresSignup && errorResponse.facebookData) {
+          setGoogleUserInfo({
+            name: errorResponse.facebookData.name,
+            email: errorResponse.facebookData.email
+          });
+          setPendingFacebookCode(response.auth.accessToken); 
+          setAuthSource('facebook');
+          setShowRoleSelection(true);
+          return;
+        }
       }
+      
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   const handleFacebookFailure = (error: string) => {
-    console.error('Facebook login failed:', error);
     setError(error);
   };
 

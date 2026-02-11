@@ -22,10 +22,7 @@ export function ForgotPassword() {
     setMessage({ text: '', type: '' });
 
     try {
-      console.log("Submitting forgot password request for:", email);
       const response = await apiService.forgotPassword(email);
-      
-      console.log("Forgot password response:", response);
       
       if (response.error) {
         setMessage({ 
@@ -47,7 +44,6 @@ export function ForgotPassword() {
         setEmail(''); // Clear the form for security
       }
     } catch (error) {
-      console.error('Forgot password error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again later.';
       setMessage({ 
         text: errorMessage, 

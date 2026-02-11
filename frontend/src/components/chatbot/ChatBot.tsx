@@ -44,7 +44,6 @@ export function ChatBot() {
 
   // Text-to-speech states
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [detectedLanguage, setDetectedLanguage] = useState(i18n.language || 'en-US');
 
   useEffect(() => {
@@ -102,10 +101,6 @@ export function ChatBot() {
     utterance.rate = 0.9;
     utterance.pitch = 1;
     utterance.volume = 1;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
   };
@@ -287,7 +282,6 @@ export function ChatBot() {
               `Ticket ${ticketId} created successfully.`
             );
           } catch (error) {
-            console.error('Failed to create complaint:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             addMessage(
               `Sorry, there was an error creating your complaint: ${errorMessage}\n\nPlease try again or contact support.`,
@@ -314,8 +308,7 @@ export function ChatBot() {
         'bot'
       );
 
-    } catch (error) {
-      console.error('Chat error:', error);
+    } catch {
       addMessage("I'm sorry, I'm having trouble processing your message. Please try again.", 'bot');
     } finally {
       setLoading(false);

@@ -36,32 +36,20 @@ export function useTokenValidation() {
       // Basic structure check
       const parts = token.split('.');
       if (parts.length !== 3) {
-        console.warn('Invalid token structure: not 3 parts');
         return false;
       }
 
       // Decode payload
       const payload = JSON.parse(atob(parts[1])) as TokenPayload;
-      if (import.meta.env.DEV) {
-        console.log('Token validated with payload:', JSON.stringify(payload));
-      }
       setTokenPayload(payload);
 
       // Check expiration
       if (payload.exp && payload.exp * 1000 < Date.now()) {
-        console.warn('Token has expired');
         return false;
       }
 
-      // Check for essential fields
-      if (!payload.id) {
-        console.warn('Token missing id field');
-        // This might still work if the backend can extract the ID from other fields
-      }
-
       return true;
-    } catch (error) {
-      console.error('Error validating token:', error);
+    } catch {
       return false;
     }
   }, []);
@@ -71,12 +59,9 @@ export function useTokenValidation() {
    */
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      console.log('Attempting to refresh token');
-
       // Check if token exists first - if not, return early
       const currentToken = localStorage.getItem('token');
       if (!currentToken) {
-        console.log('No token to refresh');
         return false;
       }
 
@@ -85,15 +70,12 @@ export function useTokenValidation() {
       const now = Date.now();
       
       if (now - lastRefreshTime < 5000) { // 5 seconds
-        console.log('Skipping token refresh - attempted too recently');
         return false;
       }
       
       // Record this attempt
       localStorage.setItem('lastTokenRefresh', now.toString());
 
-      // Note: This would need to be imported at the top: import api from '../utils/api';
-      // For now, keeping the fetch implementation but note it should use the shared instance
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -108,7 +90,6 @@ export function useTokenValidation() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.warn('Refresh token expired or invalid. Logging out...');
           logout();
           return false;
         }
@@ -134,10 +115,8 @@ export function useTokenValidation() {
         })
       );
 
-      console.log('Token refreshed successfully');
       return isValid;
-    } catch (error) {
-      console.error('Error refreshing token:', error);
+    } catch {
       setIsTokenValid(false);
       logout();
       return false;
@@ -153,7 +132,6 @@ export function useTokenValidation() {
   const checkTokenExpiration = useCallback(async (): Promise<boolean> => {
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('No token found in localStorage');
       return false;
     }
 
@@ -162,7 +140,6 @@ export function useTokenValidation() {
     const MIN_CHECK_INTERVAL = 10000; // 10 seconds minimum between checks
     
     if (now - lastCheckTime < MIN_CHECK_INTERVAL) {
-      console.log(`Throttling token check - last check was ${Math.round((now - lastCheckTime)/1000)}s ago`);
       // Return true for successful validation to prevent cascading failures
       return true;
     }
@@ -173,43 +150,35 @@ export function useTokenValidation() {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
-        console.error('Invalid token format - does not have three parts');
         return false;
       }
 
       let payload: TokenPayload;
       try {
         payload = JSON.parse(atob(parts[1])) as TokenPayload;
-      } catch (e) {
-        console.error('Failed to decode token payload:', e);
+      } catch {
         return false;
       }
       
       if (!payload.exp) {
-        console.error('Token missing expiration time');
         return false;
       }
 
       const expiresIn = payload.exp * 1000 - Date.now();
       const refreshThreshold = 5 * 60 * 1000; // 5 minutes
       
-      console.log(`Token expires in ${Math.floor(expiresIn / 1000)} seconds`);
-
       // If token is already expired
       if (expiresIn <= 0) {
-        console.log('Token already expired, attempting refresh...');
         return await refreshToken();
       }
       
       // If token is about to expire
       if (expiresIn < refreshThreshold) {
-        console.log('Token expiring soon, attempting refresh...');
         return await refreshToken();
       }
 
       return true;
-    } catch (error) {
-      console.error('Error checking token expiration:', error);
+    } catch {
       return false;
     }
   }, [refreshToken, lastCheckTime]);
@@ -223,9 +192,7 @@ export function useTokenValidation() {
     setIsTokenValid(isValid);
 
     if (!isValid && token) {
-      console.warn('Invalid token detected, attempting refresh...');
-      refreshToken().catch((error) => {
-        console.error('Token refresh failed:', error);
+      refreshToken().catch(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         logout();
