@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff, Phone } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, EyeOff, Phone, Shield } from 'lucide-react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { CustomGoogleLogin } from './CustomGoogleLogin';
 import { OTPVerification } from './OTPVerification';
@@ -210,16 +210,39 @@ export function LoginForm() {
   if (pendingVerification) {
     return (
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''}>
-        <div className="min-h-screen bg-gray-50 flex">
-          {/* Left Side */}
-          <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] relative overflow-hidden flex-col justify-center items-center">
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-              <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]"></div>
-              <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]"></div>
+        <div className="h-screen bg-white flex">
+          {/* Left Side - Blue Gradient */}
+          <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full"></div>
+              <div className="absolute bottom-32 right-20 w-24 h-24 bg-blue-300 rounded-full"></div>
+              <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-blue-400 rounded-full"></div>
             </div>
-            <div className="relative z-10 px-12 text-center">
+
+            <div className="relative z-10 flex flex-col justify-center px-12 py-20">
+              {/* Logo */}
+              <div className="flex items-center space-x-2 mb-12">
+                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-white">QuickFix</span>
+              </div>
+
               <h1 className="text-4xl font-bold text-white mb-4">Security Verification</h1>
-              <p className="text-xl text-gray-400">Please verify your identity to continue.</p>
+              <p className="text-xl text-blue-100">Please verify your identity to continue.</p>
+
+              {/* Image */}
+              <div className="mt-10 flex justify-center">
+                <div className="relative">
+                  <img
+                    src="/login.png"
+                    alt="Verification"
+                    className="w-full max-w-2xl h-auto rounded-xl shadow-2xl"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent rounded-lg"></div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -249,45 +272,61 @@ export function LoginForm() {
   // ----------------------------------------------------------------------
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''}>
-      <div className="min-h-screen bg-gray-50 flex font-sans">
+      <div className="min-h-screen bg-white flex font-sans">
 
-        {/* Left Side - Branding */}
-        <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] relative overflow-hidden flex-col justify-between p-12">
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]"></div>
+        {/* Left Side - Blue Gradient */}
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full"></div>
+            <div className="absolute bottom-32 right-20 w-24 h-24 bg-blue-300 rounded-full"></div>
+            <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-blue-400 rounded-full"></div>
           </div>
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-8">
-              {/* Logo placeholder if needed */}
+          {/* Back to Home */}
+          <Link
+            to="/"
+            className="absolute top-8 left-8 text-white hover:text-blue-200 transition-all duration-200 flex items-center gap-2 font-medium text-lg z-20"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to Home
+          </Link>
+
+          <div className="relative z-10 flex flex-col justify-center px-12 py-20">
+            {/* Logo */}
+            <div className="flex items-center space-x-2 mb-12">
+              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">QuickFix</span>
+              <span className="text-sm text-blue-200 ml-1">AI Powered Support</span>
             </div>
-          </div>
 
-          <div className="relative z-10 my-auto">
-            <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-4xl font-bold text-white mb-4">
               {isLogin ? 'Welcome Back!' : 'Join our Community'}
             </h1>
-            <p className="text-xl text-gray-400 max-w-md leading-relaxed">
+            <p className="text-xl text-blue-100 max-w-md">
               {isLogin
                 ? 'Access your intelligent complaint management dashboard.'
                 : 'Start your journey with AI-powered customer service automation.'}
             </p>
-          </div>
 
-          {/* Illustration or Image */}
-          <div className="relative z-10 mt-8 rounded-2xl overflow-hidden shadow-2xl border border-white/10 max-w-md mx-auto transform hover:scale-[1.02] transition-transform duration-500">
-            <img
-              src={isLogin ? "/login.png" : "/Signup.webp"}
-              alt="Visual"
-              className="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent"></div>
+            {/* Image Card */}
+            <div className="mt-10">
+              <div className="relative">
+                <img
+                  src={isLogin ? "/login.png" : "/Signup.webp"}
+                  alt="QuickFix Platform"
+                  className="w-full max-w-2xl h-auto rounded-xl shadow-2xl"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent rounded-lg"></div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 overflow-y-auto bg-white/50 backdrop-blur-md">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 overflow-y-auto bg-white">
           <div className="max-w-[420px] w-full">
 
             <div className="text-center mb-10">
