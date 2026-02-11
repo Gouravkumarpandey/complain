@@ -88,8 +88,7 @@ export function HomePageChatBot() {
     // Use Gemini AI with Google Search grounding for intelligent responses
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
-        tools: [{ googleSearch: {} }] // Enable Google Search grounding
+        model: 'gemini-2.0-flash-exp'
       });
 
       const systemContext = `You are a helpful AI assistant for QuickFix, an enterprise-grade AI-powered complaint management system.
@@ -260,16 +259,16 @@ DevOps:
 
 IMPORTANT INSTRUCTIONS:
 - Answer questions about QuickFix comprehensively using the above information
-- If the user asks about something not covered in QuickFix details, use Google Search to find accurate information
+- If the user asks about something not covered in QuickFix details, you can search the web for accurate information
 - For technical questions, architecture details, or specific features, refer to the detailed information above
 - Keep responses conversational, friendly, and helpful
 - Use plain text formatting (no asterisks or markdown)
 - Use emojis sparingly for visual appeal
-- If you use Google Search, clearly indicate that you're providing web search results
+- If you search the web, clearly indicate that you're providing web search results
 
-Your role is to be an expert assistant on QuickFix and help users with any questions they have, using Google Search when needed for topics beyond QuickFix.`;
+Your role is to be an expert assistant on QuickFix and help users with any questions they have.`;
 
-      const prompt = `${systemContext}\n\nUser Question: ${userMessage}\n\nProvide a helpful, comprehensive response. If the question is about QuickFix, use the detailed information provided above. If it's about something else or requires current information, use Google Search to provide accurate results. Use plain text only (no asterisks or markdown formatting):`;
+      const prompt = `${systemContext}\n\nUser Question: ${userMessage}\n\nProvide a helpful, comprehensive response. If the question is about QuickFix, use the detailed information provided above. If it's about something else or requires current information, you may search the web to provide accurate results. Use plain text only (no asterisks or markdown formatting):`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
