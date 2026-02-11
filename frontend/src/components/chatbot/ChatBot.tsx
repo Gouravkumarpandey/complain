@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Volume2, VolumeX } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -42,6 +42,11 @@ export function ChatBot() {
   const { addNotification } = useNotifications();
   const { i18n } = useTranslation();
 
+  // Text-to-speech states
+  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [detectedLanguage, setDetectedLanguage] = useState(i18n.language || 'en-US');
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -56,6 +61,53 @@ export function ChatBot() {
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, newMessage]);
+
+    // Speak bot messages if speech is enabled
+    if (sender === 'bot' && isSpeechEnabled) {
+      speakText(text, detectedLanguage);
+    }
+  };
+
+  // Detect language from user input
+  const detectLanguage = (text: string): string => {
+    const hasHindi = /[\u0900-\u097F]/.test(text);
+    const hasArabic = /[\u0600-\u06FF]/.test(text);
+    const hasChinese = /[\u4E00-\u9FFF]/.test(text);
+    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
+    const hasKorean = /[\uAC00-\uD7AF]/.test(text);
+    const hasSpanish = /[áéíóúñ¿¡]/i.test(text);
+    const hasFrench = /[àâäçèéêëîïôùûü]/i.test(text);
+    const hasGerman = /[äöüß]/i.test(text);
+
+    if (hasHindi) return 'hi-IN';
+    if (hasArabic) return 'ar-SA';
+    if (hasChinese) return 'zh-CN';
+    if (hasJapanese) return 'ja-JP';
+    if (hasKorean) return 'ko-KR';
+    if (hasSpanish) return 'es-ES';
+    if (hasFrench) return 'fr-FR';
+    if (hasGerman) return 'de-DE';
+
+    return i18n.language || 'en-US';
+  };
+
+  // Text-to-speech function
+  const speakText = (text: string, language: string = detectedLanguage) => {
+    if (!isSpeechEnabled || !('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language;
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleSendMessage = async () => {
@@ -63,6 +115,10 @@ export function ChatBot() {
     const userMessage = inputValue.trim();
     setInputValue('');
     setLoading(true);
+
+    // Detect and set language from user input
+    const userLang = detectLanguage(userMessage);
+    setDetectedLanguage(userLang);
 
     // Add user message immediately
     addMessage(userMessage, 'user');
@@ -393,16 +449,29 @@ export function ChatBot() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type a message..."
+                  placeholder="Type or speak a message..."
                   className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
                   disabled={loading}
                 />
                 <VoiceInput
                   onTranscript={handleVoiceTranscript}
-                  lang={i18n.language}
+                  lang={detectedLanguage}
                   className="absolute right-2"
                 />
               </div>
+
+              {/* Speech Toggle Button */}
+              <button
+                onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
+                className={`w-10 h-10 rounded-full transition-all shadow-sm flex items-center justify-center flex-shrink-0 ${isSpeechEnabled
+                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  }`}
+                title={isSpeechEnabled ? "Voice responses ON" : "Voice responses OFF"}
+              >
+                {isSpeechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </button>
+
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || loading}
@@ -412,7 +481,7 @@ export function ChatBot() {
               </button>
             </div>
             <p className="text-[10px] text-gray-400 text-center mt-2">
-              Powered by QuickFix AI
+              Powered by QuickFix AI • Speak in any language
             </p>
           </div>
         </div>

@@ -398,7 +398,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         const tokenParts = token.split('.');
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('Token payload:', JSON.stringify(payload));
+          if (import.meta.env.DEV) {
+            console.log('Token payload:', JSON.stringify(payload));
+          }
 
           // Extract user ID from token - backend expects 'id' as the key
           userId = payload.id || payload.userId || payload.sub;
@@ -410,7 +412,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             // Last resort: look for any field that looks like a MongoDB ObjectId
             for (const key in payload) {
               if (typeof payload[key] === 'string' && /^[0-9a-fA-F]{24}$/.test(payload[key])) {
-                console.log(`Found potential MongoDB ObjectId in field "${key}": ${payload[key]}`);
+                if (import.meta.env.DEV) {
+                  console.log(`Found potential MongoDB ObjectId in field "${key}": ${payload[key]}`);
+                }
                 userId = payload[key];
                 break;
               }
@@ -476,7 +480,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       // Use dedicated socket URL from environment variables, or fallback to API URL
       const baseURL = import.meta.env.VITE_SOCKET_SERVER_URL || 'http://localhost:5001';
 
-      console.log('🔌 Socket connecting to:', baseURL);
+      if (import.meta.env.DEV) {
+        console.log('🔌 Socket connecting to:', baseURL);
+      }
 
       const socketOptions = {
         auth: {

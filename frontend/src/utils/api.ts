@@ -24,7 +24,9 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 // In development: http://localhost:5001/api
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-console.log('✅ API configured with base URL:', API_BASE_URL);
+if (import.meta.env.DEV) {
+  console.log('✅ API configured with base URL:', API_BASE_URL);
+}
 
 // Create Axios instance with default configuration
 const api = axios.create({

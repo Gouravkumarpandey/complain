@@ -42,7 +42,9 @@ export function useTokenValidation() {
 
       // Decode payload
       const payload = JSON.parse(atob(parts[1])) as TokenPayload;
-      console.log('Token validated with payload:', JSON.stringify(payload));
+      if (import.meta.env.DEV) {
+        console.log('Token validated with payload:', JSON.stringify(payload));
+      }
       setTokenPayload(payload);
 
       // Check expiration

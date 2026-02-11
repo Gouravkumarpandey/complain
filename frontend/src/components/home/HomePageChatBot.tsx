@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface Message {
@@ -10,7 +10,8 @@ interface Message {
 }
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI('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');
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface QuickReply {
   text: string;
@@ -58,6 +59,15 @@ export function HomePageChatBot() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
+
+  // Voice input states
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const [detectedLanguage, setDetectedLanguage] = useState('en-US');
+
+  // Text-to-speech states
+  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -179,9 +189,108 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
     }
   };
 
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = detectedLanguage;
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInputValue(prev => prev ? `${prev} ${transcript}` : transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [detectedLanguage]);
+
+  // Text-to-speech function
+  const speakText = (text: string, language: string = detectedLanguage) => {
+    if (!isSpeechEnabled || !('speechSynthesis' in window)) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language;
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Toggle voice input
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (e) {
+          console.error('Start recognition error:', e);
+        }
+      } else {
+        alert('Speech recognition is not supported in this browser.');
+      }
+    }
+  };
+
+  // Detect language from user input
+  const detectLanguage = (text: string): string => {
+    // Simple language detection based on character sets
+    const hasHindi = /[\u0900-\u097F]/.test(text);
+    const hasArabic = /[\u0600-\u06FF]/.test(text);
+    const hasChinese = /[\u4E00-\u9FFF]/.test(text);
+    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
+    const hasKorean = /[\uAC00-\uD7AF]/.test(text);
+    const hasSpanish = /[áéíóúñ¿¡]/i.test(text);
+    const hasFrench = /[àâäçèéêëîïôùûü]/i.test(text);
+    const hasGerman = /[äöüß]/i.test(text);
+
+    if (hasHindi) return 'hi-IN';
+    if (hasArabic) return 'ar-SA';
+    if (hasChinese) return 'zh-CN';
+    if (hasJapanese) return 'ja-JP';
+    if (hasKorean) return 'ko-KR';
+    if (hasSpanish) return 'es-ES';
+    if (hasFrench) return 'fr-FR';
+    if (hasGerman) return 'de-DE';
+
+    return 'en-US'; // Default to English
+  };
+
   const handleSendMessage = async (text?: string) => {
     const messageText = text || inputValue.trim();
     if (!messageText) return;
+
+    // Detect and set language from user input
+    const userLang = detectLanguage(messageText);
+    setDetectedLanguage(userLang);
 
     // Add user message
     const userMessage: Message = {
@@ -210,6 +319,9 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
 
     setMessages(prev => [...prev, botMessage]);
     setIsTyping(false);
+
+    // Speak the bot response in the detected language
+    speakText(botResponse, userLang);
   };
 
   const handleQuickReply = (reply: QuickReply) => {
@@ -314,15 +426,42 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
 
           {/* Input */}
           <div className="p-4 bg-white border-t border-gray-200">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Type your question..."
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type or speak your question..."
+                  className="w-full pl-4 pr-12 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                {/* Voice Input Button */}
+                <button
+                  onClick={toggleVoiceInput}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${isListening
+                      ? 'text-red-500 bg-red-50 animate-pulse'
+                      : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  title={isListening ? "Stop listening" : "Voice input"}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Speech Toggle Button */}
+              <button
+                onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
+                className={`p-2.5 rounded-xl transition-colors ${isSpeechEnabled
+                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  }`}
+                title={isSpeechEnabled ? "Voice responses ON" : "Voice responses OFF"}
+              >
+                {isSpeechEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+
+              {/* Send Button */}
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputValue.trim()}
@@ -333,7 +472,7 @@ Your role is to answer questions about QuickFix in a friendly, helpful manner. K
               </button>
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              Powered by QuickFix AI
+              Powered by QuickFix AI • Speak in any language
             </p>
           </div>
         </div>

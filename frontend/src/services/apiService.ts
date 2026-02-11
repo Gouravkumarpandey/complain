@@ -2,7 +2,9 @@
 import api, { getErrorMessage } from '../utils/api';
 import type { Agent } from './agentService';
 
-console.log('✅ API Service initialized with shared Axios instance');
+if (import.meta.env.DEV) {
+  console.log('✅ API Service initialized with shared Axios instance');
+}
 
 export interface ApiResponse<T> {
   data?: T;

@@ -61,7 +61,9 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
         return;
       }
 
-      console.log('OTP verification successful, server response:', data);
+      if (import.meta.env.DEV) {
+        console.log('OTP verification successful, server response:', data);
+      }
       
       // Ensure we have user data and role
       if (!data.user || !data.token) {
@@ -77,7 +79,9 @@ export function OTPVerification({ email, onVerifySuccess, onBack }: OTPVerificat
       
       // Get user role from the response data to determine which dashboard to go to
       const userRole = data.user?.role || 'user';
-      console.log('User role from OTP verification:', userRole);
+      if (import.meta.env.DEV) {
+        console.log('User role from OTP verification:', userRole);
+      }
       
       // Small delay to show success message before proceeding
       setTimeout(() => {

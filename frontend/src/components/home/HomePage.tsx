@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 // i18n removed
-import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe } from 'lucide-react';
+import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play, Globe, Menu, X } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 import HomePageChatBot from './HomePageChatBot';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { useState } from 'react';
 export function HomePage() {
   const { t, i18n } = useTranslation();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -40,12 +41,12 @@ export function HomePage() {
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-gray-900">QuickFix</span>
-              <span className="text-sm text-gray-500 ml-1">AI Powered Support</span>
+              <span className="text-xl sm:text-2xl font-bold text-gray-900">QuickFix</span>
+              <span className="hidden sm:inline text-sm text-gray-500 ml-1">AI Powered Support</span>
             </div>
 
-            {/* Navigation Links */}
-            <div className="hidden md:flex items-center space-x-8">
+            {/* Desktop Navigation Links */}
+            <div className="hidden lg:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.features')}</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.plans')}</a>
               <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.howItWorks')}</a>
@@ -92,32 +93,89 @@ export function HomePage() {
                 {t('common.getStarted')}
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden flex items-center gap-3">
+              <button
+                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                className="p-2 text-gray-600 hover:text-gray-900"
+              >
+                <Globe className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="p-2 text-gray-600 hover:text-gray-900"
+              >
+                {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Menu */}
+          {showMobileMenu && (
+            <div className="lg:hidden border-t border-gray-100 py-4 space-y-3">
+              <a
+                href="#features"
+                onClick={() => setShowMobileMenu(false)}
+                className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
+              >
+                {t('common.features')}
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setShowMobileMenu(false)}
+                className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
+              >
+                {t('common.plans')}
+              </a>
+              <a
+                href="#how-it-works"
+                onClick={() => setShowMobileMenu(false)}
+                className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
+              >
+                {t('common.howItWorks')}
+              </a>
+              <a
+                href="#about"
+                onClick={() => setShowMobileMenu(false)}
+                className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
+              >
+                {t('common.aboutUs')}
+              </a>
+              <Link
+                to="/login"
+                onClick={() => setShowMobileMenu(false)}
+                className="block mx-4 text-center bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+              >
+                {t('common.getStarted')}
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-16 pb-24 bg-gradient-to-br from-gray-50 to-white">
+      <section className="pt-12 sm:pt-16 pb-16 sm:pb-24 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             {/* Left side - Text content */}
             <div className="text-center lg:text-left">
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
                 {t('common.heroTitleNormal')} <span className="text-orange-500">{t('common.heroTitleHighlight')}</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-12 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 sm:mb-12 leading-relaxed">
                 {t('common.heroSubtitle')}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-6 sm:mb-8">
                 <Link
                   to="/login"
-                  className="bg-orange-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  className="bg-orange-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   {t('common.tryItFree')}
                 </Link>
-                <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:border-orange-500 hover:text-orange-500 transition-all duration-200 flex items-center justify-center gap-2">
-                  <Play className="w-5 h-5" />
+                <button className="border-2 border-gray-300 text-gray-700 px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg hover:border-orange-500 hover:text-orange-500 transition-all duration-200 flex items-center justify-center gap-2">
+                  <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                   {t('common.bookDemo')}
                 </button>
               </div>
@@ -141,29 +199,29 @@ export function HomePage() {
           </div>
 
           {/* Trust Bar - moved below hero content */}
-          <div className="text-center mt-24">
-            <p className="text-sm text-gray-500 mb-6">Trusted by 73,000 businesses worldwide</p>
+          <div className="text-center mt-16 sm:mt-24">
+            <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">Trusted by 73,000 businesses worldwide</p>
             <div className="relative overflow-hidden">
-              <div className="flex animate-scroll gap-8 items-center opacity-60">
+              <div className="flex animate-scroll gap-6 sm:gap-8 items-center opacity-60">
                 {/* First set of logos */}
-                <img src="https://dam.freshworks.com/m/172addb8908823a/original/bridgestone-logo.webp" alt="Bridgestone" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/6b09343713112137/original/Tata-Digital-Trustbar-logo.webp" alt="Tata Digital" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/678dcfe0f3352df6/original/S-P-GLobal-Trustbar-logo.webp" alt="S&P Global" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/692895b671757fd/original/Klarna-Trustbar-Logo.webp" alt="Klarna" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/686b5fb695a93fdf/original/Forbes-Trustbar-logo.webp" alt="Forbes" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/65934d5b088a71e4/original/Pepsico-Trustbar-logo.webp" alt="PepsiCo" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/716392be1c61bd75/original/Ingram-Trustbar-logo.webp" alt="Ingram Micro" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/770b19ddd352c7cf/original/pearson-Trustbar-logo.webp" alt="Pearson" className="h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/172addb8908823a/original/bridgestone-logo.webp" alt="Bridgestone" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/6b09343713112137/original/Tata-Digital-Trustbar-logo.webp" alt="Tata Digital" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/678dcfe0f3352df6/original/S-P-GLobal-Trustbar-logo.webp" alt="S&P Global" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/692895b671757fd/original/Klarna-Trustbar-Logo.webp" alt="Klarna" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/686b5fb695a93fdf/original/Forbes-Trustbar-logo.webp" alt="Forbes" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/65934d5b088a71e4/original/Pepsico-Trustbar-logo.webp" alt="PepsiCo" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/716392be1c61bd75/original/Ingram-Trustbar-logo.webp" alt="Ingram Micro" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/770b19ddd352c7cf/original/pearson-Trustbar-logo.webp" alt="Pearson" className="h-6 sm:h-8 grayscale flex-shrink-0" />
 
                 {/* Duplicate set for seamless loop */}
-                <img src="https://dam.freshworks.com/m/172addb8908823a/original/bridgestone-logo.webp" alt="Bridgestone" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/6b09343713112137/original/Tata-Digital-Trustbar-logo.webp" alt="Tata Digital" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/678dcfe0f3352df6/original/S-P-GLobal-Trustbar-logo.webp" alt="S&P Global" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/692895b671757fd/original/Klarna-Trustbar-Logo.webp" alt="Klarna" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/686b5fb695a93fdf/original/Forbes-Trustbar-logo.webp" alt="Forbes" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/65934d5b088a71e4/original/Pepsico-Trustbar-logo.webp" alt="PepsiCo" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/716392be1c61bd75/original/Ingram-Trustbar-logo.webp" alt="Ingram Micro" className="h-8 grayscale flex-shrink-0" />
-                <img src="https://dam.freshworks.com/m/770b19ddd352c7cf/original/pearson-Trustbar-logo.webp" alt="Pearson" className="h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/172addb8908823a/original/bridgestone-logo.webp" alt="Bridgestone" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/6b09343713112137/original/Tata-Digital-Trustbar-logo.webp" alt="Tata Digital" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/678dcfe0f3352df6/original/S-P-GLobal-Trustbar-logo.webp" alt="S&P Global" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/692895b671757fd/original/Klarna-Trustbar-Logo.webp" alt="Klarna" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/686b5fb695a93fdf/original/Forbes-Trustbar-logo.webp" alt="Forbes" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/65934d5b088a71e4/original/Pepsico-Trustbar-logo.webp" alt="PepsiCo" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/716392be1c61bd75/original/Ingram-Trustbar-logo.webp" alt="Ingram Micro" className="h-6 sm:h-8 grayscale flex-shrink-0" />
+                <img src="https://dam.freshworks.com/m/770b19ddd352c7cf/original/pearson-Trustbar-logo.webp" alt="Pearson" className="h-6 sm:h-8 grayscale flex-shrink-0" />
               </div>
             </div>
           </div>
@@ -171,44 +229,44 @@ export function HomePage() {
       </section>
 
       {/* Main Value Proposition */}
-      <section className="py-24 bg-white">
+      <section className="py-16 sm:py-20 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               Seamless support, smarter agents, faster resolutions
             </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-4xl mx-auto">
               Unify every channel, cut the noise, and give agents an easy tool
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-8 h-8 text-white" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
+            <div className="text-center p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Turn email tickets into instant resolutions</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Turn email tickets into instant resolutions</h3>
+              <p className="text-sm sm:text-base text-gray-600">
                 Answer email queries with email AI agents that read every incoming message
               </p>
             </div>
 
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-8 h-8 text-white" />
+            <div className="text-center p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <Users className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Auto-resolve issues with conversational AI agents</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Auto-resolve issues with conversational AI agents</h3>
+              <p className="text-sm sm:text-base text-gray-600">
                 Deploy intelligent chatbots that understand context, provide instant answers
               </p>
             </div>
 
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50">
-              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <BarChart3 className="w-8 h-8 text-white" />
+            <div className="text-center p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50 sm:col-span-2 lg:col-span-1">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <BarChart3 className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Empower support teams with intelligent assistance</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Empower support teams with intelligent assistance</h3>
+              <p className="text-sm sm:text-base text-gray-600">
                 Give your human agents AI-powered insights and suggested responses
               </p>
             </div>
@@ -217,13 +275,13 @@ export function HomePage() {
       </section>
 
       {/* Video Section */}
-      <section className="py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               See QuickFix in action
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
               Watch how our AI-powered complaint management system transforms support
             </p>
           </div>
@@ -243,8 +301,8 @@ export function HomePage() {
             </div>
 
             {/* Video description */}
-            <div className="text-center mt-8">
-              <p className="text-gray-600 text-lg">
+            <div className="text-center mt-6 sm:mt-8">
+              <p className="text-gray-600 text-base sm:text-lg">
                 Discover how QuickFix revolutionizes customer support with AI
               </p>
             </div>
@@ -253,13 +311,13 @@ export function HomePage() {
       </section>
 
       {/* AI Section */}
-      <section className="py-24 bg-gray-50">
+      <section className="py-16 sm:py-20 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               Meet Freddy AI
             </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-4xl mx-auto mb-6 sm:mb-8">
               From AI agents that resolve routine queries instantly to AI that helps with complex issues
             </p>
             <Link
@@ -271,7 +329,7 @@ export function HomePage() {
           </div>
 
           {/* Freddy AI Video */}
-          <div className="max-w-4xl mx-auto mb-16">
+          <div className="max-w-4xl mx-auto mb-12 sm:mb-16">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <video
                 className="w-full h-auto"
@@ -288,56 +346,56 @@ export function HomePage() {
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none rounded-2xl"></div>
             </div>
-            <p className="text-center text-gray-500 mt-4">Freddy AI agents handling customer queries in real-time</p>
+            <p className="text-center text-gray-500 mt-3 sm:mt-4 text-sm sm:text-base">Freddy AI agents handling customer queries in real-time</p>
           </div>
 
           {/* Stats with colored cards like image */}
-          <div className="mt-12 mb-4">
-            <h3 className="text-2xl font-bold text-blue-600 text-center mb-6">
+          <div className="mt-8 sm:mt-12 mb-3 sm:mb-4">
+            <h3 className="text-xl sm:text-2xl font-bold text-blue-600 text-center mb-4 sm:mb-6">
               Industry-leading results with QuickFix
             </h3>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* 83% Card - Mint Green */}
-            <div className="bg-green-100 rounded-xl p-8 flex flex-col justify-center">
-              <div className="text-6xl font-bold text-gray-900 mb-4">83%</div>
-              <div className="text-lg text-gray-700">Reduction in response times</div>
+            <div className="bg-green-100 rounded-xl p-6 sm:p-8 flex flex-col justify-center">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">83%</div>
+              <div className="text-base sm:text-lg text-gray-700">Reduction in response times</div>
             </div>
 
             {/* <2 mins Card - Light Purple */}
-            <div className="bg-purple-50 rounded-xl p-8 flex flex-col justify-center">
-              <div className="text-6xl font-bold text-gray-900 mb-4">&lt;2 mins</div>
-              <div className="text-lg text-gray-700">Average conversational resolution time</div>
+            <div className="bg-purple-50 rounded-xl p-6 sm:p-8 flex flex-col justify-center">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">&lt;2 mins</div>
+              <div className="text-base sm:text-lg text-gray-700">Average conversational resolution time</div>
             </div>
 
             {/* 97% Card - Cream */}
-            <div className="bg-yellow-50 rounded-xl p-8 flex flex-col justify-center">
-              <div className="text-6xl font-bold text-gray-900 mb-4">97%</div>
-              <div className="text-lg text-gray-700">Omnichannel first contact resolution rate</div>
+            <div className="bg-yellow-50 rounded-xl p-6 sm:p-8 flex flex-col justify-center">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">97%</div>
+              <div className="text-base sm:text-lg text-gray-700">Omnichannel first contact resolution rate</div>
             </div>
 
             {/* 60% Card - Light Pink */}
-            <div className="bg-red-50 rounded-xl p-8 flex flex-col justify-center">
-              <div className="text-6xl font-bold text-gray-900 mb-4">60%</div>
-              <div className="text-lg text-gray-700">Improved agent productivity with Freddy AI Copilot</div>
+            <div className="bg-red-50 rounded-xl p-6 sm:p-8 flex flex-col justify-center">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">60%</div>
+              <div className="text-base sm:text-lg text-gray-700">Improved agent productivity with Freddy AI Copilot</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-white">
+      <section id="features" className="py-16 sm:py-20 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               The Full Customer Service Experience
             </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-10">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-4xl mx-auto mb-8 sm:mb-10">
               Everything you need to support customers and empower teams.
             </p>
 
             {/* Customer Experience Video */}
-            <div className="max-w-4xl mx-auto mb-16">
+            <div className="max-w-4xl mx-auto mb-12 sm:mb-16">
               <div className="relative rounded-2xl overflow-hidden shadow-xl">
                 <video
                   className="w-full h-auto"
@@ -354,58 +412,58 @@ export function HomePage() {
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none rounded-2xl"></div>
               </div>
-              <p className="text-center text-gray-500 mt-4">See how AI-assisted resolutions enhance the customer experience</p>
+              <p className="text-center text-gray-500 mt-3 sm:mt-4 text-sm sm:text-base">See how AI-assisted resolutions enhance the customer experience</p>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
-              <MessageSquare className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat and Voice</h3>
-              <p className="text-gray-600">Connect seamlessly across chat and voice channels.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="p-5 sm:p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
+              <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Chat and Voice</h3>
+              <p className="text-sm sm:text-base text-gray-600">Connect seamlessly across chat and voice channels.</p>
             </div>
-            <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
-              <Users className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Self Service</h3>
-              <p className="text-gray-600">Empower customers with comprehensive self-service options.</p>
+            <div className="p-5 sm:p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
+              <Users className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Self Service</h3>
+              <p className="text-sm sm:text-base text-gray-600">Empower customers with comprehensive self-service options.</p>
             </div>
-            <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
-              <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified Context</h3>
-              <p className="text-gray-600">Get complete customer context across all touchpoints.</p>
+            <div className="p-5 sm:p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
+              <BarChart3 className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Unified Context</h3>
+              <p className="text-sm sm:text-base text-gray-600">Get complete customer context across all touchpoints.</p>
             </div>
-            <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
-              <CheckCircle className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Advanced Workflows</h3>
-              <p className="text-gray-600">Automate complex processes with intelligent workflows.</p>
+            <div className="p-5 sm:p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
+              <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Advanced Workflows</h3>
+              <p className="text-sm sm:text-base text-gray-600">Automate complex processes with intelligent workflows.</p>
             </div>
-            <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
-              <BarChart3 className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics and Insights</h3>
-              <p className="text-gray-600">Make data-driven decisions with powerful analytics.</p>
+            <div className="p-5 sm:p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
+              <BarChart3 className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Analytics and Insights</h3>
+              <p className="text-sm sm:text-base text-gray-600">Make data-driven decisions with powerful analytics.</p>
             </div>
-            <div className="p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
-              <Shield className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Security & Compliance</h3>
-              <p className="text-gray-600">Enterprise-grade security and compliance features.</p>
+            <div className="p-5 sm:p-6 rounded-xl border border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all">
+              <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Security & Compliance</h3>
+              <p className="text-sm sm:text-base text-gray-600">Enterprise-grade security and compliance features.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Plans Section */}
-      <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-orange-50">
+      <section id="pricing" className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-gray-50 to-orange-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               Choose the Perfect Plan for Your Business
             </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-4xl mx-auto">
               From small teams to large enterprises, we have a plan that fits your needs
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-slate-200 hover:border-slate-300 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
               <div className="bg-gradient-to-r from-slate-600 to-slate-700 p-6 text-white">
@@ -822,17 +880,17 @@ export function HomePage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-8 sm:mb-12">
             {/* Logo and Description */}
             <div className="lg:col-span-2">
-              <div className="flex items-center space-x-2 mb-6">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-2xl font-bold">QuickFix</span>
+                <span className="text-xl sm:text-2xl font-bold">QuickFix</span>
               </div>
-              <p className="text-gray-300 mb-6 max-w-md">
+              <p className="text-gray-300 mb-4 sm:mb-6 max-w-md text-sm sm:text-base">
                 AI-powered complaint management system that revolutionizes customer service.
               </p>
               <div className="flex space-x-4">
@@ -861,72 +919,72 @@ export function HomePage() {
 
             {/* Products */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Products</h3>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">QuickFix Helpdesk</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">AI Chat Support</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Analytics Dashboard</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Mobile App</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">API Integrations</a></li>
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Products</h3>
+              <ul className="space-y-2 sm:space-y-3">
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">QuickFix Helpdesk</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">AI Chat Support</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Analytics Dashboard</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Mobile App</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">API Integrations</a></li>
               </ul>
             </div>
 
             {/* Solutions */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Solutions</h3>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Customer Support</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">IT Service Management</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Enterprise</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Small Business</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">E-commerce</a></li>
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Solutions</h3>
+              <ul className="space-y-2 sm:space-y-3">
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Customer Support</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">IT Service Management</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Enterprise</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Small Business</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">E-commerce</a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Company</h3>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">About Us</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Press & News</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Security</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Contact Us</a></li>
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Company</h3>
+              <ul className="space-y-2 sm:space-y-3">
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">About Us</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Careers</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Press & News</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Security</a></li>
+                <li><a href="#" className="text-sm sm:text-base text-gray-300 hover:text-orange-400 transition-colors">Contact Us</a></li>
               </ul>
             </div>
           </div>
 
           {/* Bottom Section */}
-          <div className="border-t border-gray-800 pt-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+          <div className="border-t border-gray-800 pt-6 sm:pt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-center">
               {/* Legal Links */}
-              <div className="flex flex-wrap gap-6">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Privacy Policy</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Terms of Service</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Cookie Policy</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-sm">Accessibility</a>
+              <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Privacy Policy</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Terms of Service</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Cookie Policy</a>
+                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Accessibility</a>
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('openCookieSettings'))}
-                  className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+                  className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm"
                 >
                   Manage Privacy Preferences
                 </button>
               </div>
 
               {/* Copyright */}
-              <div className="text-center">
-                <p className="text-gray-400 text-sm">
+              <div className="text-center order-first lg:order-none">
+                <p className="text-gray-400 text-xs sm:text-sm">
                   2025 QuickFix Inc. All rights reserved.
                 </p>
               </div>
 
-              {/* App Store Links - LARGER ICONS */}
-              <div className="flex justify-end space-x-4">
-                <a href="#" className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-3">
-                  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on App Store" className="h-12" />
+              {/* App Store Links */}
+              <div className="flex justify-center lg:justify-end space-x-3 sm:space-x-4">
+                <a href="#" className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-2 sm:p-3">
+                  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on App Store" className="h-8 sm:h-10 md:h-12" />
                 </a>
-                <a href="#" className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-3">
-                  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" className="h-12" />
+                <a href="#" className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-2 sm:p-3">
+                  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" className="h-8 sm:h-10 md:h-12" />
                 </a>
               </div>
             </div>

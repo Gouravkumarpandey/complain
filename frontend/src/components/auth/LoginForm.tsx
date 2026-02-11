@@ -5,8 +5,6 @@ import { Mail, Lock, User, AlertCircle, UserCheck, ArrowRight, ArrowLeft, Eye, E
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { CustomGoogleLogin } from './CustomGoogleLogin';
 import validateGoogleConfig from '../../services/googleAuthDebug';
-// @ts-expect-error - Missing type declarations for this JS module
-import setupGoogleAuth from '../../utils/googleAuthSetup';
 import { OTPVerification } from './OTPVerification';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
 import { FacebookLogin } from './FacebookLogin';
@@ -20,8 +18,9 @@ export function LoginForm() {
 
   // Debug Google Sign-In configuration on component mount
   useEffect(() => {
-    validateGoogleConfig();
-    setupGoogleAuth();
+    if (import.meta.env.DEV) {
+      validateGoogleConfig();
+    }
   }, []);
 
   const [formData, setFormData] = useState({
