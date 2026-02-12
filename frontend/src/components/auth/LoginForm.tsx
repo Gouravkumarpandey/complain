@@ -7,8 +7,7 @@ import { CustomGoogleLogin } from './CustomGoogleLogin';
 import { OTPVerification } from './OTPVerification';
 import { redirectToDashboard } from '../../utils/authRedirectUtils';
 import { FacebookLogin } from './FacebookLogin';
-import { AxiosError } from 'axios';
-import api, { getErrorMessage } from '../../utils/api';
+import { getErrorMessage } from '../../utils/api';
 import { GoogleRoleSelection } from './GoogleRoleSelection';
 
 export function LoginForm() {
@@ -28,12 +27,11 @@ export function LoginForm() {
   // Google/Facebook Sign-Up State
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [pendingGoogleToken, setPendingGoogleToken] = useState('');
-  const [pendingFacebookCode, setPendingFacebookCode] = useState('');
   const [authSource, setAuthSource] = useState<'google' | 'facebook'>('google');
   const [googleUserInfo, setGoogleUserInfo] = useState<{ name: string, email: string } | null>(null);
 
   // Get auth context including OTP verification
-  const { login, register, googleLogin, googleSignupWithRole, facebookSignupWithRole, pendingVerification, cancelVerification, logout, decodeGoogleToken } = useAuth();
+  const { login, register, googleLogin, googleSignupWithRole, pendingVerification, cancelVerification, logout, decodeGoogleToken } = useAuth();
 
   const validateIndianPhone = (phone: string) => {
     // Basic Indian phone validation
@@ -117,16 +115,6 @@ export function LoginForm() {
       let success = false;
       if (authSource === 'google' && pendingGoogleToken) {
         success = await googleSignupWithRole(pendingGoogleToken, role, organization, phoneNumber);
-      } else if (authSource === 'facebook' && pendingFacebookCode) {
-        // Note: facebookSignupWithRole expects 'code' in the body, but here we might pass accessToken as 'code' depending on how it's implemented in context.
-        // Actually the helper in AuthContext likely takes 'token' as argument and sends as 'code' or 'token'.
-        // Let's verify AuthContext facebookSignupWithRole signature.
-        // Assuming it's similar: (token, role, org, phone)
-        if (facebookSignupWithRole) {
-          success = await facebookSignupWithRole(pendingFacebookCode, role, organization, phoneNumber);
-        } else {
-          throw new Error("Facebook signup not supported");
-        }
       }
 
       if (success) {
@@ -138,50 +126,6 @@ export function LoginForm() {
     } catch (err: unknown) {
       setError(getErrorMessage(err));
       setShowRoleSelection(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle Facebook login success
-  const handleFacebookSuccess = async (response: {
-    profile: { id: string; name: string; email: string; picture: { data: { url: string } } };
-    auth: { accessToken: string }
-  }) => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const apiResponse = await api.post('/auth/facebook', {
-        accessToken: response.auth.accessToken,
-        isSignup: !isLogin
-      });
-
-      const data = apiResponse.data;
-
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        redirectToDashboard();
-      } else {
-        setError(data.message || 'Facebook authentication failed');
-      }
-    } catch (err: unknown) {
-      if ((err as AxiosError)?.response?.status === 400) {
-        const errorResponse = (err as AxiosError<{ message?: string; requiresSignup?: boolean; facebookData?: { name: string; email: string } }>).response?.data;
-        if (errorResponse?.requiresSignup && errorResponse.facebookData) {
-          setGoogleUserInfo({
-            name: errorResponse.facebookData.name,
-            email: errorResponse.facebookData.email
-          });
-          setPendingFacebookCode(response.auth.accessToken); 
-          setAuthSource('facebook');
-          setShowRoleSelection(true);
-          return;
-        }
-      }
-      
-      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -357,7 +301,6 @@ export function LoginForm() {
 
               {/* Facebook */}
               <FacebookLogin
-                onSuccess={handleFacebookSuccess}
                 onFailure={handleFacebookFailure}
                 buttonText={isLogin ? "Continue with Facebook" : "Sign up with Facebook"}
               />
