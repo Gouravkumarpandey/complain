@@ -377,6 +377,7 @@ export function LoginForm() {
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                     className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                     placeholder="••••••••"
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                   />
                   <button
                     type="button"

@@ -2,7 +2,7 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 interface CustomGoogleLoginProps {
     onSuccess: (token: string) => void;
-    onFailure: (error: any) => void;
+    onFailure: (error: Error) => void;
     buttonText?: string;
     className?: string;
     isLoading?: boolean;
@@ -42,6 +42,7 @@ export function CustomGoogleLogin({
                 shape="rectangular"
                 width="400"
                 logo_alignment="left"
+                use_fedcm_for_prompt={true}
             />
         </div>
     );
