@@ -216,9 +216,9 @@ export function LoginForm() {
   // ----------------------------------------------------------------------
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''}>
-      <div className="min-h-screen bg-white flex" style={{ fontFamily: '"Google Sans Flex", sans-serif' }}>
+      <div className="h-[100dvh] bg-white flex overflow-hidden" style={{ fontFamily: '"Google Sans Flex", sans-serif' }}>
 
-        {/* Left Side - Blue Gradient */}
+        {/* Left Side - Blue Gradient (hidden on mobile & tablet) */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -227,24 +227,24 @@ export function LoginForm() {
             <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-blue-400 rounded-full"></div>
           </div>
 
-          {/* Back to Home */}
-          <Link
-            to="/"
-            className="absolute top-8 left-8 text-white hover:text-blue-200 transition-all duration-200 flex items-center gap-2 font-medium text-lg z-20"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Home
-          </Link>
-
-          <div className="relative z-10 flex flex-col justify-center px-12 py-20">
+          <div className="relative z-10 flex flex-col px-12 py-8">
             {/* Logo */}
-            <div className="flex items-center space-x-2 mb-12">
+            <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-white">QuickFix</span>
               <span className="text-sm text-blue-200 ml-1">AI Powered Support</span>
             </div>
+
+            {/* Back to Home */}
+            <Link
+              to="/"
+              className="text-white hover:text-blue-200 transition-all duration-200 flex items-center gap-2 font-medium text-base mb-6"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Home
+            </Link>
 
             <h1 className="text-4xl font-bold text-white mb-4">
               {isLogin ? 'Welcome Back!' : 'Join our Community'}
@@ -256,7 +256,7 @@ export function LoginForm() {
             </p>
 
             {/* Image Card */}
-            <div className="mt-10">
+            <div className="mt-auto pt-6">
               <div className="relative">
                 <img
                   src={isLogin ? "/login.png" : "/Signup.webp"}
@@ -270,27 +270,46 @@ export function LoginForm() {
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 overflow-y-auto bg-white">
-          <div className="max-w-[420px] w-full">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-5 py-4 sm:px-8 sm:py-6 lg:px-10 lg:py-4 bg-white overflow-y-auto">
+          <div className="max-w-[400px] w-full">
 
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {/* Mobile-only header with logo and back link */}
+            <div className="lg:hidden mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-lg font-bold text-gray-900">QuickFix</span>
+                </div>
+                <Link
+                  to="/"
+                  className="text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-1 text-sm font-medium"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Home
+                </Link>
+              </div>
+            </div>
+
+            <div className="text-center mb-3 sm:mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5">
                 {isLogin ? 'Sign In' : 'Create Account'}
               </h2>
-              <p className="text-gray-500">
+              <p className="text-gray-500 text-xs sm:text-sm">
                 {isLogin ? 'Please enter your details.' : 'Get started for free!'}
               </p>
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 animate-fadeIn">
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <span className="text-red-700 text-sm">{error}</span>
+              <div className="mb-2 p-2 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-fadeIn">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <span className="text-red-700 text-xs">{error}</span>
               </div>
             )}
 
             {/* Social Auth */}
-            <div className="space-y-4 mb-6">
+            <div className="space-y-2 mb-3">
               {/* Google */}
               <CustomGoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -306,7 +325,7 @@ export function LoginForm() {
               />
             </div>
 
-            <div className="relative my-8">
+            <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
               </div>
@@ -315,18 +334,18 @@ export function LoginForm() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-2.5">
               {!isLogin && (
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Full Name</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="text"
                       required={!isLogin}
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
                       placeholder="Enter your name"
                     />
                   </div>
@@ -335,47 +354,47 @@ export function LoginForm() {
 
               {!isLogin && formData.role === 'user' && (
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Phone Number</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Phone Number</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="tel"
                       required={!isLogin}
                       value={formData.phoneNumber}
                       onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
                       placeholder="+91 98765 43210"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 ml-1">WhatsApp enabled (+91)</p>
+                  <p className="text-xs text-gray-500 mt-0.5 ml-1">WhatsApp enabled (+91)</p>
                 </div>
               )}
 
               <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Email Address</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
                   <input
                     type="email"
                     required
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
                     placeholder=""
                   />
                 </div>
               </div>
 
               <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Password</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    className="w-full pl-9 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
                     placeholder="••••••••"
                     autoComplete={isLogin ? "current-password" : "new-password"}
                   />
@@ -384,20 +403,20 @@ export function LoginForm() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
               {!isLogin && (
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Account Type</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Account Type</label>
                   <div className="relative">
-                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                     <select
                       value={formData.role}
                       onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'agent' | 'analytics' })}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none cursor-pointer"
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium appearance-none cursor-pointer"
                     >
                       <option value="user">Customer / User</option>
                       <option value="agent">Support Agent</option>
@@ -413,28 +432,28 @@ export function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center items-center gap-2"
+                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center items-center gap-2 text-sm"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
                     {isLogin ? 'Sign In' : 'Create Account'}
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
 
               {isLogin && (
                 <div className="text-center">
-                  <Link to="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500 hover:underline">
+                  <Link to="/forgot-password" className="text-xs font-medium text-blue-600 hover:text-blue-500 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
               )}
             </form>
 
-            <div className="mt-8 text-center text-sm text-gray-500">
+            <div className="mt-3 text-center text-sm text-gray-500">
               {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
               <button
                 onClick={() => {
