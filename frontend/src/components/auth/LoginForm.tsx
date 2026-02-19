@@ -216,7 +216,7 @@ export function LoginForm() {
   // ----------------------------------------------------------------------
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''}>
-      <div className="min-h-screen bg-white flex font-sans">
+      <div className="min-h-screen bg-white flex" style={{ fontFamily: '"Google Sans Flex", sans-serif' }}>
 
         {/* Left Side - Blue Gradient */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
@@ -413,7 +413,7 @@ export function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 flex justify-center items-center gap-2"
+                className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center items-center gap-2"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide Google One Tap auto-prompt and FedCM UI so only our custom button shows */
+#credential_picker_container,
+#credential_picker_iframe,
+.google-one-tap-container,
+div[id^="g_"] iframe {
+  display: none !important;
+}
+
 @layer base {
   body {
     -webkit-font-smoothing: antialiased;
