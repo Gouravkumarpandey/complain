@@ -79,27 +79,41 @@ export function LoginForm() {
         logout();
         setError('');
 
-        try {
-          const success = await googleLogin(token);
-          if (success) {
-            redirectToDashboard();
-            return;
-          }
-        } catch (loginError: unknown) {
-          // Check if "Account not found"
-          if (loginError instanceof Error && loginError.message.includes('Account not found')) {
-            // Decode token to get info
-            const info = await decodeGoogleToken(token);
-            if (info) {
-              setGoogleUserInfo(info);
-              setPendingGoogleToken(token);
-              setAuthSource('google');
-              setShowRoleSelection(true);
-            } else {
-              setError('Failed to process Google Account details. Please try again.');
+        if (isLogin) {
+          // LOGIN flow: try to log in with existing account
+          try {
+            const success = await googleLogin(token);
+            if (success) {
+              redirectToDashboard();
+              return;
             }
+          } catch (loginError: unknown) {
+            // Account not found — automatically switch to signup flow
+            if (loginError instanceof Error && loginError.message.includes('Account not found')) {
+              const info = await decodeGoogleToken(token);
+              if (info) {
+                setIsLogin(false);
+                setGoogleUserInfo(info);
+                setPendingGoogleToken(token);
+                setAuthSource('google');
+                setShowRoleSelection(true);
+              } else {
+                setError('Failed to process Google Account details. Please try again.');
+              }
+            } else {
+              setError(getErrorMessage(loginError));
+            }
+          }
+        } else {
+          // SIGNUP flow: go directly to role selection
+          const info = await decodeGoogleToken(token);
+          if (info) {
+            setGoogleUserInfo(info);
+            setPendingGoogleToken(token);
+            setAuthSource('google');
+            setShowRoleSelection(true);
           } else {
-            setError(getErrorMessage(loginError));
+            setError('Failed to process Google Account details. Please try again.');
           }
         }
       }
