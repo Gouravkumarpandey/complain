@@ -361,7 +361,7 @@ export function LoginForm() {
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                    placeholder="name@company.com"
+                    placeholder=""
                   />
                 </div>
               </div>
@@ -407,7 +407,6 @@ export function LoginForm() {
                       <ArrowRight className="w-4 h-4 text-gray-400 rotate-90" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 ml-1">Admin login is available on a separate page</p>
                 </div>
               )}
 
