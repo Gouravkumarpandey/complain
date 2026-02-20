@@ -24,9 +24,17 @@ export function CustomGoogleLogin({
             setLoading(false);
             onSuccess(tokenResponse.access_token);
         },
-        onError: () => {
+        onError: (error) => {
             setLoading(false);
+            console.error('Google login error:', error);
             onFailure(new Error('Google Sign-In Failed'));
+        },
+        onNonOAuthError: (error) => {
+            // Fires when popup is blocked or closed — not a real failure
+            setLoading(false);
+            if (error.type !== 'popup_closed') {
+                onFailure(new Error('Google Sign-In was cancelled'));
+            }
         },
     });
 

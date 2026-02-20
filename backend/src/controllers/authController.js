@@ -619,9 +619,27 @@ export const googleSignupWithRole = async (req, res) => {
     // Check if user already exists
     const { user: existingUser } = await findUserByEmail(email);
 
+    // If user already exists → auto-login instead of rejecting with 409
     if (existingUser) {
-      return res.status(409).json({
-        message: "User already exists. Please use regular Google login instead."
+      console.log(`Google signup: user ${email} already exists — auto-logging in`);
+
+      // Generate token and set cookie (same as regular login)
+      const accessToken = generateToken(existingUser._id);
+      setTokenCookie(res, accessToken);
+
+      return res.status(200).json({
+        success: true,
+        message: "Welcome back! You have been logged in.",
+        alreadyExisted: true,
+        user: {
+          id: existingUser._id,
+          name: existingUser.name,
+          email: existingUser.email,
+          role: existingUser.role,
+          isGoogleUser: existingUser.isGoogleUser,
+          isVerified: existingUser.isVerified,
+        },
+        token: accessToken,
       });
     }
 
