@@ -195,21 +195,21 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   console.log('   Category:', category);
   console.log('   Description length:', description?.length || 0);
 
-  // Import DeepSeek service for AI validation
-  const deepseekService = (await import('../services/deepseekService.js')).default;
-  
+  // Import Anthropic service for AI validation
+  const anthropicService = (await import('../services/anthropicService.js')).default;
+
   // AI VALIDATION: Check if complaint is genuine
   console.log('🤖 AI Validation: Analyzing complaint authenticity...');
   try {
-    const validation = await deepseekService.validateComplaint(title, description);
+    const validation = await anthropicService.validateComplaint(title, description);
     console.log('   Validation result:', validation);
-    
+
     if (!validation.isValid) {
       console.error('❌ AI REJECTED: Complaint appears to be invalid/gibberish');
       console.error('   Reason:', validation.reason);
       console.error('   Confidence:', validation.confidence);
-      
-      return res.status(400).json({ 
+
+      return res.status(400).json({
         error: 'Invalid complaint detected',
         message: 'Your complaint appears to contain invalid or meaningless content. Please provide a genuine description of your issue.',
         reason: validation.reason,
@@ -220,7 +220,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
         }
       });
     }
-    
+
     console.log('✅ AI APPROVED: Complaint is genuine');
     console.log('   Reason:', validation.reason);
     console.log('   Confidence:', validation.confidence);
@@ -305,7 +305,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.log('✅ COMPLAINT SAVED SUCCESSFULLY!');
     console.log('   Complaint ID:', complaint._id);
     console.log('   Complaint Number:', complaint.complaintId);
-    
+
     // Redis cache disabled
     // await invalidateComplaintCache(complaint._id.toString());
   } catch (saveError) {
@@ -315,7 +315,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.error('   Error stack:', saveError.stack);
     throw saveError;
   }
-  
+
   // Generate AI summary if description is long enough
   if (description && description.length > 100) {
     try {
@@ -332,20 +332,20 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       // Continue without summary - not critical
     }
   }
-  
+
   // Import the ticket assignment service and get io instance
   const { aiAssignToAgent, autoAssignToFreeAgent } = await import('../services/ticketAssignmentService.js');
   const { getIoInstance } = await import('../socket/socketHandlers.js');
   const { notifyComplaintCreated, notifyComplaintAssigned } = await import('../services/notificationService.js');
-  
+
   try {
     // Get WebSocket instance for real-time notifications
     const io = getIoInstance();
-    
-    // AI-POWERED ASSIGNMENT: Use DeepSeek to intelligently assign ticket
+
+    // AI-POWERED ASSIGNMENT: Use Anthropic Claude to intelligently assign ticket
     console.log('🤖 Attempting AI-powered agent assignment...');
     const { assignedAgent, message: assignMessage } = await aiAssignToAgent(complaint._id, io);
-    
+
     // If an agent was assigned, update the response
     if (assignedAgent) {
       console.log(`✅ Complaint ${complaint.complaintId} AI-assigned to agent ${assignedAgent.name}`);
@@ -353,7 +353,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       console.log(`   AI Confidence: ${assignedAgent.aiAssignment?.confidence}`);
       console.log(`   Reasoning: ${assignedAgent.aiAssignment?.reasoning}`);
       console.log(`   Method: ${assignedAgent.aiAssignment?.method}`);
-      
+
       // Create notification for assigned agent
       try {
         await notifyComplaintAssigned(
@@ -371,31 +371,31 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.error('Error in AI ticket assignment:', err);
     // Continue even if assignment fails - complaint is still created
   }
-  
+
   // Get updated complaint after assignment
   const updatedComplaint = await Complaint.findById(complaint._id)
     .populate('assignedTo', 'name username email')
     .populate('user', 'name username email');
-  
+
   // Create notification for user about complaint creation
   try {
     console.log('🔔 Creating notification for user...');
     console.log('   User ID:', req.user._id);
     console.log('   Complaint ID:', complaint._id);
     console.log('   Complaint Title:', complaint.title);
-    
+
     const notificationResult = await notifyComplaintCreated(
       req.user._id,
       complaint._id,
       complaint.title
     );
-    
+
     console.log('✅ Notification created successfully:', notificationResult._id);
   } catch (notifError) {
     console.error('❌ Failed to create complaint notification:', notifError);
     console.error('   Error stack:', notifError.stack);
   }
-  
+
   console.log('🔍 DEBUG: About to send email confirmation...');
   console.log('   Complaint ID:', complaint._id);
   console.log('   Updated complaint exists:', !!updatedComplaint);
@@ -404,12 +404,12 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   console.log('   User name:', updatedComplaint?.user?.name);
   console.log('   Complaint Number:', updatedComplaint?.complaintId);
   console.log('   Request user:', { id: req.user?._id, email: req.user?.email, name: req.user?.name });
-  
+
   // Send complaint confirmation email to user
   // Use req.user if populated user is not available
   const userEmail = updatedComplaint?.user?.email || req.user?.email;
   const userName = updatedComplaint?.user?.name || req.user?.name;
-  
+
   if (!userEmail) {
     console.error('❌ Cannot send email: User email is missing');
     console.error('   updatedComplaint.user:', updatedComplaint?.user);
@@ -420,7 +420,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       console.log(`   To: ${userEmail}`);
       console.log(`   Name: ${userName}`);
       console.log(`   Complaint: ${updatedComplaint.complaintId}`);
-      
+
       await sendComplaintConfirmationEmail(
         userEmail,
         userName,
@@ -438,12 +438,12 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       // Continue even if email fails - complaint is still created
     }
   }
-  
+
   // Send WhatsApp notification if user has phone number
   try {
     const { sendComplaintRegistrationWhatsApp } = await import('../services/whatsappService.js');
     const userPhoneNumber = req.user?.phoneNumber;
-    
+
     if (userPhoneNumber) {
       console.log(`📱 Sending WhatsApp notification to ${userPhoneNumber}...`);
       const whatsappResult = await sendComplaintRegistrationWhatsApp(
@@ -454,7 +454,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
         updatedComplaint.category,
         updatedComplaint.priority
       );
-      
+
       if (whatsappResult.success) {
         console.log(`✅ WhatsApp notification sent successfully for complaint ${updatedComplaint.complaintId}`);
       } else {
@@ -467,7 +467,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.error('❌ Failed to send WhatsApp notification:', whatsappError.message);
     // Continue even if WhatsApp fails - complaint is still created
   }
-  
+
   // Send SMS notification if user has phone number
   try {
     if (req.user?.phoneNumber) {
@@ -481,7 +481,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.error('❌ Failed to send SMS notification:', smsError.message);
     // Continue even if SMS fails - complaint is still created
   }
-  
+
   // Publish event to SNS for ticket creation
   try {
     await publishEvent('ticket.created', {
@@ -498,7 +498,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     console.error('❌ Failed to publish ticket.created event:', snsError.message);
     // Continue even if SNS fails
   }
-  
+
   res.status(201).json(updatedComplaint);
 }));
 
@@ -516,15 +516,15 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   }
 
   // Check if agent can update this complaint
-  if (req.user.role === 'agent' && 
-      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+  if (req.user.role === 'agent' &&
+    complaint.assignedTo?.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'You can only update complaints assigned to you' });
   }
 
   const oldStatus = complaint.status;
   complaint.status = status;
   complaint.updatedAt = new Date();
-  
+
   console.log(`\n🔄 STATUS UPDATE REQUEST`);
   console.log(`   Complaint ID: ${complaint.complaintId} (${complaint._id})`);
   console.log(`   Current status in DB: ${oldStatus}`);
@@ -532,13 +532,14 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   console.log(`   Status field updated in memory: ${complaint.status}`);
   console.log(`   Modified? ${complaint.isModified('status')}`);
 
-  // Add update record
+  // Add update record — field names MUST match the Complaint schema
+  // Schema requires: updatedBy (ObjectId), updateType (enum), message, isInternal, createdAt
   const updateRecord = {
     message: message || `Status changed from ${oldStatus} to ${status}`,
-    author: `${req.user.firstName} ${req.user.lastName}`,
-    authorId: req.user._id,
-    timestamp: new Date(),
-    type: 'status_change',
+    updatedBy: req.user._id,
+    updateType: 'status_change',
+    previousValue: oldStatus,
+    newValue: status,
     isInternal: false
   };
   complaint.updates.push(updateRecord);
@@ -552,15 +553,15 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
         resolvedBy: req.user._id,
         resolvedAt: new Date()
       };
-      
+
       // Send WhatsApp notification for resolution
       try {
         const { sendComplaintResolvedWhatsApp } = await import('../services/whatsappService.js');
         const { findUserById } = await import('../models/User.js');
-        
+
         // Get the complaint owner's phone number
         const { user: complaintOwner } = await findUserById(complaint.user);
-        
+
         if (complaintOwner && complaintOwner.phoneNumber) {
           console.log(`📱 Sending WhatsApp resolution notification to ${complaintOwner.phoneNumber}...`);
           const whatsappResult = await sendComplaintResolvedWhatsApp(
@@ -570,7 +571,7 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
             complaint.title,
             message || 'Your complaint has been resolved.'
           );
-          
+
           if (whatsappResult.success) {
             console.log(`✅ WhatsApp resolution notification sent successfully for complaint ${complaint.complaintId}`);
           } else {
@@ -590,9 +591,9 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   console.log(`\n💾 SAVING COMPLAINT TO DATABASE...`);
   console.log(`   Status before save: ${complaint.status}`);
   console.log(`   Resolution before save:`, complaint.resolution ? JSON.stringify(complaint.resolution) : 'None');
-  
+
   await complaint.save();
-  
+
   // Verify the save was successful by re-fetching from database
   const verifyComplaint = await Complaint.findById(complaint._id).lean();
   console.log(`\n✅ COMPLAINT SAVED AND VERIFIED`);
@@ -601,22 +602,22 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   console.log(`   Status in DB (verified): ${verifyComplaint.status}`);
   console.log(`   Resolution in DB:`, verifyComplaint.resolution ? 'Present' : 'None');
   console.log(`   Old status: ${oldStatus} → New status: ${verifyComplaint.status}`);
-  
+
   if (verifyComplaint.status !== status) {
     console.error(`\n❌ CRITICAL ERROR: Status mismatch after save!`);
     console.error(`   Expected: ${status}`);
     console.error(`   Got: ${verifyComplaint.status}`);
   }
-  
+
   // Get io instance early for use throughout
   const io = req.app.get('io');
-  
+
   // Send resolution email to user if complaint is marked as resolved
   if (status === 'Resolved') {
     try {
       // Get user details for email
       const complaintUser = await User.findById(complaint.user);
-      
+
       if (complaintUser && complaintUser.email) {
         console.log(`📧 Sending resolution email to ${complaintUser.email}...`);
         await sendComplaintResolvedEmail(
@@ -633,11 +634,11 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
       console.error('❌ Failed to send resolution email:', emailError.message);
       // Continue even if email fails - don't block the resolution process
     }
-    
+
     // Send SMS notification to user if complaint is marked as resolved
     try {
       const complaintUser = await User.findById(complaint.user);
-      
+
       if (complaintUser && complaintUser.phoneNumber) {
         console.log(`📱 Sending resolution SMS to ${complaintUser.phoneNumber}...`);
         await triggerComplaintResolvedSMS(complaintUser, complaint.complaintId);
@@ -650,19 +651,19 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
       // Continue even if SMS fails - don't block the resolution process
     }
   }
-  
+
   // NOW check if the assigned agent should be marked available (after save)
   if ((status === 'Resolved' || status === 'Closed') && complaint.assignedTo) {
     // Import the agent service
     const { refreshAgentAvailability } = await import('../services/agentService.js');
-    
+
     try {
       // This will check if agent has any remaining active complaints
       // and update their availability accordingly
       console.log(`🔍 Checking agent availability for ${complaint.assignedTo}...`);
       const updatedAgent = await refreshAgentAvailability(complaint.assignedTo);
       console.log(`🔄 Agent availability refreshed: ${updatedAgent.availability}`);
-      
+
       // Broadcast agent status update via socket
       if (io) {
         io.emit('agent_status_update', {
@@ -677,25 +678,25 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
       console.error('❌ Error updating agent availability:', err);
     }
   }
-  
+
   // Get populated complaint for response - FETCH FRESH FROM DB
   const populatedComplaint = await Complaint.findById(complaint._id)
     .populate('user', 'name email')
     .populate('assignedTo', 'name email')
     .populate('resolution.resolvedBy', 'name email')
     .lean(); // Use lean() for performance and to get plain object
-  
+
   console.log(`\n📊 POPULATED COMPLAINT FOR RESPONSE`);
   console.log(`   Status: ${populatedComplaint.status}`);
   console.log(`   Resolution:`, populatedComplaint.resolution ? 'Present' : 'None');
   console.log(`   Assigned to:`, populatedComplaint.assignedTo?.name || 'Unassigned');
-  
+
   if (populatedComplaint.status !== status) {
     console.error(`\n❌ CRITICAL: Response status doesn't match requested status!`);
     console.error(`   Requested: ${status}`);
     console.error(`   Returning: ${populatedComplaint.status}`);
   }
-  
+
   // Invalidate cache since complaint was updated
   // await invalidateComplaintCache(complaint._id.toString());
 
@@ -721,12 +722,12 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
       resolution: populatedComplaint.resolution,
       updates: populatedComplaint.updates
     };
-    
+
     // Emit to specific user for their dashboard (using both patterns for compatibility)
     const userId = complaint.user.toString();
     io.to(`user:${userId}`).emit('complaintUpdated', { complaint: complaintData });
     io.to(`user:${userId}`).emit('complaint_status_updated', { complaint: complaintData });
-    
+
     // Broadcast to all for general updates
     io.emit('complaintStatusChanged', {
       complaintId: complaint._id,
@@ -734,14 +735,14 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
       updatedBy: req.user._id,
       complaint: complaintData
     });
-    
+
     console.log(`🔔 Socket events emitted:`);
     console.log(`   - complaintUpdated to user:${userId}`);
     console.log(`   - complaint_status_updated to user:${userId}`);
     console.log(`   - complaintStatusChanged (broadcast)`);
     console.log(`   Status: ${complaint.status}`);
   }
-  
+
   // Publish event to SNS for ticket resolution (triggers worker for auto-assignment)
   if (status === 'Resolved') {
     try {
@@ -810,7 +811,7 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
   } catch (err) {
     console.error('❌ Error updating agent availability to busy:', err);
   }
-  
+
   // Emit socket event for complaint assignment
   const io = req.app.get('io');
   if (io) {
@@ -819,7 +820,7 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
       assignedTo: agentId,
       assignedBy: req.user._id
     });
-    
+
     // Also broadcast agent status update
     try {
       const agent = await User.findById(agentId);
@@ -836,7 +837,7 @@ router.patch('/:id/assign', authenticate, authorize('admin', 'agent'), asyncHand
       console.error('❌ Error broadcasting agent status:', socketErr);
     }
   }
-  
+
   // Invalidate cache since complaint was assigned
   // await invalidateComplaintCache(complaint._id.toString());
 
@@ -873,7 +874,7 @@ router.post('/:id/updates', authenticate, asyncHandler(async (req, res) => {
 
   complaint.updatedAt = new Date();
   await complaint.save();
-  
+
   // Invalidate cache since complaint was updated
   await invalidateComplaintCache(complaint._id.toString());
 
@@ -1001,9 +1002,9 @@ router.patch('/bulk/assign', authenticate, authorize('admin'), asyncHandler(asyn
     });
   }));
 
-  res.json({ 
+  res.json({
     message: `${result.modifiedCount} complaints updated successfully`,
-    modifiedCount: result.modifiedCount 
+    modifiedCount: result.modifiedCount
   });
 }));
 
@@ -1021,8 +1022,8 @@ router.patch('/bulk/status', authenticate, authorize('admin', 'agent'), asyncHan
 
   const result = await Complaint.updateMany(
     { _id: { $in: complaintIds } },
-    { 
-      status, 
+    {
+      status,
       updatedAt: new Date(),
       ...(status === 'Resolved' && { resolvedAt: new Date() })
     }
@@ -1044,9 +1045,9 @@ router.patch('/bulk/status', authenticate, authorize('admin', 'agent'), asyncHan
     });
   }));
 
-  res.json({ 
+  res.json({
     message: `${result.modifiedCount} complaints updated successfully`,
-    modifiedCount: result.modifiedCount 
+    modifiedCount: result.modifiedCount
   });
 }));
 
@@ -1062,27 +1063,27 @@ router.post('/auto-assign', authenticate, authorize('admin'), asyncHandler(async
   // Import AI assignment service
   const { aiAssignToAgent } = await import('../services/ticketAssignmentService.js');
   const { getIoInstance } = await import('../socket/socketHandlers.js');
-  
+
   try {
     const io = getIoInstance();
-    
+
     // Use AI-powered assignment
     console.log(`🤖 Admin triggered AI assignment for complaint ${complaint.complaintId}`);
     const { assignedAgent, message: assignMessage } = await aiAssignToAgent(complaint._id, io);
-    
+
     if (!assignedAgent) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: assignMessage || 'No available agents found',
         success: false
       });
     }
-    
+
     // Get updated complaint
     const updatedComplaint = await Complaint.findById(complaint._id)
       .populate('assignedTo', 'name email')
       .populate('user', 'name email');
-    
-    res.json({ 
+
+    res.json({
       success: true,
       message: 'Complaint AI-assigned successfully',
       assignedTo: {
@@ -1095,9 +1096,9 @@ router.post('/auto-assign', authenticate, authorize('admin'), asyncHandler(async
     });
   } catch (error) {
     console.error('Error in AI auto-assignment:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to auto-assign complaint',
-      message: error.message 
+      message: error.message
     });
   }
 }));
@@ -1133,7 +1134,7 @@ router.post('/:id/internal-notes', authenticate, authorize('agent', 'admin'), as
   complaint.updatedAt = new Date();
   await complaint.save();
 
-  res.json({ 
+  res.json({
     message: 'Internal note added successfully',
     note: internalNote
   });
@@ -1185,7 +1186,7 @@ router.patch('/:id/escalate', authenticate, authorize('agent', 'admin'), asyncHa
 
   await complaint.save();
 
-  res.json({ 
+  res.json({
     message: 'Complaint escalated successfully',
     escalation: complaint.escalation
   });
@@ -1216,8 +1217,8 @@ router.get('/stats/dashboard', authenticate, asyncHandler(async (req, res) => {
     Complaint.countDocuments({ ...matchFilter, status: 'In Progress' }),
     Complaint.countDocuments({ ...matchFilter, status: 'Resolved' }),
     Complaint.countDocuments({ ...matchFilter, isEscalated: true }),
-    Complaint.countDocuments({ 
-      ...matchFilter, 
+    Complaint.countDocuments({
+      ...matchFilter,
       status: { $nin: ['Resolved', 'Closed'] },
       slaTarget: { $lt: new Date() }
     })
@@ -1246,8 +1247,8 @@ router.post('/:id/generate-reply', authenticate, authorize('agent', 'admin'), as
   }
 
   // Check if agent can generate reply for this complaint
-  if (req.user.role === 'agent' && 
-      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+  if (req.user.role === 'agent' &&
+    complaint.assignedTo?.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'You can only generate replies for complaints assigned to you' });
   }
 
@@ -1255,7 +1256,7 @@ router.post('/:id/generate-reply', authenticate, authorize('agent', 'admin'), as
     // TODO: Implement KB context retrieval based on complaint category
     // For now, use some basic context based on category
     const kbContext = getKBContextForCategory(complaint.category);
-    
+
     // Determine tone based on sentiment
     const tone = complaint.aiAnalysis?.sentiment === 'Negative' ? 'empathetic' : 'polite';
 
@@ -1293,15 +1294,15 @@ router.post('/:id/generate-reply', authenticate, authorize('agent', 'admin'), as
     res.json({
       success: true,
       draftReply: complaint.aiDraftReply,
-      message: aiReply.needs_human_review 
+      message: aiReply.needs_human_review
         ? 'Draft generated - human review required before sending'
         : 'Draft generated - please review before sending'
     });
   } catch (error) {
     console.error('Error generating AI reply:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate draft reply',
-      details: error.message 
+      details: error.message
     });
   }
 }));
@@ -1334,9 +1335,9 @@ router.post('/:id/generate-summary', authenticate, authorize('agent', 'admin'), 
     });
   } catch (error) {
     console.error('Error generating AI summary:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate summary',
-      details: error.message 
+      details: error.message
     });
   }
 }));
@@ -1399,8 +1400,8 @@ router.post('/:id/accept-reply', authenticate, authorize('agent', 'admin'), asyn
   }
 
   // Check authorization
-  if (req.user.role === 'agent' && 
-      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+  if (req.user.role === 'agent' &&
+    complaint.assignedTo?.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'You can only accept replies for complaints assigned to you' });
   }
 
@@ -1435,9 +1436,9 @@ router.post('/:id/accept-reply', authenticate, authorize('agent', 'admin'), asyn
     });
   } catch (error) {
     console.error('Error accepting draft reply:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to save draft reply',
-      details: error.message 
+      details: error.message
     });
   }
 }));
@@ -1458,8 +1459,8 @@ router.post('/:id/send-reply', authenticate, authorize('agent', 'admin'), asyncH
   }
 
   // Check authorization
-  if (req.user.role === 'agent' && 
-      complaint.assignedTo?.toString() !== req.user._id.toString()) {
+  if (req.user.role === 'agent' &&
+    complaint.assignedTo?.toString() !== req.user._id.toString()) {
     return res.status(403).json({ error: 'You can only send replies for complaints assigned to you' });
   }
 
@@ -1535,9 +1536,9 @@ router.post('/:id/send-reply', authenticate, authorize('agent', 'admin'), asyncH
     });
   } catch (error) {
     console.error('Error sending reply:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to send reply',
-      details: error.message 
+      details: error.message
     });
   }
 }));

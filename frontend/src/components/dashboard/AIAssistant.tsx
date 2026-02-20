@@ -10,6 +10,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  searchUsed?: boolean;
 }
 
 interface AIAssistantProps {
@@ -23,7 +24,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
     {
       id: '1',
       role: 'assistant',
-      content: `I'm Freddy, your AI assistant powered by DeepSeek R1. I can help you with:\n\n• Technical support questions\n• Account inquiries\n• Product information\n• General assistance\n\nWhat can I help you with today?`,
+      content: `I'm your QuickFix AI Assistant. I can help you with:\n\n• Tracking your complaints\n• Answering technical questions\n• General assistance\n\nHow can I help you today?`,
       timestamp: new Date()
     }
   ]);
@@ -70,7 +71,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      // Send message to DeepSeek R1 via backend
+      // Send message to Google Gemini 3 Flash Preview via backend
       const result = await api.post('/auth/chat-ai', {
         userId: user?.id,
         message: inputMessage,
@@ -87,7 +88,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: aiResponse.response || aiResponse.reply || 'I apologize, but I encountered an issue processing your request.',
-          timestamp: new Date()
+          timestamp: new Date(),
+          searchUsed: aiResponse.searchUsed
         };
 
         setMessages(prev => [...prev, assistantMessage]);
@@ -176,7 +178,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                   }`}>
                   {message.role === 'assistant' && (
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="text-[11px] font-semibold text-gray-600">Freddy</span>
+                      <span className="text-[11px] font-semibold text-gray-600">AI Assistant</span>
+                      {message.searchUsed && (
+                        <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 font-medium ml-1">
+                          Source: Google
+                        </span>
+                      )}
                     </div>
                   )}
                   <p className="text-[13px] leading-relaxed whitespace-pre-line">{message.content}</p>

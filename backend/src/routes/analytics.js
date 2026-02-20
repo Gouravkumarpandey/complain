@@ -2,7 +2,9 @@ import express from "express";
 import { Complaint } from "../models/Complaint.js";
 import { User } from "../models/User.js";
 import { authenticate, authorize } from "../middleware/auth.js";
-import DeepSeekService from "../services/deepseekService.js";
+import anthropicService from "../services/anthropicService.js";
+
+
 // Redis caching disabled - uncomment when Redis is enabled
 // import {
 //   cacheAnalyticsOverview,
@@ -182,31 +184,31 @@ router.get("/dashboard", authenticate, authorize('admin', 'agent', 'analytics'),
 
     // Total complaints
     const totalComplaints = await Complaint.countDocuments(matchFilter);
-    
+
     // Resolved complaints
     const resolvedComplaints = await Complaint.countDocuments({
       ...matchFilter,
       status: 'Resolved'
     });
-    
+
     // Open complaints
     const openComplaints = await Complaint.countDocuments({
       ...matchFilter,
       status: { $in: ['New', 'Open', 'In Progress'] }
     });
-    
+
     // High priority complaints
     const highPriorityComplaints = await Complaint.countDocuments({
       ...matchFilter,
       priority: 'High'
     });
-    
+
     // In progress complaints
     const inProgressComplaints = await Complaint.countDocuments({
       ...matchFilter,
       status: 'In Progress'
     });
-    
+
     // New today
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -214,26 +216,26 @@ router.get("/dashboard", authenticate, authorize('admin', 'agent', 'analytics'),
       ...matchFilter,
       createdAt: { $gte: todayStart }
     });
-    
+
     // Reopened complaints
     const reopenedComplaints = await Complaint.countDocuments({
       ...matchFilter,
       reopened: true
     });
-    
+
     // Calculate trend
     const previousPeriodStart = new Date(startDate);
     previousPeriodStart.setDate(previousPeriodStart.getDate() - days);
     const previousPeriodComplaints = await Complaint.countDocuments({
       createdAt: { $gte: previousPeriodStart, $lt: startDate }
     });
-    
+
     let trend = '0%';
     if (previousPeriodComplaints > 0) {
       const trendPercentage = ((totalComplaints - previousPeriodComplaints) / previousPeriodComplaints) * 100;
       trend = `${trendPercentage > 0 ? '+' : ''}${trendPercentage.toFixed(1)}%`;
     }
-    
+
     // Average resolution time
     const resolvedComplaints2 = await Complaint.find({
       ...matchFilter,
@@ -241,18 +243,18 @@ router.get("/dashboard", authenticate, authorize('admin', 'agent', 'analytics'),
       resolvedAt: { $exists: true },
       createdAt: { $exists: true }
     });
-    
+
     let avgResolutionTime = '0 days';
     if (resolvedComplaints2.length > 0) {
       const totalResolutionTimeMs = resolvedComplaints2.reduce((total, complaint) => {
         const resolutionTimeMs = new Date(complaint.resolvedAt) - new Date(complaint.createdAt);
         return total + resolutionTimeMs;
       }, 0);
-      
+
       const avgResolutionTimeDays = totalResolutionTimeMs / (resolvedComplaints2.length * 24 * 60 * 60 * 1000);
       avgResolutionTime = `${avgResolutionTimeDays.toFixed(1)} days`;
     }
-    
+
     // Return the data
     res.json({
       totalComplaints,
@@ -265,10 +267,10 @@ router.get("/dashboard", authenticate, authorize('admin', 'agent', 'analytics'),
       trend,
       avgResolutionTime
     });
-    
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Error fetching dashboard analytics',
       error: err.message
     });
@@ -305,19 +307,19 @@ router.get("/dashboard-complete", authenticate, authorize('admin', 'agent', 'ana
             total: { $sum: 1 },
             resolved: { $sum: { $cond: [{ $in: ['$status', ['Resolved', 'Closed']] }, 1, 0] } },
             escalated: { $sum: { $cond: ['$isEscalated', 1, 0] } },
-            overdue: { 
-              $sum: { 
+            overdue: {
+              $sum: {
                 $cond: [
-                  { 
+                  {
                     $and: [
                       { $nin: ['$status', ['Resolved', 'Closed']] },
                       { $lt: ['$slaTarget', new Date()] }
                     ]
-                  }, 
-                  1, 
+                  },
+                  1,
                   0
-                ] 
-              } 
+                ]
+              }
             }
           }
         }
@@ -436,7 +438,7 @@ router.get("/dashboard-complete", authenticate, authorize('admin', 'agent', 'ana
         { $match: matchFilter },
         {
           $group: {
-            _id: { 
+            _id: {
               week: { $isoWeek: '$createdAt' },
               year: { $isoWeekYear: '$createdAt' }
             },
@@ -490,13 +492,13 @@ router.post('/export-report', authenticate, authorize('admin', 'analytics'), asy
 
     switch (reportType) {
       case 'complaints':
-        data = await Complaint.find({ 
+        data = await Complaint.find({
           createdAt: { $gte: startDate },
-          ...filters 
+          ...filters
         }).populate('userId', 'firstName lastName email').lean();
         filename = `complaints-report-${Date.now()}`;
         break;
-      
+
       case 'agents':
         data = await User.aggregate([
           { $match: { role: 'agent', isActive: true } },
@@ -526,7 +528,7 @@ router.post('/export-report', authenticate, authorize('admin', 'analytics'), asy
         ]);
         filename = `agent-performance-${Date.now()}`;
         break;
-      
+
       case 'analytics':
         // Comprehensive analytics export
         const [complaints, users, categories] = await Promise.all([
@@ -542,7 +544,7 @@ router.post('/export-report', authenticate, authorize('admin', 'analytics'), asy
             { $group: { _id: '$category', count: { $sum: 1 } } }
           ])
         ]);
-        
+
         data = {
           generatedAt: new Date(),
           timeRange: days,
@@ -554,7 +556,7 @@ router.post('/export-report', authenticate, authorize('admin', 'analytics'), asy
         };
         filename = `analytics-summary-${Date.now()}`;
         break;
-      
+
       default:
         return res.status(400).json({ error: 'Invalid report type' });
     }
@@ -591,11 +593,11 @@ router.get("/team-performance", authenticate, authorize('admin', 'manager', 'ana
   startDate.setDate(startDate.getDate() - days);
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  
+
   try {
     // Get all agents
     const agents = await User.find({ role: 'agent' }).select('_id firstName lastName');
-    
+
     // Prepare the result array
     const performanceData = await Promise.all(agents.map(async (agent) => {
       // Total resolved complaints
@@ -604,14 +606,14 @@ router.get("/team-performance", authenticate, authorize('admin', 'manager', 'ana
         status: 'Resolved',
         resolvedAt: { $exists: true, $gte: startDate }
       });
-      
+
       // Resolved today
       const resolvedToday = await Complaint.countDocuments({
         assignedTo: agent._id,
         status: 'Resolved',
         resolvedAt: { $exists: true, $gte: todayStart }
       });
-      
+
       // Average resolution time
       const resolvedComplaints = await Complaint.find({
         assignedTo: agent._id,
@@ -619,34 +621,34 @@ router.get("/team-performance", authenticate, authorize('admin', 'manager', 'ana
         resolvedAt: { $exists: true },
         createdAt: { $exists: true, $gte: startDate }
       });
-      
+
       let avgResolutionTime = '0 days';
       if (resolvedComplaints.length > 0) {
         const totalResolutionTimeMs = resolvedComplaints.reduce((total, complaint) => {
           const resolutionTimeMs = new Date(complaint.resolvedAt) - new Date(complaint.createdAt);
           return total + resolutionTimeMs;
         }, 0);
-        
+
         const avgResolutionTimeDays = totalResolutionTimeMs / (resolvedComplaints.length * 24 * 60 * 60 * 1000);
         avgResolutionTime = `${avgResolutionTimeDays.toFixed(1)} days`;
       }
-      
+
       // Satisfaction score
       const complaintsWithFeedback = await Complaint.find({
         assignedTo: agent._id,
         'feedback.rating': { $exists: true },
         updatedAt: { $gte: startDate }
       });
-      
+
       let satisfactionScore = 0;
       if (complaintsWithFeedback.length > 0) {
         const totalScore = complaintsWithFeedback.reduce((total, complaint) => {
           return total + (complaint.feedback?.rating || 0);
         }, 0);
-        
+
         satisfactionScore = Math.round((totalScore / complaintsWithFeedback.length) * 20); // Convert 1-5 to percentage
       }
-      
+
       return {
         agentId: agent._id,
         agentName: `${agent.firstName} ${agent.lastName}`,
@@ -656,7 +658,7 @@ router.get("/team-performance", authenticate, authorize('admin', 'manager', 'ana
         satisfactionScore
       };
     }));
-    
+
     res.json(performanceData);
   } catch (err) {
     console.error(err);
@@ -666,7 +668,7 @@ router.get("/team-performance", authenticate, authorize('admin', 'manager', 'ana
 
 /**
  * @route   GET /api/analytics/category-insights
- * @desc    Get AI-powered category insights using DeepSeek
+ * @desc    Get AI-powered category insights using Anthropic Claude
  * @access  Private (Admin/Agent)
  */
 router.get("/category-insights", authenticate, asyncHandler(async (req, res) => {
@@ -677,15 +679,15 @@ router.get("/category-insights", authenticate, asyncHandler(async (req, res) => 
     // Get category distribution
     const categoryStats = await Complaint.aggregate([
       { $match: match },
-      { 
-        $group: { 
-          _id: "$category", 
+      {
+        $group: {
+          _id: "$category",
           count: { $sum: 1 },
           avgResolutionTime: { $avg: "$resolutionTime" },
           resolvedCount: {
             $sum: { $cond: [{ $eq: ["$status", "Resolved"] }, 1, 0] }
           }
-        } 
+        }
       },
       { $sort: { count: -1 } }
     ]);
@@ -695,9 +697,6 @@ router.get("/category-insights", authenticate, asyncHandler(async (req, res) => 
       .select('category title description status priority')
       .sort({ createdAt: -1 })
       .limit(50);
-
-    // Initialize DeepSeek service
-    const deepseekService = new DeepSeekService();
 
     // Create analysis prompt
     const analysisPrompt = `Analyze the following complaint data and provide insights:
@@ -715,7 +714,7 @@ Provide a brief analysis of:
 Keep response under 150 words.`;
 
     // Get AI insights
-    const aiResponse = await deepseekService.chat(analysisPrompt, [], {
+    const aiResponse = await anthropicService.chat(analysisPrompt, [], {
       role: 'analytics_assistant',
       task: 'category_analysis'
     });

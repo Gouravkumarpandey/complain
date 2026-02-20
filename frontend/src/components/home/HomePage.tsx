@@ -861,7 +861,7 @@ export function HomePage() {
                 Let our product experts show you how QuickFix can solve your toughest challenges.
               </p>
               <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Book a demo
+                Start Now
               </button>
             </div>
 

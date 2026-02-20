@@ -6,8 +6,9 @@ import {
   Search, Calendar, X, Shield, Home,
   Inbox, HelpCircle, Menu, Download,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
-  Activity, UserCheck, UserX, RefreshCw
+  Activity, UserCheck, UserX, RefreshCw, Loader2
 } from 'lucide-react';
+import { apiService } from '../../services/apiService';
 import { agentService } from '../../services/agentService';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import AIAssistant from './AIAssistant';
@@ -38,6 +39,8 @@ export function AgentDashboard() {
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   // Refreshing state for manual refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Track which complaint is being resolved (to show loading spinner)
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedComplaintForMessage, setSelectedComplaintForMessage] = useState<Complaint | null>(null);
@@ -261,27 +264,63 @@ export function AgentDashboard() {
 
   const handleStatusUpdate = async (complaintId: string, newStatus: 'Open' | 'In Progress' | 'Under Review' | 'Resolved' | 'Closed') => {
     try {
-      // Use socket to update complaint status in real-time
-      if (socket && isConnected) {
-        // First join the complaint room if not already joined
-        joinComplaintRoom(complaintId);
+      setResolvingId(complaintId);
 
-        // Then send the update via socket
-        updateComplaint(complaintId, { status: newStatus }, `Status updated to ${newStatus} by ${user?.name}`);
-      } else {
-        console.warn('Cannot update status: Socket not connected');
-        // Fallback to API call if socket is not connected
-        // await api.updateComplaint(complaintId, { status: newStatus });
+      // Always call the REST API — this triggers all backend logic:
+      // ✅ Updates status in MongoDB
+      // ✅ Marks agent as available (if no remaining active tickets)
+      // ✅ Sends resolution email/SMS to user
+      // ✅ Publishes SNS event to auto-assign next pending ticket
+      // ✅ Broadcasts socket events for real-time UI updates
+      const result = await apiService.updateComplaintStatus(
+        complaintId,
+        newStatus,
+        `Status updated to ${newStatus} by ${user?.name}`
+      );
+
+      if (result.error) {
+        console.error('Failed to update status:', result.error);
+        alert(`Failed to update status: ${result.error}`);
+        return;
       }
 
+      console.log(`✅ Complaint ${complaintId} marked as ${newStatus}`);
+
+      // Also emit via socket for real-time updates to other clients
+      if (socket && isConnected) {
+        joinComplaintRoom(complaintId);
+        updateComplaint(complaintId, { status: newStatus }, `Status updated to ${newStatus} by ${user?.name}`);
+      }
+
+      // Update local state immediately for responsive UI
       setFilteredComplaints(prev =>
         prev.map(c => c.id === complaintId ? { ...c, status: newStatus } : c)
       );
       if (selectedComplaint?.id === complaintId) {
-        setSelectedComplaint({ ...selectedComplaint, status: newStatus });
+        setSelectedComplaint(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+
+      // If resolved, refresh this agent's availability status from the backend
+      if ((newStatus === 'Resolved' || newStatus === 'Closed') && user?.id) {
+        try {
+          const availResult = await agentService.refreshAvailability(user.id);
+          const availability = availResult?.data?.availability;
+          if (typeof availability === 'string') {
+            setAgentProfile(prev => ({ ...prev, availability }));
+            console.log(`🟢 Agent availability updated to: ${availability}`);
+          }
+        } catch (err) {
+          console.error('Could not refresh agent availability:', err);
+        }
+
+        // Refresh complaints list to remove resolved ticket from active view
+        await refreshComplaints();
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      alert('Failed to update ticket status. Please try again.');
+    } finally {
+      setResolvingId(null);
     }
   };
 
@@ -1346,10 +1385,14 @@ export function AgentDashboard() {
 
                           <button
                             onClick={() => handleStatusUpdate(selectedComplaint.id, 'Resolved')}
-                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-1"
+                            disabled={resolvingId === selectedComplaint.id}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
-                            <CheckCircle className="w-4 h-4" />
-                            Mark Resolved
+                            {resolvingId === selectedComplaint.id ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" /> Resolving...</>
+                            ) : (
+                              <><CheckCircle className="w-4 h-4" /> Mark Resolved</>
+                            )}
                           </button>
                         </div>
                       )}

@@ -3,8 +3,10 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 // import fetch from "node-fetch"; // Node 18+ has fetch built-in
 import crypto from "crypto";
-import { sendOtpEmail, generateOTP, sendPasswordResetEmail } from "../services/emailService.js";
-import deepseekService from "../services/deepseekService.js";
+import { sendOtpEmail, generateOTP, sendPasswordResetEmail, sendWelcomeEmail } from "../services/emailService.js";
+
+import anthropicService from "../services/anthropicService.js";
+import { Complaint } from "../models/Complaint.js";
 import { validateAndFormatPhoneNumber } from "../utils/phoneValidation.js";
 import { triggerSignupSMS } from "../services/smsTriggers.js";
 
@@ -207,6 +209,13 @@ export const registerUser = async (req, res) => {
     } catch (emailError) {
       console.error("Failed to send OTP email:", emailError);
       // We continue even if email fails, but log the error
+    }
+
+    // Send Welcome Email
+    try {
+      await sendWelcomeEmail(user.email, user.name, user.role);
+    } catch (welcomeError) {
+      console.error("Failed to send welcome email:", welcomeError);
     }
 
     // Send SMS notification if phone number is provided
@@ -1285,7 +1294,7 @@ export const processChatForComplaint = async (req, res) => {
   }
 };
 
-// Send message to AI Assistant (DeepSeek R1)
+// Send message to AI Assistant (Anthropic Claude)
 export const chatWithAI = async (req, res) => {
   try {
     const { userId, message, conversationHistory = [] } = req.body;
@@ -1301,36 +1310,51 @@ export const chatWithAI = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log('AI Chat Request:', {
+    // Fetch complaints based on role (User's submissions or Agent's assignments)
+    let complaintQuery = { status: { $ne: 'Closed' } };
+    if (user.role === 'agent') {
+      complaintQuery.assignedTo = userId;
+    } else {
+      complaintQuery.user = userId;
+    }
+
+    const complaints = await Complaint.find(complaintQuery)
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('complaintId title description status category priority createdAt');
+
+    console.log('AI Chat Request (Anthropic Claude):', {
       user: user.name,
       message: message.substring(0, 50),
-      historyLength: conversationHistory.length
+      historyLength: conversationHistory.length,
+      complaintsCount: complaints.length
     });
 
-    // Use DeepSeek R1 for natural conversation
-    const systemContext = {
+    // Use Anthropic Claude for conversation
+    const context = {
       userName: user.name,
       userRole: user.role,
-      userEmail: user.email
+      userEmail: user.email,
+      complaints: complaints
     };
 
-    const result = await deepseekService.chat(message, conversationHistory, systemContext);
+    const result = await anthropicService.chat(message, conversationHistory, context);
 
     if (result.success) {
       return res.json({
         success: true,
         response: result.response,
         model: result.model,
-        complaintDetected: result.complaintDetected
-      });
-    } else {
-      // Fallback response if DeepSeek fails
-      return res.json({
-        success: true,
-        response: "Thank you for contacting QuickFix support. I'm here to help you. Could you please describe your issue in detail?",
-        model: 'fallback'
+        searchUsed: false
       });
     }
+
+    // Fallback if Anthropic also fails
+    return res.json({
+      success: true,
+      response: "I'm having trouble accessing my systems right now. Please try again later.",
+      model: 'fallback'
+    });
   } catch (error) {
     console.error('AI Chat Error:', error);
     return res.status(500).json({
@@ -1341,7 +1365,7 @@ export const chatWithAI = async (req, res) => {
   }
 };
 
-// Generate complaint from conversation (DeepSeek R1 powered)
+// Generate complaint from conversation (Anthropic powered)
 export const generateComplaintFromAI = async (req, res) => {
   try {
     const { userId, conversationHistory, currentMessage } = req.body;
@@ -1357,21 +1381,18 @@ export const generateComplaintFromAI = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Use DeepSeek R1
-    const deepseekService = (await import('../services/deepseekService.js')).default;
+    // Use Anthropic
+    const anthropicService = (await import('../services/anthropicService.js')).default;
 
     const fullConversation = currentMessage
       ? `${conversationHistory}\n\nLatest message: ${currentMessage}`
       : conversationHistory;
 
-    const userInfo = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    };
-
-    const result = await deepseekService.generateComplaint(fullConversation, userInfo);
+    // Use analyzeComplaint or custom prompt
+    const result = await anthropicService.analyzeComplaint(
+      "Conversation Complaint",
+      fullConversation + "\n\nExtract complaint details from this conversation."
+    );
 
     if (!result.success) {
       return res.status(500).json({
@@ -1381,11 +1402,21 @@ export const generateComplaintFromAI = async (req, res) => {
     }
 
     const complaintData = {
-      ...result.complaint,
-      tags: ['ai-generated', 'deepseek', 'chatbot'],
+      title: result.summary || 'AI Generated Complaint',
+      description: fullConversation, // Or better summary
+      category: result.category,
+      priority: result.priority,
+      tags: ['ai-generated', 'claude', 'chatbot'],
       source: 'chat-conversation',
       aiModel: result.model,
-      confidence: result.fallback ? 0.7 : 0.9
+      confidence: 0.9
+    };
+
+    const userInfo = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
     };
 
     res.json({
@@ -1394,7 +1425,7 @@ export const generateComplaintFromAI = async (req, res) => {
       complaintData: complaintData,
       user: userInfo,
       model: result.model,
-      fallback: result.fallback || false
+      fallback: false
     });
 
   } catch (error) {

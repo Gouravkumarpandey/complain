@@ -70,7 +70,7 @@ export const getCspDirectives = (isDevelopment = false) => {
       "https://www.googleapis.com",
       "https://graph.facebook.com",
       "https://connect.facebook.net",
-      "https://openrouter.ai", // DeepSeek API
+      "https://openrouter.ai", // AI Service (OpenRouter)
       "https://api.stripe.com", // Stripe payments
     ],
 

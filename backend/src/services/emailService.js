@@ -64,11 +64,11 @@ export const sendOtpEmail = async (to, name, otp) => {
 export const generateOTP = (length = 6) => {
   const digits = '0123456789';
   let OTP = '';
-  
+
   for (let i = 0; i < length; i++) {
     OTP += digits[Math.floor(Math.random() * 10)];
   }
-  
+
   return OTP;
 };
 
@@ -82,7 +82,7 @@ export const generateOTP = (length = 6) => {
 export const sendPasswordResetEmail = async (to, name, resetToken) => {
   try {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    
+
     const mailOptions = {
       from: `"QuickFix Support" <${process.env.EMAIL_USER}>`,
       to,
@@ -127,9 +127,9 @@ export const sendComplaintConfirmationEmail = async (to, name, complaintId, titl
     console.log(`📧 Attempting to send complaint confirmation email...`);
     console.log(`   To: ${to}`);
     console.log(`   Ticket ID: ${complaintId}`);
-    
+
     const dashboardUrl = `${process.env.FRONTEND_URL}/dashboard`;
-    
+
     const mailOptions = {
       from: `"QuickFix Support" <${process.env.EMAIL_USER}>`,
       to,
@@ -286,9 +286,9 @@ export const sendComplaintResolvedEmail = async (to, name, complaintId, title) =
     console.log(`📧 Attempting to send complaint resolution email...`);
     console.log(`   To: ${to}`);
     console.log(`   Ticket ID: ${complaintId}`);
-    
+
     const dashboardUrl = `${process.env.FRONTEND_URL}/dashboard`;
-    
+
     const mailOptions = {
       from: `"QuickFix Support" <${process.env.EMAIL_USER}>`,
       to,
@@ -421,15 +421,167 @@ export const sendComplaintResolvedEmail = async (to, name, complaintId, title) =
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ Complaint resolution email sent successfully!');
     console.log(`   Message ID: ${info.messageId}`);
-    console.log(`   Response: ${info.response}`);
     return info;
   } catch (error) {
     console.error('❌ Error sending complaint resolution email:', error);
-    console.error('   Error details:', {
-      message: error.message,
-      code: error.code,
-      command: error.command
-    });
     throw error;
+  }
+};
+
+/**
+ * Send welcome email to new users/agents/analysts
+ * @param {string} to - Recipient email address
+ * @param {string} name - Recipient name
+ * @param {string} role - User role (user, agent, analytics)
+ */
+export const sendWelcomeEmail = async (to, name, role) => {
+  try {
+    console.log(`📧 Attempting to send welcome email (${role})...`);
+
+    let subject = 'Welcome to QuickFix!';
+    let welcomeMessage = 'We are excited to have you on board.';
+    let actionButtonText = 'Go to Dashboard';
+    let actionButtonUrl = `${process.env.FRONTEND_URL}/dashboard`;
+    let featuresList = '';
+
+    // Customize content based on role
+    if (role === 'agent') {
+      subject = 'Welcome to QuickFix Agent Team! 🚀';
+      welcomeMessage = `
+        Welcome to the QuickFix support team! We're thrilled to have you join our mission of providing exceptional customer service.
+        <br><br>
+        As a Support Agent, you play a crucial role in resolving user issues and maintaining our high standards of satisfaction.
+      `;
+      featuresList = `
+        <ul style="color: #475569; font-size: 14px; line-height: 1.6; padding-left: 20px;">
+          <li>Process and resolve assigned tickets efficiently</li>
+          <li>Use AI-powered tools for faster diagnosis</li>
+          <li>Communicate directly with users</li>
+          <li>Track your performance metrics</li>
+        </ul>
+      `;
+      actionButtonText = 'Access Agent Portal';
+      actionButtonUrl = `${process.env.FRONTEND_URL}/dashboard/agent`;
+    } else if (role === 'analytics') {
+      subject = 'Welcome to QuickFix Analytics Team! 📊';
+      welcomeMessage = `
+        Welcome to the QuickFix data team! You now have access to our advanced analytics platform.
+        <br><br>
+        Your insights will help drive decision-making and improve our overall service quality.
+      `;
+      featuresList = `
+        <ul style="color: #475569; font-size: 14px; line-height: 1.6; padding-left: 20px;">
+          <li>Monitor real-time system performance</li>
+          <li>Analyze complaint trends and patterns</li>
+          <li>Generate detailed reports</li>
+          <li>Identify areas for improvement</li>
+        </ul>
+      `;
+      actionButtonText = 'View Analytics';
+      actionButtonUrl = `${process.env.FRONTEND_URL}/dashboard/analytics`;
+    } else {
+      // Default User
+      subject = 'Welcome to QuickFix! 👋';
+      welcomeMessage = `
+        Thank you for joining QuickFix! We're here to ensure your issues are resolved quickly and efficiently.
+        <br><br>
+        Our AI-powered platform makes it easy to track, manage, and resolve any complaints you may have.
+      `;
+      featuresList = `
+        <ul style="color: #475569; font-size: 14px; line-height: 1.6; padding-left: 20px;">
+          <li>Submit complaints easily</li>
+          <li>Track real-time status updates</li>
+          <li>Get instant AI support</li>
+          <li>Rate your service experience</li>
+        </ul>
+      `;
+    }
+
+    const mailOptions = {
+      from: `"QuickFix Team" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8fafc;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                  
+                  <!-- Gradient Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">QuickFix</h1>
+                      <p style="margin: 8px 0 0 0; color: #ffedd5; font-size: 16px; font-weight: 500;">AI-Powered Complaint System</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 22px; font-weight: 600;">Hello ${name},</h2>
+                      
+                      <p style="margin: 0 0 24px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+                        ${welcomeMessage}
+                      </p>
+                      
+                      <!-- Features Box -->
+                      <div style="background-color: #f1f5f9; border-radius: 8px; padding: 24px; margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 16px 0; color: #334155; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">What you can do:</h3>
+                        ${featuresList}
+                      </div>
+                      
+                      <!-- CTA Button -->
+                      <table role="presentation" style="width: 100%;">
+                        <tr>
+                          <td style="text-align: center;">
+                            <a href="${actionButtonUrl}" style="display: inline-block; padding: 14px 32px; background-color: #f97316; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px; transition: background-color 0.2s;">
+                              ${actionButtonText}
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <p style="margin: 30px 0 0 0; text-align: center; color: #94a3b8; font-size: 14px;">
+                        Need help getting started? <a href="#" style="color: #f97316; text-decoration: none;">Check our documentation</a>
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
+                      <p style="margin: 0; color: #64748b; font-size: 14px;">
+                        &copy; ${new Date().getFullYear()} QuickFix. All rights reserved.
+                      </p>
+                      <div style="margin-top: 12px;">
+                        <a href="#" style="color: #94a3b8; text-decoration: none; margin: 0 8px; font-size: 12px;">Privacy Policy</a>
+                        <span style="color: #cbd5e1;">|</span>
+                        <a href="#" style="color: #94a3b8; text-decoration: none; margin: 0 8px; font-size: 12px;">Terms of Service</a>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Welcome email sent to ${to}`);
+    return info;
+  } catch (error) {
+    console.error('❌ Error sending welcome email:', error);
+    // Don't throw, just log. Welcome emails are non-critical.
   }
 };

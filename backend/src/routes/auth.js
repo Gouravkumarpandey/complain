@@ -72,7 +72,7 @@ router.post("/facebook-signup", facebookSignupWithRole);
 router.post("/generate-complaint-from-chat", generateComplaintFromChat);
 router.post("/process-chat", processChatForComplaint);
 
-// DeepSeek R1 AI Assistant integration
+// Google Gemini AI Assistant integration
 router.post("/chat-ai", chatWithAI);
 router.post("/chat-watson", chatWithAI); // Backward compatibility alias
 router.post("/generate-complaint-ai", generateComplaintFromAI);

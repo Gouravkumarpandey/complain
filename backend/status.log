@@ -1,0 +1,20 @@
+--- AI Configuration Check ---
+Anthropic Key Available: true
+Gemini Key Available: false
+✅ Anthropic Service initialized with OpenRouter key
+GEMINI_API_KEY is not set in environment variables
+Using Google Generative AI SDK (Native)
+
+--- 1. Testing Gemini (Proposed Replacement) ---
+Gemini Chat Error: Error: Gemini API key not configured
+    at GeminiService.chat (file:///C:/Personal%20Project/QuickFix%20-%20AI%20Powered%20Complaint%20System/complain/backend/src/services/geminiService.js:44:23)
+    at runChecks (file:///C:/Personal%20Project/QuickFix%20-%20AI%20Powered%20Complaint%20System/complain/backend/check_ai_status.js:28:45)
+❌ Gemini failed: Gemini API key not configured
+
+--- 2. Testing Anthropic Service (New Default) ---
+✅ ANTHROPIC_API_KEY is configured.
+⏳ Testing Anthropic Chat...
+Anthropic Chat Error: { error: { message: 'User not found.', code: 401 } }
+✅ Anthropic is working.
+   Response: I'm currently offline. Please try again later....
+   Model: undefined

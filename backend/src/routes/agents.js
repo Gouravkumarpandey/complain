@@ -17,7 +17,7 @@ router.get('/available', authenticate, authorize('admin'), asyncHandler(async (r
   const availableAgents = await AgentUser.find({
     availability: 'available'
   }).select('-password');
-  
+
   res.json(availableAgents);
 }));
 
@@ -25,17 +25,17 @@ router.get('/available', authenticate, authorize('admin'), asyncHandler(async (r
 router.patch('/:agentId/availability', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
   const { agentId } = req.params;
   const { status } = req.body;
-  
+
   // Only admins can manually update availability
   // Agents' availability is automatically managed through ticket assignment/resolution
-  
+
   // Validate status
   if (!['available', 'busy', 'offline'].includes(status)) {
     return res.status(400).json({
       error: 'Invalid availability status. Must be "available", "busy", or "offline"'
     });
   }
-  
+
   try {
     const updatedAgent = await updateAgentAvailability(agentId, status);
     res.json(updatedAgent);
@@ -44,13 +44,15 @@ router.patch('/:agentId/availability', authenticate, authorize('admin'), asyncHa
   }
 }));
 
-// Refresh agent availability based on active tickets (ADMIN ONLY)
-router.post('/:agentId/refresh-availability', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+// Refresh agent availability based on active tickets (Admin or Self)
+router.post('/:agentId/refresh-availability', authenticate, authorize('admin', 'agent'), asyncHandler(async (req, res) => {
   const { agentId } = req.params;
-  
-  // Only admins can manually refresh availability
-  // Agents' availability is automatically refreshed when tickets are resolved/assigned
-  
+
+  // Allow admins OR the agent themselves
+  if (req.user.role !== 'admin' && req.user.id !== agentId && req.user._id?.toString() !== agentId) {
+    return res.status(403).json({ error: 'Access denied. You can only refresh your own availability.' });
+  }
+
   try {
     const updatedAgent = await refreshAgentAvailability(agentId);
     res.json(updatedAgent);
