@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Send, X, Loader2 } from 'lucide-react';
+import { Bot, Send, X, Loader2, Volume2, VolumeX, StopCircle } from 'lucide-react';
 import { VoiceInput } from '../complaints/agent/VoiceInput';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,32 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
   const [conversationState, setConversationState] = useState<any>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // TTS state — never auto-speaks, user taps 🔊 per message
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+
+  const speakMessage = (messageId: string, text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    if (speakingMessageId === messageId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    setSpeakingMessageId(messageId);
+    utterance.onend = () => setSpeakingMessageId(null);
+    utterance.onerror = () => setSpeakingMessageId(null);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setSpeakingMessageId(null);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -172,9 +198,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
               </div>
 
               <div className="flex flex-col max-w-[75%]">
-                <div className={`px-4 py-2.5 rounded-2xl ${message.role === 'user'
-                  ? 'bg-slate-800 text-white rounded-br-md'
-                  : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
+                <div className={`px-4 py-2.5 rounded-2xl group ${message.role === 'user'
+                    ? 'bg-slate-800 text-white rounded-br-md'
+                    : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
                   }`}>
                   {message.role === 'assistant' && (
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -187,6 +213,23 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                     </div>
                   )}
                   <p className="text-[13px] leading-relaxed whitespace-pre-line">{message.content}</p>
+                  {/* Read aloud button — only on assistant messages */}
+                  {message.role === 'assistant' && (
+                    <div className="flex items-center mt-1.5 gap-1">
+                      <button
+                        onClick={() => speakMessage(message.id, message.content)}
+                        className={`p-1 rounded-full transition-all ${speakingMessageId === message.id
+                            ? 'text-slate-700 bg-slate-100'
+                            : 'text-gray-300 hover:text-slate-600 hover:bg-gray-100 opacity-0 group-hover:opacity-100'
+                          }`}
+                        title={speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
+                      >
+                        {speakingMessageId === message.id
+                          ? <StopCircle className="w-3.5 h-3.5" />
+                          : <Volume2 className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <span className={`text-[11px] mt-1 px-1 ${message.role === 'user' ? 'text-right text-gray-500' : 'text-left text-gray-500'
                   }`}>
@@ -224,7 +267,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
+                placeholder="Type or speak a message..."
                 disabled={isLoading}
                 className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
               />
@@ -234,6 +277,25 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                 className="absolute right-2"
               />
             </div>
+            {/* Stop reading button — shown when speaking */}
+            {speakingMessageId && (
+              <button
+                onClick={stopSpeaking}
+                className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-all shadow-sm flex items-center justify-center flex-shrink-0 animate-pulse"
+                title="Stop reading"
+              >
+                <StopCircle className="w-4 h-4" />
+              </button>
+            )}
+            {!speakingMessageId && (
+              <button
+                disabled
+                className="w-10 h-10 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center flex-shrink-0 cursor-default"
+                title="Tap 🔊 on any message to hear it"
+              >
+                <VolumeX className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}

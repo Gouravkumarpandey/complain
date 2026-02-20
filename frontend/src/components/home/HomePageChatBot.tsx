@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, Mic, MicOff, Volume2, VolumeX, StopCircle } from 'lucide-react';
 import api from '../../utils/api';
 
 // Remove GoogleGenerativeAI initialization
@@ -65,8 +65,8 @@ export function HomePageChatBot() {
   const recognitionRef = useRef<any>(null);
   const [detectedLanguage, setDetectedLanguage] = useState('en-US');
 
-  // Text-to-speech states
-  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  // TTS state — never auto-speaks, user taps 🔊 per message
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -165,9 +165,16 @@ export function HomePageChatBot() {
     };
   }, [detectedLanguage]);
 
-  // Text-to-speech function
-  const speakText = (text: string, language: string = detectedLanguage) => {
-    if (!isSpeechEnabled || !('speechSynthesis' in window)) return;
+  // Speak a specific message on button click
+  const speakMessage = (messageId: string, text: string, language: string = detectedLanguage) => {
+    if (!('speechSynthesis' in window)) return;
+
+    // If already speaking this message, stop it
+    if (speakingMessageId === messageId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+      return;
+    }
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
@@ -178,8 +185,21 @@ export function HomePageChatBot() {
     utterance.pitch = 1;
     utterance.volume = 1;
 
+    setSpeakingMessageId(messageId);
+    utterance.onend = () => setSpeakingMessageId(null);
+    utterance.onerror = () => setSpeakingMessageId(null);
+
     window.speechSynthesis.speak(utterance);
   };
+
+  // Stop all speech
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setSpeakingMessageId(null);
+  };
+
+  // Legacy speakText kept for compatibility but no longer called automatically
+  const speakText = (_text: string, _language?: string) => { /* auto-speak disabled */ };
 
   // Toggle voice input
   const toggleVoiceInput = () => {
@@ -259,9 +279,8 @@ export function HomePageChatBot() {
 
     setMessages(prev => [...prev, botMessage]);
     setIsTyping(false);
-
-    // Speak the bot response in the detected language
-    speakText(botResponse, userLang);
+    // Auto-speak is disabled — user can tap 🔊 on any message to hear it
+    void speakText; // suppress unused warning
   };
 
   const handleQuickReply = (reply: QuickReply) => {
@@ -315,7 +334,7 @@ export function HomePageChatBot() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group`}
               >
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.sender === 'user'
@@ -324,10 +343,26 @@ export function HomePageChatBot() {
                     }`}
                 >
                   <p className="text-sm whitespace-pre-line leading-relaxed">{message.text}</p>
-                  <p className={`text-xs mt-1 ${message.sender === 'user' ? 'text-orange-100' : 'text-gray-400'
-                    }`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  <div className={`flex items-center mt-1 gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <span className={`text-xs ${message.sender === 'user' ? 'text-orange-100' : 'text-gray-400'}`}>
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {/* Read aloud button — only on bot messages */}
+                    {message.sender === 'bot' && (
+                      <button
+                        onClick={() => speakMessage(message.id, message.text, detectedLanguage)}
+                        className={`p-1 rounded-full transition-all ${speakingMessageId === message.id
+                          ? 'text-orange-500 bg-orange-50'
+                          : 'text-gray-300 hover:text-orange-500 hover:bg-orange-50 opacity-0 group-hover:opacity-100'
+                          }`}
+                        title={speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
+                      >
+                        {speakingMessageId === message.id
+                          ? <StopCircle className="w-3.5 h-3.5" />
+                          : <Volume2 className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -389,17 +424,24 @@ export function HomePageChatBot() {
                 </button>
               </div>
 
-              {/* Speech Toggle Button */}
-              <button
-                onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
-                className={`p-2.5 rounded-xl transition-colors ${isSpeechEnabled
-                  ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
-                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                  }`}
-                title={isSpeechEnabled ? "Voice responses ON" : "Voice responses OFF"}
-              >
-                {isSpeechEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-              </button>
+              {/* Stop Speaking Button — only visible when AI is speaking */}
+              {speakingMessageId ? (
+                <button
+                  onClick={stopSpeaking}
+                  className="p-2.5 rounded-xl bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors animate-pulse"
+                  title="Stop reading"
+                >
+                  <StopCircle className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="p-2.5 rounded-xl bg-gray-50 text-gray-300 cursor-default"
+                  title="Tap 🔊 on any message to hear it"
+                >
+                  <VolumeX className="w-5 h-5" />
+                </button>
+              )}
 
               {/* Send Button */}
               <button

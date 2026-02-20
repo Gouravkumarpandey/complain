@@ -5,6 +5,7 @@ const validateComplaint = (complaint) => {
     title: Joi.string().min(3).max(200).required(),
     description: Joi.string().min(3).max(5000).required(),
     category: Joi.string().valid(
+      // Backend / full-text categories
       'Technical Support',
       'Billing',
       'Product Quality',
@@ -12,7 +13,12 @@ const validateComplaint = (complaint) => {
       'Delivery',
       'General Inquiry',
       'Refund Request',
-      'Account Issues'
+      'Account Issues',
+      // Frontend AI service short categories
+      'Technical',
+      'Service',
+      'Product',
+      'General'
     ).optional(),
     attachments: Joi.array().items(Joi.string()).optional()
   });
