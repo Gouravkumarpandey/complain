@@ -480,6 +480,14 @@ export function LoginForm() {
               </button>
             </div>
 
+            {!isLogin && (
+              <p className="mt-4 text-center text-[10px] sm:text-xs text-gray-400">
+                By creating an account, you agree to our{' '}
+                <Link to="/terms-of-service" className="text-gray-500 hover:underline font-medium">Terms of Service</Link>
+                {' '}and{' '}
+                <Link to="/privacy-policy" className="text-gray-500 hover:underline font-medium">Privacy Policy</Link>.
+              </p>
+            )}
           </div>
         </div>
       </div>

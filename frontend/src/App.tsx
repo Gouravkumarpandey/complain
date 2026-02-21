@@ -26,6 +26,8 @@ import { PricingPlans } from './components/subscription/PricingPlans';
 import { PaymentSuccess } from './components/subscription/PaymentSuccess';
 import { PaymentCancel } from './components/subscription/PaymentCancel';
 import { CookieConsent } from './components/common/CookieConsent';
+import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
+import { TermsOfService } from './components/legal/TermsOfService';
 // import { LanguageSwitchInstructions } from './components/common/LanguageSwitchInstructions'; (removed)
 
 // Protected Route Component
@@ -139,6 +141,10 @@ function AppContent() {
             )
           }
         />
+
+        {/* Legal Routes */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
 
         {/* Pricing and Payment Routes */}
         <Route path="/pricing" element={<PricingPlans />} />

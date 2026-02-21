@@ -490,7 +490,7 @@ export const PricingPlans: React.FC = () => {
               {/* Copyright */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">
-                  © 2025 QuickFix Inc. All Rights Reserved
+                  © 2026 QuickFix Inc. All Rights Reserved
                 </p>
               </div>
 

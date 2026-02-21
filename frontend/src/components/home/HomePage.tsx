@@ -48,9 +48,10 @@ export function HomePage() {
             {/* Desktop Navigation Links */}
             <div className="hidden lg:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.features')}</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.plans')}</a>
+              <Link to="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.plans')}</Link>
               <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.howItWorks')}</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">{t('common.aboutUs')}</a>
+              <Link to="/privacy-policy" className="text-gray-600 hover:text-gray-900 font-medium">Privacy</Link>
+              <Link to="/terms-of-service" className="text-gray-600 hover:text-gray-900 font-medium">Terms</Link>
 
               {/* Language Selector */}
               <div className="relative">
@@ -121,13 +122,13 @@ export function HomePage() {
               >
                 {t('common.features')}
               </a>
-              <a
-                href="#pricing"
+              <Link
+                to="/pricing"
                 onClick={() => setShowMobileMenu(false)}
                 className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
               >
                 {t('common.plans')}
-              </a>
+              </Link>
               <a
                 href="#how-it-works"
                 onClick={() => setShowMobileMenu(false)}
@@ -135,13 +136,20 @@ export function HomePage() {
               >
                 {t('common.howItWorks')}
               </a>
-              <a
-                href="#about"
+              <Link
+                to="/privacy-policy"
                 onClick={() => setShowMobileMenu(false)}
                 className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
               >
-                {t('common.aboutUs')}
-              </a>
+                Privacy Policy
+              </Link>
+              <Link
+                to="/terms-of-service"
+                onClick={() => setShowMobileMenu(false)}
+                className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium"
+              >
+                Terms of Service
+              </Link>
               <Link
                 to="/login"
                 onClick={() => setShowMobileMenu(false)}
@@ -776,7 +784,7 @@ export function HomePage() {
               <div className="bg-gradient-to-br from-orange-200 to-white-100 rounded-2xl p-8 mb-6 hover:shadow-xl transition-all duration-300">
                 <img
                   src="exploreinsight.png"
-                  alt="QuickFix Customer Service Benchmark Report 2025"
+                  alt="QuickFix Customer Service Benchmark Report 2026"
                   className="w-full h-auto rounded-lg"
                 />
               </div>
@@ -784,7 +792,7 @@ export function HomePage() {
                 <span className="inline-block bg-green-200 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
                   Report
                 </span>
-                <h3 className="text-2xl font-bold text-gray-900">2025 Customer Service Report</h3>
+                <h3 className="text-2xl font-bold text-gray-900">2026 Customer Service Report</h3>
                 <p className="text-gray-600">
                   Evaluate your performance against industry competitors to see how you measure up.
                 </p>
@@ -959,8 +967,8 @@ export function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-center">
               {/* Legal Links */}
               <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Privacy Policy</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Terms of Service</a>
+                <Link to="/privacy-policy" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Privacy Policy</Link>
+                <Link to="/terms-of-service" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Terms of Service</Link>
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Cookie Policy</a>
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors text-xs sm:text-sm">Accessibility</a>
                 <button
@@ -974,7 +982,7 @@ export function HomePage() {
               {/* Copyright */}
               <div className="text-center order-first lg:order-none">
                 <p className="text-gray-400 text-xs sm:text-sm">
-                  2025 QuickFix Inc. All rights reserved.
+                  2026 QuickFix Inc. All rights reserved.
                 </p>
               </div>
 
