@@ -185,7 +185,7 @@ export const registerUser = async (req, res) => {
 
     // Validate and add phone number if provided
     if (phoneNumber && phoneNumber.trim()) {
-      const phoneValidation = validateAndFormatPhoneNumber(phoneNumber.trim());
+      const phoneValidation = validateAndFormatPhoneNumber(phoneNumber.trim(), 'IN');
 
       if (phoneValidation.isValid) {
         userData.phoneNumber = phoneValidation.formattedNumber; // Store in E.164 format
