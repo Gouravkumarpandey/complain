@@ -4,12 +4,59 @@ import { ArrowRight, Users, MessageSquare, BarChart3, Shield, CheckCircle, Play,
 import TestimonialCarousel from './TestimonialCarousel';
 import HomePageChatBot from './HomePageChatBot';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export function HomePage() {
   const { t, i18n } = useTranslation();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState('whats-new');
+  
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    const activeIndex = ['whats-new', 'why-freshdesk', 'freddy-ai', 'testimonials', 'capabilities'].indexOf(activeTab);
+    const activeElement = tabsRef.current[activeIndex];
+    
+    if (activeElement) {
+      setIndicatorStyle({
+        left: activeElement.offsetLeft,
+        width: activeElement.offsetWidth,
+        opacity: 1
+      });
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['whats-new', 'why-freshdesk', 'freddy-ai', 'testimonials', 'capabilities'];
+      let currentSection = sections[0];
+      
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 120) {
+            currentSection = section;
+          }
+        }
+      }
+      setActiveTab(currentSection);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const yOffset = -100; // Account for sticky navbar and pill headers
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -236,8 +283,93 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Scrollspy Sections Wrapper */}
+      <div className="relative w-full">
+        
+        {/* Sticky Pill Navigation Header */}
+        <div className="sticky top-[64px] z-40 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 py-4 flex justify-center transition-all duration-300 shadow-sm shadow-gray-100/50">
+          <div className="inline-flex rounded-full bg-gradient-to-r from-purple-400 via-teal-300 to-emerald-400 p-[1px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 h-[72px]">
+             <div className="flex w-full h-full bg-white rounded-full p-2 relative">
+               
+               {/* Floating Active Indicator */}
+               <div 
+                 className="absolute top-2 bottom-2 rounded-full p-[1.25px] bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 transition-all duration-300 ease-out z-0"
+                 style={{ left: indicatorStyle.left, width: indicatorStyle.width, opacity: indicatorStyle.opacity }}
+               >
+                 <div className="w-full h-full bg-white rounded-full drop-shadow-sm"></div>
+               </div>
+
+               <div className="flex items-center relative z-10 w-full h-full gap-2">
+                 <button 
+                   ref={(el) => { tabsRef.current[0] = el; }}
+                   onClick={() => scrollToSection('whats-new')} 
+                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'whats-new' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                 >What&apos;s new</button>
+
+                 <button 
+                   ref={(el) => { tabsRef.current[1] = el; }}
+                   onClick={() => scrollToSection('why-freshdesk')} 
+                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'why-freshdesk' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                 >Why Freshdesk</button>
+
+                 <button 
+                   ref={(el) => { tabsRef.current[2] = el; }}
+                   onClick={() => scrollToSection('freddy-ai')} 
+                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'freddy-ai' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                 >Freddy AI</button>
+
+                 <button 
+                   ref={(el) => { tabsRef.current[3] = el; }}
+                   onClick={() => scrollToSection('testimonials')} 
+                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'testimonials' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                 >Testimonials</button>
+
+                 <button 
+                   ref={(el) => { tabsRef.current[4] = el; }}
+                   onClick={() => scrollToSection('capabilities')} 
+                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'capabilities' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                 >Capabilities</button>
+               </div>
+            </div>
+          </div>
+        </div>
+
+      {/* Vertical AI Agents Section */}
+      <section id="whats-new" className="pt-16 pb-16 sm:pb-20 md:pb-24 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8 items-stretch pt-4">
+            <div className="w-full flex flex-col justify-start bg-gradient-to-b from-[#EEF4FF] to-[#DFEDFF] rounded-[32px] overflow-hidden pt-12 px-2 hover:shadow-lg transition-all duration-300">
+              <h3 className="text-[32px] md:text-[38px] font-bold text-[#111827] mb-8 text-center leading-tight tracking-tight px-6">
+                Launch AI agents in minutes
+              </h3>
+              <div className="flex-1 flex items-end justify-center">
+                <img 
+                  src="/Freshdesk-command-centre1-FD-Home-New-Component.webp" 
+                  alt="Launch AI agents in minutes" 
+                  className="w-full h-auto object-contain object-bottom"
+                />
+              </div>
+            </div>
+            
+            <div className="w-full flex flex-col justify-start bg-gradient-to-b from-[#E9FBF3] to-[#D5F5E3] rounded-[32px] overflow-hidden pt-12 px-2 hover:shadow-lg transition-all duration-300">
+              <h3 className="text-[32px] md:text-[38px] font-bold text-[#111827] mb-8 text-center leading-tight tracking-tight px-6">
+                Resolve in a central workspace
+              </h3>
+              <div className="flex-1 flex items-end justify-center">
+                <img 
+                  src="/Verticalized-AI-agents_Differentiator-example-based-on-top-use-case.webp" 
+                  alt="Resolve in a central workspace" 
+                  className="w-full h-auto object-contain object-bottom"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Main Value Proposition */}
-      <section className="py-16 sm:py-20 md:py-24 bg-white">
+      <section id="why-freshdesk" className="py-16 sm:py-20 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
@@ -283,7 +415,7 @@ export function HomePage() {
       </section>
 
       {/* Video Section */}
-      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <section id="freddy-ai" className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
@@ -741,7 +873,7 @@ export function HomePage() {
       </section>
 
       {/* Testimonials - Auto-scrolling carousel */}
-      <section id="reviews" className="py-12 bg-gray-50">
+      <section id="testimonials" className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -767,7 +899,7 @@ export function HomePage() {
       </section>
 
       {/* Resources Section */}
-      <section className="py-24 bg-white">
+      <section id="capabilities" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -841,6 +973,8 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      </div> {/* End of Scrollspy Sections Wrapper */}
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-orange-500 to-red-600 text-white">

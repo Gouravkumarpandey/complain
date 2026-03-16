@@ -374,7 +374,12 @@ app.use(cors(corsOptions));
 
 // Apply production-ready CSP configuration (Helmet handles COOP/COEP)
 const isDevelopment = process.env.NODE_ENV !== 'production';
-app.use(helmet(getHelmetCspConfig(isDevelopment)));
+app.use(
+  helmet({
+    ...getHelmetCspConfig(isDevelopment),
+    crossOriginOpenerPolicy: false
+  })
+);
 
 // Set COOP/COEP headers AFTER helmet to override for Google Sign-In compatibility
 app.use((req, res, next) => {
