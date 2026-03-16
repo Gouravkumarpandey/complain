@@ -1,0 +1,4 @@
+﻿src/components/dashboard/UserDashboard.tsx(1055,43): error TS2367: This comparison appears to be unintentional because the types '"Under Review" | "Resolved" | "Closed" | "Escalated"' and '"Pending"' have no overlap.
+src/components/dashboard/UserDashboard.tsx(1064,54): error TS2339: Property 'assignedAgency' does not exist on type 'Complaint'.
+src/components/dashboard/UserDashboard.tsx(1306,39): error TS2367: This comparison appears to be unintentional because the types '"Under Review" | "Resolved" | "Closed" | "Escalated"' and '"Pending"' have no overlap.
+src/components/dashboard/UserDashboard.tsx(1315,50): error TS2339: Property 'assignedAgency' does not exist on type 'Complaint'.

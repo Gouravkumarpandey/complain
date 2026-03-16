@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-// i18n removed
-// Trans and t removed after migration
 import { useComplaints } from '../../contexts/ComplaintContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { Send, FileText, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface ComplaintFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
+export function ComplaintForm({ onSuccess, onCancel }: ComplaintFormProps) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -27,72 +26,110 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
     setLoading(true);
     try {
       const complaint = await createComplaint(formData.title, formData.description, user.id);
-      addNotification('success', 'Complaint filed successfully', `Your complaint has been classified as ${complaint.category} with priority ${complaint.priority}.`);
+      addNotification('success', 'Ticket Created successfully', `Your ticket has been classified as ${complaint.category} with priority ${complaint.priority}.`);
       setFormData({ title: '', description: '' });
       onSuccess?.();
     } catch (error: unknown) {
-      // Show AI validation error message if available
       const err = error as { message?: string };
-      const errorMessage = err.message || 'Failed to file complaint. Please try again.';
-      addNotification('error', 'Invalid Complaint', errorMessage);
+      const errorMessage = err.message || 'Failed to file ticket. Please try again.';
+      addNotification('error', 'Invalid Ticket', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Customer Information Section */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-          Complaint Title
-        </label>
-        <div className="relative">
-          <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder={'Brief summary of your complaint'}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            required
-          />
+        <h4 className="text-base font-semibold text-gray-900 mb-4">Customer Information</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1.5">
+              Customer Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={user?.name || ''}
+              readOnly
+              className="w-full px-4 py-2.5 bg-gray-50 border-0 rounded-lg text-gray-500 cursor-not-allowed focus:ring-0"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1.5">
+              Email Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={user?.email || ''}
+              readOnly
+              className="w-full px-4 py-2.5 bg-gray-50 border-0 rounded-lg text-gray-500 cursor-not-allowed focus:ring-0"
+            />
+          </div>
         </div>
       </div>
 
+      {/* Ticket Details Section */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-          Detailed Description
-        </label>
-        <textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder={'Please provide a detailed description of your complaint'}
-          rows={6}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-          required
-        />
-        <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-          <Sparkles className="w-4 h-4" />
-          <span>Our AI will automatically categorize and prioritize your complaint.</span>
+        <h4 className="text-base font-semibold text-gray-900 mb-4">Ticket Details</h4>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-900 mb-1.5">
+              Subject <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Brief description of the issue"
+              className="w-full px-4 py-2.5 bg-gray-50 border-0 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-teal-400 focus:bg-white transition-all duration-200"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-1.5">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Provide detailed information about the issue..."
+              rows={4}
+              className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-teal-400 focus:bg-white transition-all duration-200 resize-none"
+              required
+            />
+            <div className="mt-2 flex items-center gap-2 text-xs text-teal-600">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Priority and Assignment will be automatically handled by our AI agents.</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading || !formData.title.trim() || !formData.description.trim()}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <>
-            <Send className="w-5 h-5" />
-            Submit Complaint
-          </>
-        )}
-      </button>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 py-2.5 border border-gray-200 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={loading || !formData.title.trim() || !formData.description.trim()}
+          className="px-6 py-2.5 bg-[#4AC7B5] text-white rounded-lg font-medium hover:bg-[#3eb3a2] focus:outline-none focus:ring-2 focus:ring-[#4AC7B5] focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center min-w-[140px]"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            'Create Ticket'
+          )}
+        </button>
+      </div>
     </form>
   );
 }

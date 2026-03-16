@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, Mic, MicOff, Volume2, VolumeX, StopCircle } from 'lucide-react';
+import { X, Send, Bot, Mic, MicOff, Volume2, VolumeX, StopCircle } from 'lucide-react';
 import api from '../../utils/api';
 
 // Remove GoogleGenerativeAI initialization
@@ -293,10 +293,12 @@ export function HomePageChatBot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-2xl hover:shadow-orange-300 hover:scale-110 transition-all duration-300 flex items-center justify-center z-50 group"
+          className="fixed bottom-6 right-6 w-16 h-16 bg-[#F47216] rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center z-50 group"
           aria-label="Open chat"
         >
-          <MessageCircle className="w-7 h-7 text-white" />
+          <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+          </svg>
 
           {/* Tooltip */}
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">

@@ -5,7 +5,8 @@ import {
   Search, Calendar, X, Shield, Home,
   Inbox, HelpCircle, Menu,
   Bot, Star, AlertCircle, Eye, LogOut, Settings, ChevronDown,
-  TrendingUp, BarChart3, Activity, Crown, Zap, RefreshCw, Globe
+  TrendingUp, BarChart3, Activity, Crown, Zap, RefreshCw, Globe,
+  MoreVertical
 } from 'lucide-react';
 import { ComplaintForm } from '../complaints/ComplaintForm';
 import AIAssistant from './AIAssistant';
@@ -987,40 +988,103 @@ export function UserDashboard() {
                             </button>
                           </div>
                         ) : (
-                          <div className="space-y-3">
-                            {filteredComplaints.slice(0, 5).map((complaint) => (
-                              <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="flex-1 min-w-0">
-                                    {/* Complaint ID Badge */}
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
-                                        {complaint.complaintId || complaint.id}
-                                      </span>
-                                      {complaint.status === 'Resolved' && (
-                                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
-                                          <CheckCircle className="w-3 h-3" />
-                                          Resolved
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-gray-100 text-[15px] font-semibold text-gray-900 bg-white">
+                                  <th className="py-4 px-4 font-semibold whitespace-nowrap">Ticket ID</th>
+                                  <th className="py-4 px-4 font-semibold">Subject</th>
+                                  <th className="py-4 px-4 font-semibold">Customer</th>
+                                  <th className="py-4 px-4 font-semibold">Priority</th>
+                                  <th className="py-4 px-4 font-semibold">Status</th>
+                                  <th className="py-4 px-4 font-semibold">Assignee</th>
+                                  <th className="py-4 px-4 font-semibold">Updated</th>
+                                  <th className="py-4 px-4"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {filteredComplaints.slice(0, 5).map((complaint) => {
+                                  const getUpdatedTime = (d: any) => {
+                                    if (!d) return '';
+                                    const secs = Math.floor((new Date().getTime() - new Date(d).getTime()) / 1000);
+                                    if (secs < 60) return 'Just now';
+                                    const mins = Math.floor(secs / 60);
+                                    if (mins < 60) return `${mins} min ago`;
+                                    const hrs = Math.floor(mins / 60);
+                                    if (hrs < 24) return hrs === 1 ? '1 hour ago' : `${hrs} hours ago`;
+                                    const days = Math.floor(hrs / 24);
+                                    if (days === 1) return 'Yesterday';
+                                    if (days < 30) return `${days} days ago`;
+                                    return new Date(d).toLocaleDateString();
+                                  };
+
+                                  return (
+                                    <tr 
+                                      key={complaint.id} 
+                                      className="hover:bg-gray-50 cursor-pointer transition-colors bg-white group"
+                                      onClick={() => setSelectedComplaint(complaint)}
+                                    >
+                                      <td className="py-4 px-4">
+                                        <span className="text-[15px] font-semibold text-gray-800">
+                                          {complaint.complaintId || complaint.id.substring(0, 8)}
                                         </span>
-                                      )}
-                                    </div>
-                                    <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{complaint.title}</h4>
-                                    <p className="text-sm text-gray-600 mb-2 line-clamp-1">{complaint.description}</p>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                      <Clock className="w-3 h-3" />
-                                      <span>{new Date(complaint.createdAt).toLocaleDateString()}</span>
-                                      <span>•</span>
-                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
-                                        {complaint.priority}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <span className={`px-2.5 py-1 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
-                                    {complaint.status}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                                      </td>
+                                      <td className="py-4 px-4">
+                                        <span className="text-[15px] font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{complaint.title}</span>
+                                      </td>
+                                      <td className="py-4 px-4">
+                                        <div className="flex flex-col">
+                                          <span className="text-[15px] font-medium text-gray-900 whitespace-nowrap">{user?.name || 'Customer'}</span>
+                                          <span className="text-[13px] text-gray-500 whitespace-nowrap">{user?.email || ''}</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-4 px-4">
+                                        <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full border ${
+                                          complaint.priority === 'Urgent' ? 'bg-[#C1121F] text-white border-[#C1121F]' :
+                                          complaint.priority === 'High' ? 'bg-[#111827] text-white border-[#111827]' :
+                                          complaint.priority === 'Medium' ? 'bg-[#F3F4F6] text-gray-700 border-gray-200' :
+                                          'bg-white text-gray-700 border-gray-200'
+                                        }`}>
+                                          {complaint.priority}
+                                        </span>
+                                      </td>
+                                      <td className="py-4 px-4">
+                                        <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${
+                                          complaint.status === 'Open' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                          complaint.status === 'In Progress' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                          (complaint.status as string) === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                                          complaint.status === 'Resolved' ? 'bg-green-50 text-green-600 border-green-100' :
+                                          'bg-gray-50 text-gray-600 border-gray-100'
+                                        }`}>
+                                          {complaint.status}
+                                        </span>
+                                      </td>
+                                      <td className="py-4 px-4">
+                                        <span className="text-[15px] text-gray-700 whitespace-nowrap">
+                                          {(complaint as any).assignedAgency?.name || (complaint as any).assignedAgent?.name || 'Unassigned'}
+                                        </span>
+                                      </td>
+                                      <td className="py-4 px-4">
+                                        <span className="text-[15px] text-gray-500 whitespace-nowrap">
+                                          {getUpdatedTime(complaint.updatedAt || complaint.createdAt)}
+                                        </span>
+                                      </td>
+                                      <td className="py-4 px-4 text-right">
+                                        <button 
+                                          className="text-gray-400 hover:text-gray-700 p-1 rounded-md hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedComplaint(complaint);
+                                          }}
+                                        >
+                                          <MoreVertical className="w-5 h-5" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         )}
                       </div>
@@ -1175,65 +1239,103 @@ export function UserDashboard() {
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        {filteredComplaints.map((complaint) => (
-                          <div key={complaint.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedComplaint(complaint)}>
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-2">
-                                  {/* Complaint ID Badge */}
-                                  <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-gray-100 text-gray-700 rounded border border-gray-300">
-                                    {complaint.complaintId || complaint.id}
-                                  </span>
-                                  <h4 className="font-semibold text-gray-900 truncate">{complaint.title}</h4>
-                                  <span className={`px-2.5 py-0.5 text-xs font-medium rounded border ${getStatusColor(complaint.status)} whitespace-nowrap`}>
-                                    {complaint.status}
-                                  </span>
-                                  {complaint.status === 'Resolved' && (
-                                    <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded flex items-center gap-1">
-                                      <CheckCircle className="w-3 h-3" />
-                                      ✓
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-gray-100 text-[15px] font-semibold text-gray-900 bg-white">
+                              <th className="py-4 px-4 font-semibold whitespace-nowrap">Ticket ID</th>
+                              <th className="py-4 px-4 font-semibold">Subject</th>
+                              <th className="py-4 px-4 font-semibold">Customer</th>
+                              <th className="py-4 px-4 font-semibold">Priority</th>
+                              <th className="py-4 px-4 font-semibold">Status</th>
+                              <th className="py-4 px-4 font-semibold">Assignee</th>
+                              <th className="py-4 px-4 font-semibold">Updated</th>
+                              <th className="py-4 px-4"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {filteredComplaints.map((complaint) => {
+                              const getUpdatedTime = (d: any) => {
+                                if (!d) return '';
+                                const secs = Math.floor((new Date().getTime() - new Date(d).getTime()) / 1000);
+                                if (secs < 60) return 'Just now';
+                                const mins = Math.floor(secs / 60);
+                                if (mins < 60) return `${mins} min ago`;
+                                const hrs = Math.floor(mins / 60);
+                                if (hrs < 24) return hrs === 1 ? '1 hour ago' : `${hrs} hours ago`;
+                                const days = Math.floor(hrs / 24);
+                                if (days === 1) return 'Yesterday';
+                                if (days < 30) return `${days} days ago`;
+                                return new Date(d).toLocaleDateString();
+                              };
 
-                                {/* Resolution message for resolved complaints */}
-                                {complaint.status === 'Resolved' && (
-                                  <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                                    <p className="text-xs text-green-700 flex items-center gap-1">
-                                      <CheckCircle className="w-3 h-3" />
-                                      <span className="font-medium">Your complaint has been successfully resolved</span>
-                                    </p>
-                                  </div>
-                                )}
-
-                                <div className="flex items-center gap-4 text-xs text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    {new Date(complaint.createdAt).toLocaleDateString()}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <MessageCircle className="w-3.5 h-3.5" />
-                                    {complaint.category}
-                                  </span>
-                                  <span className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(complaint.priority)}`}>
-                                    {complaint.priority}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedComplaint(complaint);
-                                  }}
-                                  className="text-slate-800 hover:text-slate-900 text-sm font-medium whitespace-nowrap"
+                              return (
+                                <tr 
+                                  key={complaint.id} 
+                                  className="hover:bg-gray-50 cursor-pointer transition-colors bg-white group"
+                                  onClick={() => setSelectedComplaint(complaint)}
                                 >
-                                  View
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                                  <td className="py-4 px-4">
+                                    <span className="text-[15px] font-semibold text-gray-800">
+                                      {complaint.complaintId || complaint.id.substring(0, 8)}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <span className="text-[15px] font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{complaint.title}</span>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <div className="flex flex-col">
+                                      <span className="text-[15px] font-medium text-gray-900 whitespace-nowrap">{user?.name || 'Customer'}</span>
+                                      <span className="text-[13px] text-gray-500 whitespace-nowrap">{user?.email || ''}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full border ${
+                                      complaint.priority === 'Urgent' ? 'bg-[#C1121F] text-white border-[#C1121F]' :
+                                      complaint.priority === 'High' ? 'bg-[#111827] text-white border-[#111827]' :
+                                      complaint.priority === 'Medium' ? 'bg-[#F3F4F6] text-gray-700 border-gray-200' :
+                                      'bg-white text-gray-700 border-gray-200'
+                                    }`}>
+                                      {complaint.priority}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${
+                                      complaint.status === 'Open' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                      complaint.status === 'In Progress' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                      (complaint.status as string) === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                                      complaint.status === 'Resolved' ? 'bg-green-50 text-green-600 border-green-100' :
+                                      'bg-gray-50 text-gray-600 border-gray-100'
+                                    }`}>
+                                      {complaint.status}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <span className="text-[15px] text-gray-700 whitespace-nowrap">
+                                      {(complaint as any).assignedAgency?.name || (complaint as any).assignedAgent?.name || 'Unassigned'}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <span className="text-[15px] text-gray-500 whitespace-nowrap">
+                                      {getUpdatedTime(complaint.updatedAt || complaint.createdAt)}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4 text-right">
+                                    <button 
+                                      className="text-gray-400 hover:text-gray-700 p-1 rounded-md hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedComplaint(complaint);
+                                      }}
+                                    >
+                                      <MoreVertical className="w-5 h-5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </div>
@@ -1258,7 +1360,10 @@ export function UserDashboard() {
                     </button>
                   </div>
                   <div className="p-6">
-                    <ComplaintForm onSuccess={() => setActiveView('complaints')} />
+                    <ComplaintForm 
+                      onSuccess={() => setActiveView('complaints')} 
+                      onCancel={() => setActiveView('dashboard')}
+                    />
                   </div>
                 </div>
               </div>
