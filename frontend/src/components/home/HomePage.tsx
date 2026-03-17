@@ -16,7 +16,7 @@ export function HomePage() {
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
-    const activeIndex = ['whats-new', 'why-freshdesk', 'freddy-ai', 'testimonials', 'capabilities'].indexOf(activeTab);
+    const activeIndex = ['whats-new', 'why-quickfix', 'freddy-ai', 'testimonials', 'capabilities'].indexOf(activeTab);
     const activeElement = tabsRef.current[activeIndex];
     
     if (activeElement) {
@@ -30,7 +30,7 @@ export function HomePage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['whats-new', 'why-freshdesk', 'freddy-ai', 'testimonials', 'capabilities'];
+      const sections = ['whats-new', 'why-quickfix', 'freddy-ai', 'testimonials', 'capabilities'];
       let currentSection = sections[0];
       
       for (const section of sections) {
@@ -287,49 +287,51 @@ export function HomePage() {
       <div className="relative w-full">
         
         {/* Sticky Pill Navigation Header */}
-        <div className="sticky top-[64px] z-40 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 py-4 flex justify-center transition-all duration-300 shadow-sm shadow-gray-100/50">
-          <div className="inline-flex rounded-full bg-gradient-to-r from-purple-400 via-teal-300 to-emerald-400 p-[1px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 h-[72px]">
-             <div className="flex w-full h-full bg-white rounded-full p-2 relative">
-               
-               {/* Floating Active Indicator */}
-               <div 
-                 className="absolute top-2 bottom-2 rounded-full p-[1.25px] bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 transition-all duration-300 ease-out z-0"
-                 style={{ left: indicatorStyle.left, width: indicatorStyle.width, opacity: indicatorStyle.opacity }}
-               >
-                 <div className="w-full h-full bg-white rounded-full drop-shadow-sm"></div>
-               </div>
+        <div className="sticky top-[64px] z-40 w-full bg-white/90 backdrop-blur-md py-3 md:py-4 flex justify-center transition-all duration-300">
+          <div className="w-full max-w-full overflow-x-auto flex justify-start md:justify-center px-4 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="inline-flex rounded-full bg-gradient-to-r from-purple-400 via-teal-300 to-emerald-400 p-[1px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 h-[56px] md:h-[72px] flex-nowrap whitespace-nowrap">
+               <div className="flex w-full h-full bg-white rounded-full p-1.5 md:p-2 relative flex-nowrap">
+                 
+                 {/* Floating Active Indicator */}
+                 <div 
+                   className="absolute top-1.5 bottom-1.5 md:top-2 md:bottom-2 rounded-full p-[1px] md:p-[1.25px] bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 transition-all duration-300 ease-out z-0"
+                   style={{ left: indicatorStyle.left, width: indicatorStyle.width, opacity: indicatorStyle.opacity }}
+                 >
+                   <div className="w-full h-full bg-white rounded-full drop-shadow-sm"></div>
+                 </div>
 
-               <div className="flex items-center relative z-10 w-full h-full gap-2">
-                 <button 
-                   ref={(el) => { tabsRef.current[0] = el; }}
-                   onClick={() => scrollToSection('whats-new')} 
-                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'whats-new' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
-                 >What&apos;s new</button>
+                 <div className="flex items-center relative z-10 w-full h-full gap-1 md:gap-2 flex-nowrap">
+                   <button 
+                     ref={(el) => { tabsRef.current[0] = el; }}
+                     onClick={() => scrollToSection('whats-new')} 
+                     className={`px-5 md:px-10 h-full flex items-center justify-center rounded-full text-[15px] md:text-[18px] transition-all duration-300 ${activeTab === 'whats-new' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                   >What&apos;s new</button>
 
-                 <button 
-                   ref={(el) => { tabsRef.current[1] = el; }}
-                   onClick={() => scrollToSection('why-freshdesk')} 
-                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'why-freshdesk' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
-                 >Why Freshdesk</button>
+                   <button 
+                     ref={(el) => { tabsRef.current[1] = el; }}
+                     onClick={() => scrollToSection('why-quickfix')} 
+                     className={`px-5 md:px-10 h-full flex items-center justify-center rounded-full text-[15px] md:text-[18px] transition-all duration-300 ${activeTab === 'why-quickfix' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                   >Why QuickFix</button>
 
-                 <button 
-                   ref={(el) => { tabsRef.current[2] = el; }}
-                   onClick={() => scrollToSection('freddy-ai')} 
-                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'freddy-ai' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
-                 >Freddy AI</button>
+                   <button 
+                     ref={(el) => { tabsRef.current[2] = el; }}
+                     onClick={() => scrollToSection('freddy-ai')} 
+                     className={`px-5 md:px-10 h-full flex items-center justify-center rounded-full text-[15px] md:text-[18px] transition-all duration-300 ${activeTab === 'freddy-ai' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                   >Freddy AI</button>
 
-                 <button 
-                   ref={(el) => { tabsRef.current[3] = el; }}
-                   onClick={() => scrollToSection('testimonials')} 
-                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'testimonials' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
-                 >Testimonials</button>
+                   <button 
+                     ref={(el) => { tabsRef.current[3] = el; }}
+                     onClick={() => scrollToSection('testimonials')} 
+                     className={`px-5 md:px-10 h-full flex items-center justify-center rounded-full text-[15px] md:text-[18px] transition-all duration-300 ${activeTab === 'testimonials' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                   >Testimonials</button>
 
-                 <button 
-                   ref={(el) => { tabsRef.current[4] = el; }}
-                   onClick={() => scrollToSection('capabilities')} 
-                   className={`px-10 h-full flex items-center justify-center rounded-full text-[18px] transition-all duration-300 ${activeTab === 'capabilities' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
-                 >Capabilities</button>
-               </div>
+                   <button 
+                     ref={(el) => { tabsRef.current[4] = el; }}
+                     onClick={() => scrollToSection('capabilities')} 
+                     className={`px-5 md:px-10 h-full flex items-center justify-center rounded-full text-[15px] md:text-[18px] transition-all duration-300 ${activeTab === 'capabilities' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
+                   >Capabilities</button>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
@@ -339,28 +341,28 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid md:grid-cols-2 gap-6 lg:gap-8 items-stretch pt-4">
-            <div className="w-full flex flex-col justify-start bg-gradient-to-b from-[#EEF4FF] to-[#DFEDFF] rounded-[32px] overflow-hidden pt-12 px-2 hover:shadow-lg transition-all duration-300">
-              <h3 className="text-[32px] md:text-[38px] font-bold text-[#111827] mb-8 text-center leading-tight tracking-tight px-6">
+            <div className="w-full h-[450px] sm:h-[550px] md:h-[650px] flex flex-col justify-between bg-gradient-to-b from-[#EAEFFF] to-[#E3F4FE] rounded-[32px] md:rounded-[40px] overflow-hidden pt-8 md:pt-12 relative group hover:shadow-xl transition-shadow duration-300">
+              <h3 className="text-[26px] sm:text-[32px] md:text-[42px] font-bold text-[#111827] text-center leading-[1.15] tracking-tight px-6 md:px-12 z-10">
                 Launch AI agents in minutes
               </h3>
-              <div className="flex-1 flex items-end justify-center">
+              <div className="flex-1 flex items-end justify-center w-full px-4 md:px-8">
                 <img 
                   src="/Freshdesk-command-centre1-FD-Home-New-Component.webp" 
                   alt="Launch AI agents in minutes" 
-                  className="w-full h-auto object-contain object-bottom"
+                  className="w-full h-auto max-h-[320px] sm:max-h-[400px] md:max-h-[450px] object-contain object-bottom translate-y-4 group-hover:-translate-y-1 transition-transform duration-500 ease-out"
                 />
               </div>
             </div>
             
-            <div className="w-full flex flex-col justify-start bg-gradient-to-b from-[#E9FBF3] to-[#D5F5E3] rounded-[32px] overflow-hidden pt-12 px-2 hover:shadow-lg transition-all duration-300">
-              <h3 className="text-[32px] md:text-[38px] font-bold text-[#111827] mb-8 text-center leading-tight tracking-tight px-6">
+            <div className="w-full h-[450px] sm:h-[550px] md:h-[650px] flex flex-col justify-between bg-gradient-to-b from-[#E8FAF0] to-[#E4F8F4] rounded-[32px] md:rounded-[40px] overflow-hidden pt-8 md:pt-12 relative group hover:shadow-xl transition-shadow duration-300">
+              <h3 className="text-[26px] sm:text-[32px] md:text-[42px] font-bold text-[#111827] text-center leading-[1.15] tracking-tight px-6 md:px-12 z-10">
                 Resolve in a central workspace
               </h3>
-              <div className="flex-1 flex items-end justify-center">
+              <div className="flex-1 flex items-end justify-center w-full px-4 md:px-8">
                 <img 
                   src="/Verticalized-AI-agents_Differentiator-example-based-on-top-use-case.webp" 
                   alt="Resolve in a central workspace" 
-                  className="w-full h-auto object-contain object-bottom"
+                  className="w-full h-auto max-h-[320px] sm:max-h-[400px] md:max-h-[450px] object-contain object-bottom translate-y-4 group-hover:-translate-y-1 transition-transform duration-500 ease-out"
                 />
               </div>
             </div>
@@ -524,7 +526,7 @@ export function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 sm:py-20 md:py-24 bg-white">
+      <section id="why-quickfix" className="py-16 sm:py-20 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
