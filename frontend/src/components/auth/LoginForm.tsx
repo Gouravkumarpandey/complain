@@ -284,46 +284,46 @@ export function LoginForm() {
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-5 py-4 sm:px-8 sm:py-6 lg:px-10 lg:py-4 bg-white overflow-y-auto">
-          <div className="max-w-[400px] w-full">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-5 py-6 sm:px-10 sm:py-8 lg:px-12 lg:py-10 bg-white overflow-y-auto">
+          <div className="max-w-[420px] w-full">
 
             {/* Mobile-only header with logo and back link */}
-            <div className="lg:hidden mb-4">
+            <div className="lg:hidden mb-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-lg font-bold text-gray-900">QuickFix</span>
+                  <span className="text-xl font-bold text-gray-900">QuickFix</span>
                 </div>
                 <Link
                   to="/"
-                  className="text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-1 text-sm font-medium"
+                  className="text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-1.5 text-sm font-medium"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-5 h-5" />
                   Home
                 </Link>
               </div>
             </div>
 
-            <div className="text-center mb-3 sm:mb-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5">
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 {isLogin ? 'Sign In' : 'Create Account'}
               </h2>
-              <p className="text-gray-500 text-xs sm:text-sm">
+              <p className="text-gray-500 text-sm sm:text-base">
                 {isLogin ? 'Please enter your details.' : 'Get started for free!'}
               </p>
             </div>
 
             {error && (
-              <div className="mb-2 p-2 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-fadeIn">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <span className="text-red-700 text-xs">{error}</span>
+              <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 animate-fadeIn">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <span className="text-red-700 text-sm">{error}</span>
               </div>
             )}
 
             {/* Social Auth */}
-            <div className="space-y-2 mb-3">
+            <div className="space-y-3 mb-6">
               {/* Google */}
               <CustomGoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -339,27 +339,27 @@ export function LoginForm() {
               />
             </div>
 
-            <div className="relative my-3">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-wider font-semibold">
-                <span className="px-4 bg-white text-gray-400">Or continue with email</span>
+              <div className="relative flex justify-center text-xs sm:text-sm uppercase tracking-wider font-bold">
+                <span className="px-5 bg-white text-gray-400">Or continue with email</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-2.5">
               {!isLogin && (
                 <div className="group">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Full Name</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="text"
                       required={!isLogin}
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
+                      className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-medium"
                       placeholder="Enter your name"
                     />
                   </div>
@@ -368,76 +368,76 @@ export function LoginForm() {
 
               {!isLogin && formData.role === 'user' && (
                 <div className="group">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Phone Number</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Phone Number</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="tel"
                       required={!isLogin}
                       value={formData.phoneNumber}
                       onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
-                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
+                      className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-medium"
                       placeholder="+91 98765 43210"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5 ml-1">WhatsApp enabled (+91)</p>
+                  <p className="text-xs text-gray-500 mt-1 ml-1 font-medium">WhatsApp enabled (+91)</p>
                 </div>
               )}
 
               <div className="group">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Email Address</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
                   <input
                     type="email"
                     required
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
-                    placeholder=""
+                    className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-medium"
+                    placeholder="name@example.com"
                   />
                 </div>
               </div>
 
               <div className="group">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Password</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-9 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
+                    className="w-full pl-11 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-medium"
                     placeholder="••••••••"
                     autoComplete={isLogin ? "current-password" : "new-password"}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1.5"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
               {!isLogin && (
                 <div className="group">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Account Type</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Account Type</label>
                   <div className="relative">
-                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                    <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                     <select
                       value={formData.role}
                       onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'agent' | 'analytics' })}
-                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium appearance-none cursor-pointer"
+                      className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-medium appearance-none cursor-pointer"
                     >
                       <option value="user">Customer / User</option>
                       <option value="agent">Support Agent</option>
                       <option value="analytics">Analytics Manager</option>
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ArrowRight className="w-4 h-4 text-gray-400 rotate-90" />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <ArrowRight className="w-5 h-5 text-gray-400 rotate-90" />
                     </div>
                   </div>
                 </div>
@@ -446,10 +446,10 @@ export function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center items-center gap-2 text-sm"
+                className="w-full py-2.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-blue-500/25 flex justify-center items-center gap-2 text-sm mt-2"
               >
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
                     {isLogin ? 'Sign In' : 'Create Account'}
@@ -459,15 +459,15 @@ export function LoginForm() {
               </button>
 
               {isLogin && (
-                <div className="text-center">
-                  <Link to="/forgot-password" className="text-xs font-medium text-blue-600 hover:text-blue-500 hover:underline">
+                <div className="text-center pt-1">
+                  <Link to="/forgot-password" className="text-sm font-bold text-blue-600 hover:text-blue-500 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
               )}
             </form>
 
-            <div className="mt-3 text-center text-sm text-gray-500">
+            <div className="mt-6 text-center text-sm text-gray-600 font-medium">
               {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
               <button
                 onClick={() => {
@@ -481,11 +481,11 @@ export function LoginForm() {
             </div>
 
             {!isLogin && (
-              <p className="mt-4 text-center text-[10px] sm:text-xs text-gray-400">
+              <p className="mt-5 text-center text-[11px] text-gray-400 font-medium leading-normal">
                 By creating an account, you agree to our{' '}
-                <Link to="/terms-of-service" className="text-gray-500 hover:underline font-medium">Terms of Service</Link>
+                <Link to="/terms-of-service" className="text-gray-500 hover:underline font-bold text-blue-600">Terms of Service</Link>
                 {' '}and{' '}
-                <Link to="/privacy-policy" className="text-gray-500 hover:underline font-medium">Privacy Policy</Link>.
+                <Link to="/privacy-policy" className="text-gray-500 hover:underline font-bold text-blue-600">Privacy Policy</Link>.
               </p>
             )}
           </div>

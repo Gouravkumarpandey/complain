@@ -59,10 +59,10 @@ export function FacebookLogin({
       type="button"
       onClick={handleFacebookLogin}
       disabled={isLoading}
-      className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       <Facebook className="w-5 h-5 text-blue-600" />
-      <span className="text-sm font-medium text-gray-700">
+      <span className="text-sm font-semibold text-gray-700">
         {isLoading ? 'Redirecting...' : buttonText}
       </span>
     </button>

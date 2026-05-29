@@ -287,17 +287,17 @@ export function HomePage() {
       <div className="relative w-full">
         
         {/* Sticky Pill Navigation Header */}
-        <div className="sticky top-[64px] z-40 w-full bg-white/90 backdrop-blur-md py-3 md:py-4 flex justify-center transition-all duration-300">
-          <div className="w-full max-w-full overflow-x-auto flex justify-start md:justify-center px-4 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="inline-flex rounded-full bg-gradient-to-r from-purple-400 via-teal-300 to-emerald-400 p-[1px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 h-[56px] md:h-[72px] flex-nowrap whitespace-nowrap">
-               <div className="flex w-full h-full bg-white rounded-full p-1.5 md:p-2 relative flex-nowrap">
+        <div className="sticky top-[64px] z-40 w-full bg-white/90 backdrop-blur-md py-4 md:py-6 flex justify-center transition-all duration-300">
+          <div className="w-full max-w-7xl mx-auto overflow-x-auto flex justify-start md:justify-center px-6 md:px-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="inline-flex rounded-full bg-gradient-to-r from-purple-400 via-teal-300 to-emerald-400 p-[1.5px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] transition-all duration-300 h-[60px] md:h-[76px] flex-nowrap whitespace-nowrap mx-4">
+               <div className="flex w-full h-full bg-white rounded-full p-2 md:p-3 relative flex-nowrap overflow-visible">
                  
                  {/* Floating Active Indicator */}
                  <div 
-                   className="absolute top-1.5 bottom-1.5 md:top-2 md:bottom-2 rounded-full p-[1px] md:p-[1.25px] bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 transition-all duration-300 ease-out z-0"
+                   className="absolute top-2 bottom-2 md:top-3 md:bottom-3 rounded-full p-[1px] md:p-[1.5px] bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 transition-all duration-300 ease-out z-0"
                    style={{ left: indicatorStyle.left, width: indicatorStyle.width, opacity: indicatorStyle.opacity }}
                  >
-                   <div className="w-full h-full bg-white rounded-full drop-shadow-sm"></div>
+                   <div className="w-full h-full bg-white rounded-full drop-shadow-md"></div>
                  </div>
 
                  <div className="flex items-center relative z-10 w-full h-full gap-1 md:gap-2 flex-nowrap">

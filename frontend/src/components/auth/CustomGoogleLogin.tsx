@@ -50,7 +50,7 @@ export function CustomGoogleLogin({
             type="button"
             onClick={handleClick}
             disabled={busy}
-            className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+            className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -70,7 +70,7 @@ export function CustomGoogleLogin({
                     fill="#EA4335"
                 />
             </svg>
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-semibold text-gray-700">
                 {busy ? 'Signing in...' : buttonText}
             </span>
         </button>
