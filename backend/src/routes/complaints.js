@@ -1,6 +1,6 @@
 import express from 'express';
 import { Complaint } from '../models/Complaint.js';
-import { User } from '../models/User.js';
+import { User, findUserById } from '../models/User.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { validateComplaint, validateComplaintUpdate } from '../validators/complaintValidators.js';
@@ -410,18 +410,11 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   const userEmail = updatedComplaint?.user?.email || req.user?.email;
   const userName = updatedComplaint?.user?.name || req.user?.name;
 
-  if (!userEmail) {
-    console.error('❌ Cannot send email: User email is missing');
-    console.error('   updatedComplaint.user:', updatedComplaint?.user);
-    console.error('   req.user:', req.user);
-  } else {
-    try {
-      console.log(`📧 Sending complaint confirmation email...`);
-      console.log(`   To: ${userEmail}`);
-      console.log(`   Name: ${userName}`);
-      console.log(`   Complaint: ${updatedComplaint.complaintId}`);
-
-      await sendComplaintConfirmationEmail(
+  // Trigger all notifications and event publishing in the background
+  (async () => {
+    // 1. Send Email Notification
+    if (userEmail) {
+      sendComplaintConfirmationEmail(
         userEmail,
         userName,
         updatedComplaint.complaintId,
@@ -429,62 +422,48 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
         updatedComplaint.description,
         updatedComplaint.category,
         updatedComplaint.priority
-      );
-      console.log(`✅ Confirmation email sent to ${userEmail} for complaint ${updatedComplaint.complaintId}`);
-    } catch (emailError) {
-      console.error('❌ Failed to send complaint confirmation email:', emailError.message);
-      console.error('   Error code:', emailError.code);
-      console.error('   Error stack:', emailError.stack);
-      // Continue even if email fails - complaint is still created
-    }
-  }
-
-  // Send WhatsApp notification if user has phone number
-  try {
-    const { sendComplaintRegistrationWhatsApp } = await import('../services/whatsappService.js');
-    const userPhoneNumber = req.user?.phoneNumber;
-
-    if (userPhoneNumber) {
-      console.log(`📱 Sending WhatsApp notification to ${userPhoneNumber}...`);
-      const whatsappResult = await sendComplaintRegistrationWhatsApp(
-        userPhoneNumber,
-        userName,
-        updatedComplaint.complaintId,
-        updatedComplaint.title,
-        updatedComplaint.category,
-        updatedComplaint.priority
-      );
-
-      if (whatsappResult.success) {
-        console.log(`✅ WhatsApp notification sent successfully for complaint ${updatedComplaint.complaintId}`);
-      } else {
-        console.log(`⚠️  WhatsApp notification failed: ${whatsappResult.error}`);
-      }
+      )
+        .then(() => console.log(`✅ Confirmation email sent to ${userEmail} for complaint ${updatedComplaint.complaintId}`))
+        .catch((emailError) => console.error('❌ Failed to send complaint confirmation email:', emailError.message));
     } else {
-      console.log('ℹ️  No phone number on user record, skipping WhatsApp notification');
+      console.error('❌ Cannot send email: User email is missing');
     }
-  } catch (whatsappError) {
-    console.error('❌ Failed to send WhatsApp notification:', whatsappError.message);
-    // Continue even if WhatsApp fails - complaint is still created
-  }
 
-  // Send SMS notification if user has phone number
-  try {
+    // 2. Send WhatsApp Notification
+    const userPhoneNumber = req.user?.phoneNumber;
+    if (userPhoneNumber) {
+      import('../services/whatsappService.js')
+        .then(({ sendComplaintRegistrationWhatsApp }) => {
+          console.log(`📱 Sending WhatsApp notification to ${userPhoneNumber}...`);
+          return sendComplaintRegistrationWhatsApp(
+            userPhoneNumber,
+            userName,
+            updatedComplaint.complaintId,
+            updatedComplaint.title,
+            updatedComplaint.category,
+            updatedComplaint.priority
+          );
+        })
+        .then((whatsappResult) => {
+          if (whatsappResult.success) {
+            console.log(`✅ WhatsApp notification sent successfully for complaint ${updatedComplaint.complaintId}`);
+          } else {
+            console.log(`⚠️  WhatsApp notification failed: ${whatsappResult.error}`);
+          }
+        })
+        .catch((whatsappError) => console.error('❌ Failed to send WhatsApp notification:', whatsappError.message));
+    }
+
+    // 3. Send SMS Notification
     if (req.user?.phoneNumber) {
       console.log(`📱 Sending SMS notification to ${req.user.phoneNumber}...`);
-      await triggerComplaintCreatedSMS(req.user, updatedComplaint.complaintId);
-      console.log(`✅ SMS notification sent successfully for complaint ${updatedComplaint.complaintId}`);
-    } else {
-      console.log('ℹ️  No phone number on user record, skipping SMS notification');
+      triggerComplaintCreatedSMS(req.user, updatedComplaint.complaintId)
+        .then(() => console.log(`✅ SMS notification sent successfully for complaint ${updatedComplaint.complaintId}`))
+        .catch((smsError) => console.error('❌ Failed to send SMS notification:', smsError.message));
     }
-  } catch (smsError) {
-    console.error('❌ Failed to send SMS notification:', smsError.message);
-    // Continue even if SMS fails - complaint is still created
-  }
 
-  // Publish event to SNS for ticket creation
-  try {
-    await publishEvent('ticket.created', {
+    // 4. Publish SNS event
+    publishEvent('ticket.created', {
       ticketId: updatedComplaint._id.toString(),
       complaintId: updatedComplaint.complaintId,
       userId: req.user._id.toString(),
@@ -492,12 +471,10 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       category: updatedComplaint.category,
       priority: updatedComplaint.priority,
       assignedTo: updatedComplaint.assignedTo?.toString() || null
-    });
-    console.log(`📡 SNS Event published: ticket.created for ${updatedComplaint.complaintId}`);
-  } catch (snsError) {
-    console.error('❌ Failed to publish ticket.created event:', snsError.message);
-    // Continue even if SNS fails
-  }
+    })
+      .then(() => console.log(`📡 SNS Event published: ticket.created for ${updatedComplaint.complaintId}`))
+      .catch((snsError) => console.error('❌ Failed to publish ticket.created event:', snsError.message));
+  })();
 
   res.status(201).json(updatedComplaint);
 }));
@@ -612,44 +589,41 @@ router.patch('/:id/status', authenticate, authorize('agent', 'admin'), asyncHand
   // Get io instance early for use throughout
   const io = req.app.get('io');
 
-  // Send resolution email to user if complaint is marked as resolved
+  // Send resolution email and SMS to user in the background if complaint is marked as resolved
   if (status === 'Resolved') {
-    try {
-      // Get user details for email
-      const complaintUser = await User.findById(complaint.user);
+    (async () => {
+      try {
+        const { user: complaintUser } = await findUserById(complaint.user);
 
-      if (complaintUser && complaintUser.email) {
-        console.log(`📧 Sending resolution email to ${complaintUser.email}...`);
-        await sendComplaintResolvedEmail(
-          complaintUser.email,
-          complaintUser.name || complaintUser.username,
-          complaint.complaintId,
-          complaint.title
-        );
-        console.log(`✅ Resolution email sent successfully for complaint ${complaint.complaintId}`);
-      } else {
-        console.log('⚠️  User email not found, skipping resolution email');
+        if (!complaintUser) {
+          console.log('⚠️  User not found for resolved complaint notifications');
+          return;
+        }
+
+        // Send Email Notification in background
+        const emailPromise = complaintUser.email
+          ? sendComplaintResolvedEmail(
+              complaintUser.email,
+              complaintUser.name || complaintUser.username,
+              complaint.complaintId,
+              complaint.title
+            )
+              .then(() => console.log(`✅ Resolution email sent successfully for complaint ${complaint.complaintId}`))
+              .catch((emailError) => console.error('❌ Failed to send resolution email:', emailError.message))
+          : Promise.resolve();
+
+        // Send SMS Notification in background
+        const smsPromise = complaintUser.phoneNumber
+          ? triggerComplaintResolvedSMS(complaintUser, complaint.complaintId)
+              .then(() => console.log(`✅ Resolution SMS sent successfully for complaint ${complaint.complaintId}`))
+              .catch((smsError) => console.error('❌ Failed to send resolution SMS:', smsError.message))
+          : Promise.resolve();
+
+        await Promise.all([emailPromise, smsPromise]);
+      } catch (err) {
+        console.error('❌ Error during background complaint resolution notifications:', err);
       }
-    } catch (emailError) {
-      console.error('❌ Failed to send resolution email:', emailError.message);
-      // Continue even if email fails - don't block the resolution process
-    }
-
-    // Send SMS notification to user if complaint is marked as resolved
-    try {
-      const complaintUser = await User.findById(complaint.user);
-
-      if (complaintUser && complaintUser.phoneNumber) {
-        console.log(`📱 Sending resolution SMS to ${complaintUser.phoneNumber}...`);
-        await triggerComplaintResolvedSMS(complaintUser, complaint.complaintId);
-        console.log(`✅ Resolution SMS sent successfully for complaint ${complaint.complaintId}`);
-      } else {
-        console.log('⚠️  User phone number not found, skipping resolution SMS');
-      }
-    } catch (smsError) {
-      console.error('❌ Failed to send resolution SMS:', smsError.message);
-      // Continue even if SMS fails - don't block the resolution process
-    }
+    })();
   }
 
   // NOW check if the assigned agent should be marked available (after save)

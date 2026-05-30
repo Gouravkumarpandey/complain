@@ -143,42 +143,38 @@ export const getUserModelByRole = (role) => {
 
 // Helper function to find user across all role-specific collections
 export const findUserByEmail = async (email) => {
-  // Search in all collections
+  // Search in all collections in parallel
   const normalizedEmail = email.toLowerCase().trim();
   
-  // Check main users collection
-  let user = await User.findOne({ email: normalizedEmail });
+  const [user, admin, agent, analytics] = await Promise.all([
+    User.findOne({ email: normalizedEmail }),
+    AdminUser.findOne({ email: normalizedEmail }),
+    AgentUser.findOne({ email: normalizedEmail }),
+    AnalyticsUser.findOne({ email: normalizedEmail })
+  ]);
+  
   if (user) return { user, model: User };
-  
-  // Check admin collection
-  user = await AdminUser.findOne({ email: normalizedEmail });
-  if (user) return { user, model: AdminUser };
-  
-  // Check agent collection
-  user = await AgentUser.findOne({ email: normalizedEmail });
-  if (user) return { user, model: AgentUser };
-  
-  // Check analytics collection
-  user = await AnalyticsUser.findOne({ email: normalizedEmail });
-  if (user) return { user, model: AnalyticsUser };
+  if (admin) return { user: admin, model: AdminUser };
+  if (agent) return { user: agent, model: AgentUser };
+  if (analytics) return { user: analytics, model: AnalyticsUser };
   
   return { user: null, model: null };
 };
 
 // Helper function to find user by ID across all collections
 export const findUserById = async (userId) => {
-  // Try to find in all collections
-  let user = await User.findById(userId).catch(() => null);
+  // Try to find in all collections in parallel
+  const [user, admin, agent, analytics] = await Promise.all([
+    User.findById(userId).catch(() => null),
+    AdminUser.findById(userId).catch(() => null),
+    AgentUser.findById(userId).catch(() => null),
+    AnalyticsUser.findById(userId).catch(() => null)
+  ]);
+  
   if (user) return { user, model: User };
-  
-  user = await AdminUser.findById(userId).catch(() => null);
-  if (user) return { user, model: AdminUser };
-  
-  user = await AgentUser.findById(userId).catch(() => null);
-  if (user) return { user, model: AgentUser };
-  
-  user = await AnalyticsUser.findById(userId).catch(() => null);
-  if (user) return { user, model: AnalyticsUser };
+  if (admin) return { user: admin, model: AdminUser };
+  if (agent) return { user: agent, model: AgentUser };
+  if (analytics) return { user: analytics, model: AnalyticsUser };
   
   return { user: null, model: null };
 };

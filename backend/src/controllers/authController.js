@@ -202,31 +202,21 @@ export const registerUser = async (req, res) => {
 
     const user = await UserModel.create(userData);
 
-    // Send OTP via email
-    try {
-      await sendOtpEmail(user.email, user.name, otp);
-      console.log("OTP email sent to user");
-    } catch (emailError) {
-      console.error("Failed to send OTP email:", emailError);
-      // We continue even if email fails, but log the error
-    }
+    // Send OTP via email in the background
+    sendOtpEmail(user.email, user.name, otp)
+      .then(() => console.log("OTP email sent to user in background"))
+      .catch((emailError) => console.error("Failed to send OTP email in background:", emailError));
 
-    // Send Welcome Email
-    try {
-      await sendWelcomeEmail(user.email, user.name, user.role);
-    } catch (welcomeError) {
-      console.error("Failed to send welcome email:", welcomeError);
-    }
+    // Send Welcome Email in the background
+    sendWelcomeEmail(user.email, user.name, user.role)
+      .then(() => console.log("Welcome email sent to user in background"))
+      .catch((welcomeError) => console.error("Failed to send welcome email in background:", welcomeError));
 
-    // Send SMS notification if phone number is provided
+    // Send SMS notification in the background if phone number is provided
     if (user.phoneNumber) {
-      try {
-        await triggerSignupSMS(user);
-        console.log("Signup SMS sent to user");
-      } catch (smsError) {
-        console.error("Failed to send signup SMS:", smsError);
-        // Continue even if SMS fails
-      }
+      triggerSignupSMS(user)
+        .then(() => console.log("Signup SMS sent to user in background"))
+        .catch((smsError) => console.error("Failed to send signup SMS in background:", smsError));
     }
     console.log("User registered (unverified) in collection:", {
       collection: UserModel.collection.name,
@@ -281,8 +271,10 @@ export const loginUser = async (req, res) => {
         user.otpExpiry = otpExpiry;
         await user.save();
 
-        // Send new OTP
-        await sendOtpEmail(user.email, user.name, otp);
+        // Send new OTP in the background
+        sendOtpEmail(user.email, user.name, otp)
+          .then(() => console.log("Login verification OTP email sent in background"))
+          .catch((err) => console.error("Failed to send login verification OTP email in background:", err));
 
         return res.status(401).json({
           message: "Account not verified. A new verification OTP has been sent to your email.",
@@ -680,13 +672,11 @@ export const googleSignupWithRole = async (req, res) => {
     });
 
     // Send SMS notification if phone number is provided
+    // Send SMS notification in the background if phone number is provided
     if (user.phoneNumber) {
-      try {
-        await triggerSignupSMS(user);
-        console.log("Signup SMS sent to Google user");
-      } catch (smsError) {
-        console.error("Failed to send signup SMS:", smsError);
-      }
+      triggerSignupSMS(user)
+        .then(() => console.log("Signup SMS sent to Google user in background"))
+        .catch((smsError) => console.error("Failed to send signup SMS in background:", smsError));
     }
 
     const accessToken = generateToken(user._id);
@@ -1781,8 +1771,10 @@ export const resendOTP = async (req, res) => {
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    // Send new OTP via email
-    await sendOtpEmail(user.email, user.name, otp);
+    // Send new OTP via email in the background
+    sendOtpEmail(user.email, user.name, otp)
+      .then(() => console.log("Resend OTP email sent in background"))
+      .catch((err) => console.error("Failed to send resend OTP email in background:", err));
 
     res.json({
       success: true,
