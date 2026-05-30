@@ -334,7 +334,9 @@ export function ChatBot() {
       {/* Freshdesk-style Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-5 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-2xl hover:bg-slate-700 transition-all duration-300 z-50 flex items-center justify-center"
+        className={`fixed bottom-5 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-2xl hover:bg-slate-700 transition-all duration-300 z-50 items-center justify-center ${
+          isOpen ? 'hidden sm:flex' : 'flex'
+        }`}
         style={{ boxShadow: '0 4px 12px rgba(30, 41, 59, 0.4)' }}
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
@@ -342,7 +344,7 @@ export function ChatBot() {
 
       {isOpen && (
         <div
-          className="fixed bottom-24 right-5 w-[380px] h-[600px] bg-white rounded-2xl flex flex-col z-50 overflow-hidden"
+          className="fixed bottom-0 right-0 w-full h-full sm:bottom-24 sm:right-5 sm:w-[380px] sm:h-[600px] bg-white sm:rounded-2xl flex flex-col z-50 overflow-hidden"
           style={{
             boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)'
           }}
@@ -375,7 +377,7 @@ export function ChatBot() {
           </div>
 
           {/* Freshdesk-style Messages Area */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#f8f9fa]" style={{
+          <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3 sm:space-y-4 bg-[#f8f9fa]" style={{
             scrollbarWidth: 'thin',
             scrollbarColor: '#cbd5e1 transparent'
           }}>
@@ -401,8 +403,8 @@ export function ChatBot() {
                     </div>
                   )}
 
-                  <div className="flex flex-col max-w-[75%]">
-                    <div className={`px-4 py-2.5 rounded-2xl ${message.sender === 'user'
+                  <div className="flex flex-col max-w-[85%] sm:max-w-[75%]">
+                    <div className={`px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl ${message.sender === 'user'
                       ? 'bg-slate-800 text-white rounded-br-md'
                       : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
                       }`}>
@@ -434,8 +436,8 @@ export function ChatBot() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-gray-200 px-4 py-3 bg-white">
-            <div className="flex gap-2 items-end">
+          <div className="border-t border-gray-200 p-2.5 sm:px-4 sm:py-3 bg-white">
+            <div className="flex gap-1.5 sm:gap-2 items-end">
               <div className="flex-1 relative flex items-center">
                 <input
                   type="text"
@@ -443,20 +445,20 @@ export function ChatBot() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Type or speak a message..."
-                  className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
+                  className="w-full pl-3.5 pr-10 sm:pl-4 sm:pr-12 py-2 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-xs sm:text-sm transition-all"
                   disabled={loading}
                 />
                 <VoiceInput
                   onTranscript={handleVoiceTranscript}
                   lang={detectedLanguage}
-                  className="absolute right-2"
+                  className="absolute right-1.5 sm:right-2"
                 />
               </div>
 
               {/* Speech Toggle Button */}
               <button
                 onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
-                className={`w-10 h-10 rounded-full transition-all shadow-sm flex items-center justify-center flex-shrink-0 ${isSpeechEnabled
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all shadow-sm flex items-center justify-center flex-shrink-0 ${isSpeechEnabled
                     ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
                     : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                   }`}
@@ -468,7 +470,7 @@ export function ChatBot() {
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || loading}
-                className="w-10 h-10 bg-slate-800 text-white rounded-full hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center flex-shrink-0"
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-800 text-white rounded-full hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
               </button>

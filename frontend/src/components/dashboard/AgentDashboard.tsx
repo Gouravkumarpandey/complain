@@ -29,6 +29,7 @@ export function AgentDashboard() {
   const { isConnected, socket, joinComplaintRoom, updateComplaint, sendMessage } = useSocket();
   const [activeView, setActiveView] = useState('my-tickets');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Use loading state from context
   const complaintsLoading = complaintsContextLoading;
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
@@ -369,9 +370,21 @@ export function AgentDashboard() {
   // Using imported helper functions for consistent styling
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Freshdesk-style Clean Sidebar */}
-      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile backdrop overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Freshdesk-style Clean Sidebar — fixed drawer on mobile, static on lg+ */}
+      <div className={`bg-slate-800 flex flex-col py-4 transition-all duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50
+        ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
+        ${mobileMenuOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0'}
+      `}>
         <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -453,18 +466,24 @@ export function AgentDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Freshdesk-style Clean Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => {
+                if (window.innerWidth >= 1024) {
+                  setSidebarCollapsed(!sidebarCollapsed);
+                } else {
+                  setMobileMenuOpen(!mobileMenuOpen);
+                }
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              title="Toggle menu"
             >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
               {activeView === 'dashboard' && 'Agent Dashboard'}
               {activeView === 'my-tickets' && 'My Tickets'}
               {activeView === 'performance' && 'Performance Metrics'}
@@ -603,9 +622,9 @@ export function AgentDashboard() {
 
         {/* Dashboard View - Core Complaint Features */}
         {activeView === 'dashboard' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
+          <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
             {/* Top Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Total Complaints</h3>
                 <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -638,7 +657,7 @@ export function AgentDashboard() {
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Recent Complaints */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -784,7 +803,7 @@ export function AgentDashboard() {
                 <p className="text-sm text-gray-600 mt-1">Track the progress of your assigned tickets</p>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   <div className="flex items-center gap-3 p-4 border border-blue-200 rounded-lg bg-blue-50">
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                     <div>
@@ -1013,7 +1032,7 @@ export function AgentDashboard() {
                 </div>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-500 mb-1">Average Response Time</p>
                     <p className="text-2xl font-bold text-blue-600">2.5 hours</p>
@@ -1069,7 +1088,7 @@ export function AgentDashboard() {
 
         {/* Freshdesk-Style Profile Settings */}
         {activeView === 'profile' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
+          <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
             <div className="max-w-5xl mx-auto">
               {/* Profile Header Card */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">

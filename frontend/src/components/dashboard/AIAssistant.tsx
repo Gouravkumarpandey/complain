@@ -157,8 +157,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl flex flex-col overflow-hidden max-w-2xl w-full" style={{ height: '85vh', maxHeight: '700px', boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)' }}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-0 sm:p-4">
+      <div 
+        className="bg-white flex flex-col overflow-hidden w-full h-full sm:h-[85vh] sm:max-h-[700px] sm:max-w-2xl sm:rounded-2xl" 
+        style={{ 
+          boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)' 
+        }}
+      >
         {/* Header */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-700 text-white px-5 py-4">
           <div className="flex items-center justify-between mb-3">
@@ -183,7 +188,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#f8f9fa]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4 bg-[#f8f9fa]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -197,8 +202,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                 <Bot className={`w-4 h-4 ${message.role === 'user' ? 'text-white' : 'text-slate-800'}`} />
               </div>
 
-              <div className="flex flex-col max-w-[75%]">
-                <div className={`px-4 py-2.5 rounded-2xl group ${message.role === 'user'
+              <div className="flex flex-col max-w-[85%] sm:max-w-[75%]">
+                <div className={`px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl group ${message.role === 'user'
                     ? 'bg-slate-800 text-white rounded-br-md'
                     : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
                   }`}>
@@ -258,8 +263,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-200 px-4 py-3 bg-white">
-          <div className="flex gap-2 items-end">
+        <div className="border-t border-gray-200 p-2.5 sm:px-4 sm:py-3 bg-white">
+          <div className="flex gap-1.5 sm:gap-2 items-end">
             <div className="flex-1 relative flex items-center">
               <input
                 ref={inputRef}
@@ -269,19 +274,19 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
                 onKeyPress={handleKeyPress}
                 placeholder="Type or speak a message..."
                 disabled={isLoading}
-                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-sm transition-all"
+                className="w-full pl-3.5 pr-10 sm:pl-4 sm:pr-12 py-2 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:bg-white focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 text-xs sm:text-sm transition-all"
               />
               <VoiceInput
                 onTranscript={handleVoiceTranscript}
                 lang={i18n.language}
-                className="absolute right-2"
+                className="absolute right-1.5 sm:right-2"
               />
             </div>
             {/* Stop reading button — shown when speaking */}
             {speakingMessageId && (
               <button
                 onClick={stopSpeaking}
-                className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-all shadow-sm flex items-center justify-center flex-shrink-0 animate-pulse"
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-all shadow-sm flex items-center justify-center flex-shrink-0 animate-pulse"
                 title="Stop reading"
               >
                 <StopCircle className="w-4 h-4" />
@@ -290,7 +295,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
             {!speakingMessageId && (
               <button
                 disabled
-                className="w-10 h-10 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center flex-shrink-0 cursor-default"
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center flex-shrink-0 cursor-default"
                 title="Tap 🔊 on any message to hear it"
               >
                 <VolumeX className="w-4 h-4" />
@@ -299,7 +304,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className="w-10 h-10 bg-slate-800 text-white rounded-full hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center flex-shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-800 text-white rounded-full hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center flex-shrink-0"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

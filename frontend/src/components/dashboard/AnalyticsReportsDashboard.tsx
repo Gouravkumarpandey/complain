@@ -26,6 +26,7 @@ export function AnalyticsReportsDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -281,9 +282,21 @@ export function AnalyticsReportsDashboard() {
   const trendData = getTrendData();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Collapsible Sidebar */}
-      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile backdrop overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Collapsible Sidebar — fixed drawer on mobile, static on lg+ */}
+      <div className={`bg-slate-800 flex flex-col py-4 transition-all duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50
+        ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
+        ${mobileMenuOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0'}
+      `}>
         {/* Logo */}
         <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
@@ -356,139 +369,208 @@ export function AnalyticsReportsDashboard() {
       </div>
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Header with Menu Toggle */}
-        <header className="bg-white border-b border-gray-200 py-3 px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <h1 className="text-xl font-semibold text-gray-800">
-                QuickFix <span className="font-normal text-gray-500">| Analytics Dashboard</span>
-              </h1>
+        <header className="bg-white border-b border-gray-200 py-2 sm:py-3 px-3 sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4 flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <button
+                  onClick={() => {
+                    if (window.innerWidth >= 1024) {
+                      setSidebarCollapsed(!sidebarCollapsed);
+                    } else {
+                      setMobileMenuOpen(!mobileMenuOpen);
+                    }
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors flex-shrink-0"
+                  title="Toggle menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <h1 className="text-base sm:text-xl font-semibold text-gray-800 truncate">
+                  QuickFix <span className="hidden sm:inline font-normal text-gray-500">| Analytics</span>
+                </h1>
+              </div>
               
-              <div className="flex items-center gap-2 ml-8">
+              {/* Header Right Actions for Mobile Menu Toggle */}
+              <div className="flex items-center gap-1 sm:hidden">
+                {/* Search Button */}
+                <button 
+                  onClick={() => setShowSearchModal(true)}
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  title="Search complaints"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                
+                {/* Notifications Button */}
+                <button 
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors relative"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+
+                <div className="user-menu-container relative">
+                  <button 
+                    className="flex items-center gap-1.5 hover:bg-gray-100 p-1.5 rounded-lg transition-colors"
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                  >
+                    <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                      {analystProfile.name.charAt(0).toUpperCase()}
+                    </div>
+                  </button>
+                  {showUserMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                      <div className="p-3 border-b border-gray-100">
+                        <p className="font-semibold text-gray-900 text-sm">{analystProfile.name}</p>
+                        <p className="text-xs text-blue-600 truncate" title={analystProfile.email}>{analystProfile.email}</p>
+                      </div>
+                      <div className="p-1">
+                        <button 
+                          className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-2"
+                          onClick={() => {
+                            setSelectedReport('profile');
+                            setShowUserMenu(false);
+                          }}
+                        >
+                          <Settings className="w-4 h-4 text-gray-500" />
+                          Settings
+                        </button>
+                        <button 
+                          className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-2"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="w-4 h-4 text-gray-500" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-header Filters for Mobile / Flex elements for Desktop */}
+            <div className="flex items-center justify-between sm:justify-end gap-2 overflow-x-auto pb-1 sm:pb-0">
+              <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setSelectedTimeRange('7d')}
-                  className={`px-3 py-1 text-sm rounded-md ${
+                  className={`px-2.5 py-1 text-xs sm:text-sm rounded-md font-medium transition-colors ${
                     selectedTimeRange === '7d' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  7 days
+                  7d
                 </button>
                 <button 
                   onClick={() => setSelectedTimeRange('30d')}
-                  className={`px-3 py-1 text-sm rounded-md ${
+                  className={`px-2.5 py-1 text-xs sm:text-sm rounded-md font-medium transition-colors ${
                     selectedTimeRange === '30d' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  30 days
+                  30d
                 </button>
                 <button 
                   onClick={() => setSelectedTimeRange('90d')}
-                  className={`px-3 py-1 text-sm rounded-md ${
+                  className={`px-2.5 py-1 text-xs sm:text-sm rounded-md font-medium transition-colors ${
                     selectedTimeRange === '90d' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  90 days
+                  90d
                 </button>
                 
                 {/* Refresh Button */}
                 <button
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className="ml-4 px-3 py-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50 flex items-center gap-2 border border-gray-200"
+                  className="px-2 py-1 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50 flex items-center gap-1.5 border border-gray-200 text-xs"
                   title="Refresh Overview"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="text-sm font-medium">Refresh Overview</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline font-medium">Refresh</span>
                 </button>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Search Button */}
-              <button 
-                onClick={() => setShowSearchModal(true)}
-                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                title="Search complaints"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-              
-              {/* Help Button */}
-              <button 
-                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                title="Help"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              
-              {/* Notifications Button */}
-              <button 
-                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors relative"
-                onClick={() => setShowNotifications(!showNotifications)}
-                title="Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              
-              <div className="user-menu-container relative">
+
+              {/* Desktop Header Actions (hidden on mobile) */}
+              <div className="hidden sm:flex items-center gap-2">
                 <button 
-                  className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded-lg transition-colors"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  onClick={() => setShowSearchModal(true)}
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  title="Search complaints"
                 >
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {analystProfile.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-gray-900">{analystProfile.name}</p>
-                    <p className="text-xs text-gray-500">{analystProfile.role}</p>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  <Search className="w-5 h-5" />
                 </button>
                 
-                {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-100">
-                      <p className="font-semibold text-gray-900">{analystProfile.name}</p>
-                      <p className="text-sm text-blue-600 truncate" title={analystProfile.email}>{analystProfile.email}</p>
-                      <p className="text-sm text-gray-500 mt-1">Role: {analystProfile.role}</p>
+                <button 
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  title="Help"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+                
+                <button 
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors relative"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                
+                <div className="user-menu-container relative">
+                  <button 
+                    className="flex items-center gap-2 hover:bg-gray-100 p-1.5 rounded-lg transition-colors"
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                  >
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      {analystProfile.name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="p-2">
-                      <button 
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
-                        onClick={() => {
-                          setSelectedReport('profile');
-                          setShowUserMenu(false);
-                        }}
-                      >
-                        <Settings className="w-4 h-4 text-gray-500" />
-                        Account Settings
-                      </button>
-                      <button 
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="w-4 h-4 text-gray-500" />
-                        Sign Out
-                      </button>
+                    <div className="text-left hidden md:block">
+                      <p className="text-sm font-medium text-gray-900 leading-none">{analystProfile.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{analystProfile.role}</p>
                     </div>
-                  </div>
-                )}
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                      <div className="p-4 border-b border-gray-100">
+                        <p className="font-semibold text-gray-900">{analystProfile.name}</p>
+                        <p className="text-sm text-blue-600 truncate" title={analystProfile.email}>{analystProfile.email}</p>
+                        <p className="text-sm text-gray-500 mt-1">Role: {analystProfile.role}</p>
+                      </div>
+                      <div className="p-2">
+                        <button 
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                          onClick={() => {
+                            setSelectedReport('profile');
+                            setShowUserMenu(false);
+                          }}
+                        >
+                          <Settings className="w-4 h-4 text-gray-500" />
+                          Account Settings
+                        </button>
+                        <button 
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-3"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="w-4 h-4 text-gray-500" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </header>
         
         {/* Main Dashboard Content will go here */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
           {showNotifications && (
             <div className="absolute right-6 top-16 z-50">
               <Notifications />
@@ -503,7 +585,7 @@ export function AnalyticsReportsDashboard() {
                 <p className="text-gray-600">Data for the past {selectedTimeRange === '7d' ? '7 days' : selectedTimeRange === '30d' ? '30 days' : '90 days'}</p>
                 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <p className="text-sm text-gray-600 mb-2">Total Complaints</p>
                     <p className="text-3xl font-bold text-gray-800">{analyticsData.total}</p>
@@ -530,7 +612,7 @@ export function AnalyticsReportsDashboard() {
                 </div>
                 
                 {/* Charts Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                   {/* Status Distribution Chart */}
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -607,7 +689,7 @@ export function AnalyticsReportsDashboard() {
                 <p className="text-gray-600">Performance metrics for service level agreements</p>
                 
                 {/* SLA Metrics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">SLA Compliance Rate</h3>
@@ -642,7 +724,7 @@ export function AnalyticsReportsDashboard() {
                     <h3 className="text-lg font-semibold text-gray-800">SLA Performance by Priority</h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[600px]">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
@@ -689,7 +771,7 @@ export function AnalyticsReportsDashboard() {
                 <p className="text-gray-600">Individual agent metrics and comparisons</p>
                 
                 {/* Agent Performance Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">Active Agents</h3>
@@ -733,7 +815,7 @@ export function AnalyticsReportsDashboard() {
                     <h3 className="text-lg font-semibold text-gray-800">Agent Leaderboard</h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[600px]">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
@@ -773,7 +855,7 @@ export function AnalyticsReportsDashboard() {
                 <p className="text-gray-600">Long-term trends and patterns</p>
                 
                 {/* Trend Insights */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">Peak Hours</h3>
@@ -825,7 +907,7 @@ export function AnalyticsReportsDashboard() {
                 <h2 className="text-2xl font-semibold text-gray-800">Export Reports</h2>
                 <p className="text-gray-600">Download analytics reports</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <h3 className="font-semibold text-gray-800">Monthly Performance Report</h3>
                     <p className="text-sm text-gray-600 mt-2">Complete overview of system performance and metrics</p>
@@ -858,7 +940,7 @@ export function AnalyticsReportsDashboard() {
 
             {/* Profile Settings View */}
             {selectedReport === 'profile' && (
-              <div className="p-6 bg-gray-50 min-h-screen">
+              <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
                 <div className="max-w-5xl mx-auto">
                   {/* Success/Error Messages */}
                   {saveSuccess && (
@@ -877,7 +959,7 @@ export function AnalyticsReportsDashboard() {
                   {/* Profile Header Card */}
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                     <div className="p-6">
-                      <div className="flex items-start gap-6">
+                      <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6">
                         <div className="relative group">
                           {profilePhoto ? (
                             <>
@@ -933,7 +1015,7 @@ export function AnalyticsReportsDashboard() {
                         <p className="text-sm text-gray-600 mt-1">Update your personal details and contact information</p>
                       </div>
                       <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                             <input 
@@ -1002,7 +1084,7 @@ export function AnalyticsReportsDashboard() {
                         {/* Notification Toggles */}
                         <div className="mb-6">
                           <p className="text-sm font-medium text-gray-700 mb-3">Notification Channels</p>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg text-center">
                               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
                                 <Bell className="w-5 h-5 text-blue-600" />
@@ -1056,7 +1138,7 @@ export function AnalyticsReportsDashboard() {
                         {/* Security Options */}
                         <div className="border-t border-gray-200 pt-5">
                           <p className="text-sm font-medium text-gray-700 mb-3">Security Options</p>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                             <button className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
                               <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

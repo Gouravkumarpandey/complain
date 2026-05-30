@@ -170,6 +170,7 @@ export const AdminDashboard = () => {
   const [showUserMenu, setShowUserMenu] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   
   // Profile settings state
@@ -800,9 +801,21 @@ export const AdminDashboard = () => {
   const trendData = getTrendData();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Collapsible Sidebar */}
-      <div className={`bg-slate-800 ${sidebarCollapsed ? 'w-16' : 'w-64'} flex flex-col py-4 transition-all duration-300 ease-in-out`}>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile backdrop overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Collapsible Sidebar — fixed drawer on mobile, static on lg+ */}
+      <div className={`bg-slate-800 flex flex-col py-4 transition-all duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50
+        ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
+        ${mobileMenuOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0'}
+      `}>
         <div className={`${sidebarCollapsed ? 'px-3' : 'px-4'} mb-4`}>
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -901,18 +914,24 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => {
+                if (window.innerWidth >= 1024) {
+                  setSidebarCollapsed(!sidebarCollapsed);
+                } else {
+                  setMobileMenuOpen(!mobileMenuOpen);
+                }
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              title="Toggle menu"
             >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
               {activeView === 'dashboard' && 'Admin Dashboard'}
               {activeView === 'users' && 'Users Management'}
               {activeView === 'agents' && 'Agents Management'}
@@ -1010,7 +1029,7 @@ export const AdminDashboard = () => {
         
         {/* Dashboard View */}
         {activeView === 'dashboard' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
+          <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
             {/* Welcome Section */}
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-1">Admin Dashboard</h2>
@@ -1018,7 +1037,7 @@ export const AdminDashboard = () => {
             </div>
 
             {/* Clean Stats Cards - Text Only Style */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <p className="text-sm text-gray-600 mb-2">Total Users</p>
                 <div className="text-3xl font-bold text-gray-900">{stats.totalUsers}</div>
@@ -1057,7 +1076,7 @@ export const AdminDashboard = () => {
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
               {/* User/Agent Distribution Pie Chart */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
                 <div className="flex items-center justify-between mb-4">
@@ -1283,14 +1302,14 @@ export const AdminDashboard = () => {
 
         {/* Users Management View */}
         {activeView === 'users' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
+          <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-1">User Management</h2>
               <p className="text-gray-600">Manage all registered users</p>
             </div>
 
             {/* User Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -1463,7 +1482,7 @@ export const AdminDashboard = () => {
 
         {/* Agents Management View */}
         {activeView === 'agents' && (
-          <div className="p-6 bg-gray-50 min-h-screen">
+          <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-1">Agent Management</h2>
               <p className="text-gray-600">Monitor and manage support agents</p>

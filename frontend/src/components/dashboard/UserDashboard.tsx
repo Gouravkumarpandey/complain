@@ -34,6 +34,7 @@ export function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -438,9 +439,20 @@ export function UserDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Premium Dark Sidebar */}
-      <div className={`bg-[#0f172a] ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen z-40 border-r border-slate-800`}>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile backdrop overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Premium Dark Sidebar — translate-x drawer on mobile, always fixed on lg+ */}
+      <div className={`bg-[#0f172a] flex flex-col transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen z-40 border-r border-slate-800
+        ${sidebarCollapsed ? 'lg:w-20 w-64' : 'w-64'}
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         {/* Logo Section */}
         <div className="p-6">
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
@@ -607,18 +619,24 @@ export function UserDashboard() {
       </div>
 
       {/* Main Content Area - Adjusted for Fixed Sidebar */}
-      <div className={`flex-1 flex flex-col min-h-screen ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300`}>
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {/* Freshdesk-style Clean Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => {
+                if (window.innerWidth >= 1024) {
+                  setSidebarCollapsed(!sidebarCollapsed);
+                } else {
+                  setMobileMenuOpen(!mobileMenuOpen);
+                }
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              title="Toggle menu"
             >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
               {activeView === 'dashboard' && 'User Dashboard'}
               {activeView === 'complaints' && 'My Complaints'}
               {activeView === 'new-complaint' && 'File New Complaint'}
@@ -770,7 +788,7 @@ export function UserDashboard() {
                   </div>
 
                   {/* Clean Stats Cards - Text Only Style */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                       <p className="text-sm text-gray-600 mb-2">{t('common.totalComplaints')}</p>
                       <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -810,7 +828,7 @@ export function UserDashboard() {
 
                   {/* Analytics Charts Section - Freshdesk Style */}
                   {filteredComplaints.length > 0 && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                       {/* Status Distribution Pie Chart */}
                       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
                         <div className="flex items-center justify-between mb-4">
@@ -960,7 +978,7 @@ export function UserDashboard() {
                   )}
 
                   {/* Main Content Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                     {/* Recent Complaints - Clean Freshdesk Style */}
                     <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
                       <div className="p-5 border-b border-gray-200 flex items-center justify-between">
@@ -1210,7 +1228,7 @@ export function UserDashboard() {
             )}
             {/* Clean Complaints List View */}
             {activeView === 'complaints' && (
-              <div className="p-6 bg-gray-50 min-h-screen">
+              <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="p-5 border-b border-gray-200 flex items-center justify-between">
                     <div>
@@ -1345,7 +1363,7 @@ export function UserDashboard() {
 
             {/* New Complaint View */}
             {activeView === 'new-complaint' && (
-              <div className="p-6 bg-gray-50 min-h-screen">
+              <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
                 <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="p-5 border-b border-gray-200 flex items-center justify-between">
                     <div>
@@ -1372,7 +1390,7 @@ export function UserDashboard() {
             {/* Freshdesk-Style Profile Settings */}
             {
               activeView === 'profile' && (
-                <div className="p-6 bg-gray-50 min-h-screen">
+                <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
                   <div className="max-w-5xl mx-auto">
                     {/* Profile Header Card */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
