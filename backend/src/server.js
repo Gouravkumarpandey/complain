@@ -383,7 +383,7 @@ app.use(
 
 // Set COOP/COEP headers AFTER helmet to override for Google Sign-In compatibility
 app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
   res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
   next();
 });
