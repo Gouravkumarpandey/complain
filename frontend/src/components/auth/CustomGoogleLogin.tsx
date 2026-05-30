@@ -1,5 +1,5 @@
-import { useGoogleLogin } from '@react-oauth/google';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
+import { useOAuthPopup } from '../../hooks/useOAuthPopup';
 
 interface CustomGoogleLoginProps {
     onSuccess: (token: string) => void;
@@ -17,100 +17,35 @@ export function CustomGoogleLogin({
     isLoading = false,
 }: CustomGoogleLoginProps) {
     const [loading, setLoading] = useState(false);
-    const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // ─────────────────────────────────────────────────────────────
-    // Option 2 — postMessage-based popup-closed detection
-    //
-    // `window.closed` polling is blocked by COOP when the popup is
-    // cross-origin (e.g. accounts.google.com).  Instead we listen
-    // for postMessage events.  @react-oauth/google relays the OAuth
-    // result through a same-origin frame that fires postMessage back
-    // to the opener, so we catch both the success path and the
-    // user-closed path here without ever touching popup.closed.
-    // ─────────────────────────────────────────────────────────────
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            // Only accept messages from our own origin or Google's OAuth relay
-            const trustedOrigins = [
-                window.location.origin,
-                'https://accounts.google.com',
-            ];
-            if (!trustedOrigins.includes(event.origin)) return;
-
-            const data = event.data;
-
-            // @react-oauth/google sends these on popup close / error
-            if (
-                data?.type === 'popup-closed'   ||
-                data?.type === 'oauth_error'     ||
-                data === 'popup_closed_by_user'  ||
-                // Google's own relay message shape
-                (typeof data === 'string' && data.includes('oauth'))
-            ) {
-                clearSafetyTimer();
-                setLoading(false);
+    const { openPopup } = useOAuthPopup(
+        (data) => {
+            setLoading(false);
+            if (data.token) {
+                onSuccess(data.token);
+            } else {
+                onFailure(new Error('Google Sign-In failed to return access token'));
             }
-        };
-
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, []);
-
-    // Cleanup safety timer on unmount
-    useEffect(() => {
-        return () => clearSafetyTimer();
-    }, []);
-
-    const clearSafetyTimer = () => {
-        if (safetyTimerRef.current) {
-            clearTimeout(safetyTimerRef.current);
-            safetyTimerRef.current = null;
+        },
+        () => {
+            setLoading(false);
         }
-    };
-
-    const googleLogin = useGoogleLogin({
-        flow: 'implicit',
-
-        onSuccess: (tokenResponse) => {
-            clearSafetyTimer();
-            setLoading(false);
-            onSuccess(tokenResponse.access_token);
-        },
-
-        onError: (error) => {
-            clearSafetyTimer();
-            setLoading(false);
-            console.error('Google login error:', error);
-            onFailure(new Error('Google Sign-In Failed'));
-        },
-
-        // ── Option 2 fallback ──────────────────────────────────────
-        // onNonOAuthError fires for popup_closed / popup_blocked even
-        // when COOP prevents window.closed polling.  The library still
-        // dispatches this event via its own internal postMessage relay,
-        // so it reaches us without touching cross-origin window props.
-        onNonOAuthError: (error) => {
-            clearSafetyTimer();
-            setLoading(false);
-            // popup_closed is user-initiated — not an error worth surfacing
-            if (error.type !== 'popup_closed') {
-                onFailure(new Error('Google Sign-In was cancelled'));
-            }
-        },
-    });
+    );
 
     const handleClick = () => {
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+        if (!clientId) {
+            onFailure(new Error('Google Client ID is not configured. Please add VITE_GOOGLE_CLIENT_ID to your .env file.'));
+            return;
+        }
+
         setLoading(true);
-
-        // Safety timeout — reset loading if postMessage is never received
-        // (e.g. network error, browser blocks popup, etc.)
-        clearSafetyTimer();
-        safetyTimerRef.current = setTimeout(() => {
-            setLoading(false);
-        }, 3 * 60 * 1000); // 3 minutes
-
-        googleLogin();
+        const redirectUri = `${window.location.origin}/auth/google/callback`;
+        const scope = 'profile email';
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
+        
+        openPopup(googleAuthUrl);
     };
 
     const busy = isLoading || loading;

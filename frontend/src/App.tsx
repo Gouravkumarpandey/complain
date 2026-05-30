@@ -13,6 +13,7 @@ import { LoginForm } from './components/auth/LoginForm';
 import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 import FacebookCallback from './components/auth/FacebookCallback';
+import GoogleCallback from './components/auth/GoogleCallback';
 import { UserDashboard } from './components/dashboard/UserDashboard';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
 import { AgentDashboard } from './components/dashboard/AgentDashboard';
@@ -127,6 +128,7 @@ function AppContent() {
         />
 
         <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
