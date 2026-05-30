@@ -146,6 +146,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       newSocket.on('complaint_status_updated', (data) => {
         window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
       });
+
       newSocket.on('complaint_assigned', (data) => {
         window.dispatchEvent(new CustomEvent('complaintAssigned', { detail: data }));
 
@@ -164,10 +165,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             icon: '/logo.svg',
           });
         }
-      });
-
-      newSocket.on('complaint_status_updated', (data) => {
-        window.dispatchEvent(new CustomEvent('complaintUpdated', { detail: data }));
       });
 
       newSocket.on('dashboard_stats_update', (data) => {
@@ -467,6 +464,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // If no user, disconnect and clean up
     if (!user) {
       if (socket) {
+        // Fix 2: Remove all listeners before disconnecting to prevent MaxListenersExceededWarning.
+        // Without this, each reconnect accumulates listeners on the same underlying EventEmitter.
+        socket.removeAllListeners();
         socket.disconnect();
         setSocket(null);
         setIsConnected(false);
@@ -474,7 +474,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       return () => { isMounted = false; };
     }
 
-    // If socket already connected, don't reconnect
+    // Fix 3 (singleton pattern): If socket already connected, reuse it — never create a second instance.
+    // Multiple io() instances share the same underlying transport streams, causing ObjectMultiplex
+    // "orphaned data" and "malformed chunk" errors when the old instance's streams receive data
+    // intended for the new one.
     if (socket && socket.connected) {
       return () => { isMounted = false; };
     }
@@ -493,8 +496,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       return () => { isMounted = false; };
     }
 
-    // Clean up any existing socket that's not connected
+    // Fix 2: Clean up any existing disconnected socket — remove ALL listeners first,
+    // then disconnect. This ensures the old socket's EventEmitter is fully drained
+    // before we create a new one, preventing listener accumulation.
     if (socket && !socket.connected) {
+      socket.removeAllListeners();
       socket.disconnect();
       setSocket(null);
     }
