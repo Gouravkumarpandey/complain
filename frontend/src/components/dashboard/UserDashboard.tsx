@@ -786,9 +786,9 @@ export function UserDashboard() {
         ) : (
           <>
             {activeView === 'dashboard' && (
-              <div className="flex bg-gray-50 min-h-screen">
+              <div className="flex flex-col xl:flex-row bg-gray-50 min-h-screen">
                 {/* Main Content Area */}
-                <div className="flex-1 p-6">
+                <div className="flex-1 p-3 sm:p-4 md:p-6 w-full">
                   {/* Welcome Section */}
                   <div className="mb-6">
                     <h2 className="text-2xl font-semibold text-gray-900 mb-1">{t('common.welcome')}, {userProfile.name}</h2>
@@ -796,7 +796,7 @@ export function UserDashboard() {
                   </div>
 
                   {/* Clean Stats Cards - Text Only Style */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                       <p className="text-sm text-gray-600 mb-2">{t('common.totalComplaints')}</p>
                       <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -864,7 +864,7 @@ export function UserDashboard() {
                             <Tooltip />
                           </PieChart>
                         </ResponsiveContainer>
-                        <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {statusChartData.map((item) => (
                             <div key={item.name} className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
@@ -901,7 +901,7 @@ export function UserDashboard() {
                             <Tooltip />
                           </PieChart>
                         </ResponsiveContainer>
-                        <div className="mt-4 grid grid-cols-3 gap-2">
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                           {priorityData.map((item) => (
                             <div key={item.name} className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
@@ -1220,7 +1220,7 @@ export function UserDashboard() {
                 </div>
 
                 {/* Right Side Promotional Panel */}
-                <div className="w-80 p-6">
+                <div className="w-full xl:w-80 p-3 sm:p-4 md:p-6 xl:pl-0">
                   <div className="sticky top-6">
                     <div className="rounded-xl shadow-lg overflow-hidden border border-gray-100 cursor-pointer hover:shadow-xl transition-shadow duration-300">
                       <img
@@ -1402,8 +1402,8 @@ export function UserDashboard() {
                   <div className="max-w-5xl mx-auto">
                     {/* Profile Header Card */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                      <div className="p-6">
-                        <div className="flex items-start gap-6">
+                      <div className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                           <div className="relative group">
                             {profilePhoto ? (
                               <>
