@@ -358,10 +358,6 @@ export function ChatBot() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-base">Support Chat</h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-xs text-white/90">We're online</span>
-                  </div>
                 </div>
               </div>
               <button
@@ -371,9 +367,6 @@ export function ChatBot() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-white/80 leading-relaxed">
-              Hi there! 👋 How can we help you today?
-            </p>
           </div>
 
           {/* Freshdesk-style Messages Area */}

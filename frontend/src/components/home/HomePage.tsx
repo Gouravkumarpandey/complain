@@ -331,10 +331,11 @@ export function HomePage() {
                      className={`px-5 md:px-10 h-full flex items-center justify-center rounded-full text-[15px] md:text-[18px] transition-all duration-300 ${activeTab === 'capabilities' ? 'font-bold text-[#111827]' : 'font-medium text-gray-600 hover:text-gray-900 bg-transparent'}`}
                    >Capabilities</button>
                  </div>
-              </div>
-            </div>
-          </div>
-        </div>
+               </div>
+             </div>
+           </div>
+         </div>
+
 
       {/* Vertical AI Agents Section */}
       <section id="whats-new" className="pt-16 pb-16 sm:pb-20 md:pb-24 bg-white text-center">
