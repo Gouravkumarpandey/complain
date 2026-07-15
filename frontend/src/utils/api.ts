@@ -20,8 +20,11 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 // Get API base URL from environment variables
 // Use the production URL from VITE_API_BASE_URL or VITE_API_URL
 
-// In development: http://localhost:5001/api
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Falls back to production URL if env var is not set
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  'https://complai-y8tj.onrender.com/api';
 
 // Create Axios instance with default configuration
 const api = axios.create({

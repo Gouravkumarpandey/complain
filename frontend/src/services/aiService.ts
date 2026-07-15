@@ -81,7 +81,7 @@ class AIService {
     }
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://complai-y8tj.onrender.com/api';
       const response = await fetch(`${apiBaseUrl}/ai/response`, {
         method: 'POST',
         headers: {

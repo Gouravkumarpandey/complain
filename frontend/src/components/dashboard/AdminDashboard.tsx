@@ -8,6 +8,7 @@ import {
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
 import { useComplaints } from '../../contexts/ComplaintContext';
+import api from '../../utils/api';
 import { apiService } from '../../services/apiService';
 import { agentService } from '../../services/agentService';
 import { NotificationCenter } from '../notifications/NotificationCenter';
@@ -387,34 +388,25 @@ export const AdminDashboard = () => {
   const fetchAgentPerformanceData = useCallback(async () => {
     try {
       setIsLoadingAgents(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/admin/agents/performance', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.agents && Array.isArray(data.agents)) {
-          const formattedAgents: Agent[] = data.agents.map((agent: ApiAgentData) => ({
-            id: agent._id || agent.id || '',
-            name: agent.name || 'Unknown Agent',
-            initials: getInitials(agent.name || 'Unknown Agent'),
-            status: agent.status || 'offline',
-            availability: agent.availability || 'offline',
-            currentLoad: agent.stats?.pendingTickets || 0,
-            avgResponseTime: agent.stats?.avgResolutionTime || 'N/A',
-            color: getAgentColor(agent.stats?.pendingTickets || 0),
-            lastUpdated: new Date(),
-            email: agent.email || '',
-            currentTickets: agent.stats?.totalTickets || 0,
-            resolvedToday: agent.stats?.resolvedTickets || 0,
-            rating: agent.stats?.rating || 0
-          }));
-          setAgents(formattedAgents);
-        }
+      const response = await api.get('/admin/agents/performance');
+      const data = response.data;
+      if (data.agents && Array.isArray(data.agents)) {
+        const formattedAgents: Agent[] = data.agents.map((agent: ApiAgentData) => ({
+          id: agent._id || agent.id || '',
+          name: agent.name || 'Unknown Agent',
+          initials: getInitials(agent.name || 'Unknown Agent'),
+          status: agent.status || 'offline',
+          availability: agent.availability || 'offline',
+          currentLoad: agent.stats?.pendingTickets || 0,
+          avgResponseTime: agent.stats?.avgResolutionTime || 'N/A',
+          color: getAgentColor(agent.stats?.pendingTickets || 0),
+          lastUpdated: new Date(),
+          email: agent.email || '',
+          currentTickets: agent.stats?.totalTickets || 0,
+          resolvedToday: agent.stats?.resolvedTickets || 0,
+          rating: agent.stats?.rating || 0
+        }));
+        setAgents(formattedAgents);
       }
     } catch (error) {
       console.error('Error fetching agent performance data:', error);
@@ -427,20 +419,11 @@ export const AdminDashboard = () => {
   const fetchUsersData = useCallback(async (page = 1) => {
     try {
       setIsLoadingUsers(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/users?page=${page}&limit=20`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.users && Array.isArray(data.users)) {
-          setUsers(data.users);
-          setUsersPagination(data.pagination || { current: 1, pages: 1, total: data.users.length });
-        }
+      const response = await api.get(`/admin/users?page=${page}&limit=20`);
+      const data = response.data;
+      if (data.users && Array.isArray(data.users)) {
+        setUsers(data.users);
+        setUsersPagination(data.pagination || { current: 1, pages: 1, total: data.users.length });
       }
     } catch (error) {
       console.error('Error fetching users data:', error);

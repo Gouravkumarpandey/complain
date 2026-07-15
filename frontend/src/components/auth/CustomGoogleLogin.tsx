@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useOAuthPopup } from '../../hooks/useOAuthPopup';
+import { useGoogleLogin } from '@react-oauth/google';
 
 interface CustomGoogleLoginProps {
     onSuccess: (token: string) => void;
@@ -18,34 +18,26 @@ export function CustomGoogleLogin({
 }: CustomGoogleLoginProps) {
     const [loading, setLoading] = useState(false);
 
-    const { openPopup } = useOAuthPopup(
-        (data) => {
+    const login = useGoogleLogin({
+        onSuccess: (tokenResponse) => {
             setLoading(false);
-            if (data.token) {
-                onSuccess(data.token);
-            } else {
-                onFailure(new Error('Google Sign-In failed to return access token'));
-            }
+            // tokenResponse.access_token is the OAuth access token
+            onSuccess(tokenResponse.access_token);
         },
-        () => {
+        onError: (error) => {
             setLoading(false);
-        }
-    );
+            onFailure(new Error(error.error_description ?? 'Google Sign-In failed'));
+        },
+        onNonOAuthError: () => {
+            // User closed the popup, etc.
+            setLoading(false);
+        },
+        flow: 'implicit', // Uses the Google Identity Services popup (not the deprecated manual implicit flow)
+    });
 
     const handleClick = () => {
-        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-        if (!clientId) {
-            onFailure(new Error('Google Client ID is not configured. Please add VITE_GOOGLE_CLIENT_ID to your .env file.'));
-            return;
-        }
-
         setLoading(true);
-        const redirectUri = `${window.location.origin}/auth/google/callback`;
-        const scope = 'profile email';
-        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
-        
-        openPopup(googleAuthUrl);
+        login();
     };
 
     const busy = isLoading || loading;

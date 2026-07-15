@@ -76,7 +76,7 @@ export function useTokenValidation() {
       // Record this attempt
       localStorage.setItem('lastTokenRefresh', now.toString());
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/refresh`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://complai-y8tj.onrender.com/api'}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
