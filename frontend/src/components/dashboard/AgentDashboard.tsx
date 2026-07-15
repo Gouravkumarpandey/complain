@@ -491,18 +491,18 @@ export function AgentDashboard() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Refresh Button */}
             <button
               onClick={() => window.location.reload()}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              className="hidden sm:flex p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
               title="Refresh Dashboard"
             >
               <RefreshCw className="w-5 h-5" />
             </button>
 
             {/* Agent Availability Status (Read-only - Auto-managed) */}
-            <div className="flex items-center gap-3 text-sm">
+            <div className="hidden md:flex items-center gap-3 text-sm">
               <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
                 <div className="flex items-center gap-2">
                   {agentProfile.availability === 'available' && (
@@ -542,7 +542,7 @@ export function AgentDashboard() {
             {activeView === 'my-tickets' && (
               <button
                 onClick={exportToCSV}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg"
+                className="hidden sm:flex text-blue-600 hover:text-blue-700 font-medium text-sm items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg"
               >
                 <Download className="w-4 h-4" />
                 Export CSV
@@ -569,19 +569,22 @@ export function AgentDashboard() {
               )}
             </button>
 
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+            <button className="hidden sm:flex p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
               <HelpCircle className="w-5 h-5" />
             </button>
 
             <div className="relative user-menu-container">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 rounded-lg p-1.5 sm:p-2 transition-colors"
               >
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                <div className="hidden sm:flex w-8 h-8 bg-green-500 rounded-full items-center justify-center text-white font-semibold text-sm">
                   {agentProfile.name?.charAt(0).toUpperCase() || 'A'}
                 </div>
-                <div className="text-left">
+                <div className="sm:hidden w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-gray-600" />
+                </div>
+                <div className="text-left hidden sm:block">
                   <p className="text-sm font-medium text-gray-900">{agentProfile.name}</p>
                   <p className="text-xs text-gray-500">{agentProfile.role}</p>
                 </div>

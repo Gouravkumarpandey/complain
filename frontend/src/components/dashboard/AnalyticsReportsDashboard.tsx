@@ -365,6 +365,17 @@ export function AnalyticsReportsDashboard() {
             <Download className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Export Reports</span>}
           </button>
+          
+          <div className="pt-4 mt-4 border-t border-slate-700">
+            <button 
+              onClick={handleLogout}
+              className={`w-full ${sidebarCollapsed ? 'h-10' : 'h-10'} rounded-lg flex items-center ${sidebarCollapsed ? 'justify-center' : 'px-3'} gap-3 transition-colors text-red-400 hover:text-red-300 hover:bg-red-500/10`}
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Sign Out</span>}
+            </button>
+          </div>
         </div>
       </div>
       

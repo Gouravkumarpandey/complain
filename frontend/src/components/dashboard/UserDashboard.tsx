@@ -724,16 +724,24 @@ export function UserDashboard() {
             <div className="relative user-menu-container">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
               >
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {userProfile.name?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                )}
-                <div className="text-left">
+                {/* Desktop: Show Image/Initials */}
+                <div className="hidden sm:block">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </div>
+                {/* Mobile: Show simple user icon */}
+                <div className="sm:hidden w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-gray-600" />
+                </div>
+                
+                <div className="text-left hidden sm:block">
                   <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
                   <p className="text-xs text-gray-500">{userProfile.role}</p>
                 </div>

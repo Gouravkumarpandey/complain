@@ -3,7 +3,7 @@ import {
   Shield, Activity, FileText, UserCheck, RefreshCw,
   Users, Home, Settings, Bell, HelpCircle, LogOut,
   ChevronDown, Menu, TrendingUp, BarChart3,
-  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X, Search
+  Clock, CheckCircle, Star, Eye, Calendar, MessageCircle, X, Search, User
 } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
@@ -924,7 +924,7 @@ export const AdminDashboard = () => {
             </h1>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button 
               onClick={() => setShowSearchModal(true)}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
@@ -936,7 +936,7 @@ export const AdminDashboard = () => {
             <button 
               onClick={refreshData}
               disabled={isRefreshing}
-              className="text-slate-800 hover:text-slate-900 font-medium text-sm flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg disabled:opacity-50"
+              className="hidden sm:flex text-slate-800 hover:text-slate-900 font-medium text-sm items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
@@ -955,23 +955,28 @@ export const AdminDashboard = () => {
               )}
             </button>
             
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+            <button className="hidden sm:flex p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
               <HelpCircle className="w-5 h-5" />
             </button>
             
             <div className="relative admin-menu-container">
               <button 
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 rounded-lg p-1.5 sm:p-2 transition-colors"
               >
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {adminProfile.name?.charAt(0).toUpperCase() || 'A'}
-                  </div>
-                )}
-                <div className="text-left">
+                <div className="hidden sm:block">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      {adminProfile.name?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                  )}
+                </div>
+                <div className="sm:hidden w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-gray-600" />
+                </div>
+                <div className="text-left hidden sm:block">
                   <p className="text-sm font-medium text-gray-900">{adminProfile.name}</p>
                   <p className="text-xs text-gray-500">{adminProfile.role}</p>
                 </div>
